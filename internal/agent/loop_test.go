@@ -379,20 +379,18 @@ func TestLoopRejectsInvalidInputsWithoutCallingDependencies(t *testing.T) {
 	}
 }
 
-func TestLoopOwnsConversationAndSchemaCopies(t *testing.T) {
+func TestLoopSnapshotsInputsAndReply(t *testing.T) {
 	initial := append(testInitial(), Message{Role: RoleAssistant, ToolCalls: calls("old").ToolCalls}, Message{Role: RoleTool, ToolCallID: "old"})
+	initialContent := initial[0].Content
 	tools := testTools()
 	reply := calls("new")
 	step := 0
 	loop := Loop{Tools: tools, Limits: Limits{2, 1},
 		Model: modelFunc(func(_ context.Context, messages []Message, specs []ToolSpec) (Reply, error) {
 			step++
-			if messages[0].Content != initial[0].Content || messages[1].ToolCalls[0].ID != "old" || !json.Valid(specs[0].Parameters) {
-				t.Fatal("dependency mutation corrupted loop history")
+			if messages[0].Content != initialContent || messages[1].ToolCalls[0].ID != "old" || !json.Valid(specs[0].Parameters) {
+				t.Fatal("caller mutation corrupted loop snapshots")
 			}
-			messages[0].Content = "mutated"
-			messages[1].ToolCalls[0].ID = "mutated"
-			specs[0].Parameters[0] = '!'
 			if step == 1 {
 				return reply, nil
 			}
@@ -402,6 +400,10 @@ func TestLoopOwnsConversationAndSchemaCopies(t *testing.T) {
 			return Reply{Finish: FinishStop}, nil
 		}),
 		Executor: executorFunc(func(_ context.Context, call ToolCall) (ToolResult, error) {
+			// 修改调用方的原始数据，验证入口快照和已接收回复仍保持独立。
+			initial[0].Content = "caller update"
+			initial[1].ToolCalls[0].ID = "caller update"
+			tools[0].Parameters[0] = '!'
 			reply.ToolCalls[0].Arguments = "mutated"
 			if call.Arguments != `{"path":"client.go"}` {
 				t.Fatal("call arguments corrupted")
@@ -414,8 +416,8 @@ func TestLoopOwnsConversationAndSchemaCopies(t *testing.T) {
 		t.Fatalf("%+v %v", result, err)
 	}
 	result.Messages[1].ToolCalls[0].ID = "caller mutation"
-	if initial[1].ToolCalls[0].ID != "old" || !json.Valid(tools[0].Parameters) {
-		t.Fatal("caller-owned inputs were modified")
+	if initial[1].ToolCalls[0].ID != "caller update" {
+		t.Fatal("result mutation changed caller-owned history")
 	}
 }
 

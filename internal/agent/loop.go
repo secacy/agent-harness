@@ -53,7 +53,7 @@ func (l Loop) Run(ctx context.Context, initial []Message) (Result, error) {
 			return result, nil
 		}
 		result.ModelCalls++
-		reply, err := l.Model.Complete(ctx, cloneMessages(result.Messages), cloneTools(tools))
+		reply, err := l.Model.Complete(ctx, result.Messages, tools)
 		if err != nil {
 			return stopWithError(ctx, result, fmt.Errorf("model call %d: %w", result.ModelCalls, err))
 		}

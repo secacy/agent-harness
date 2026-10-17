@@ -54,6 +54,8 @@ type Reply struct {
 }
 
 type Model interface {
+	// 输入由循环持有，实现只能读取消息、工具及其嵌套切片，
+	// 不得修改或在调用结束后继续使用。构造请求时所需的转换由实现负责。
 	Complete(ctx context.Context, messages []Message, tools []ToolSpec) (Reply, error)
 }
 
