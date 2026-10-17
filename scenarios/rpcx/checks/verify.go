@@ -1,0 +1,686 @@
+// Package checks implements the public T1/T2 development-case verifier.
+package checks
+
+import (
+	"bytes"
+	"context"
+	"crypto/sha256"
+	"embed"
+	"encoding/hex"
+	"encoding/json"
+	"fmt"
+	"go/ast"
+	"go/parser"
+	"go/token"
+	"io"
+	"io/fs"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"sort"
+	"strconv"
+	"strings"
+	"time"
+)
+
+//go:embed probes/*.txt
+var probes embed.FS
+
+type Expected struct {
+	Checks  map[string]string `json:"checks"`
+	Verdict string            `json:"verdict"`
+}
+type Case struct {
+	ID       string   `json:"id"`
+	Patch    string   `json:"patch"`
+	Expected Expected `json:"expected"`
+}
+type Manifest struct {
+	SchemaVersion int    `json:"schema_version"`
+	Spec          string `json:"spec"`
+	Cases         []Case `json:"cases"`
+}
+type Check struct {
+	Status string `json:"status"`
+	Detail string `json:"detail"`
+}
+type Command struct {
+	Args       []string `json:"args"`
+	Directory  string   `json:"directory"`
+	Log        string   `json:"log"`
+	ExitCode   int      `json:"exit_code"`
+	TimedOut   bool     `json:"timed_out"`
+	DurationMS int64    `json:"duration_ms"`
+}
+type Result struct {
+	ID                 string           `json:"id"`
+	PatchSHA256        string           `json:"patch_sha256"`
+	CandidateSHA256    string           `json:"candidate_sha256"`
+	Checks             map[string]Check `json:"checks"`
+	Verdict            string           `json:"verdict"`
+	Commands           []Command        `json:"commands"`
+	ExpectationMatched bool             `json:"expectation_matched"`
+}
+type Report struct {
+	StartedAt         string    `json:"started_at"`
+	GoVersion         string    `json:"go_version"`
+	Spec              string    `json:"spec"`
+	SpecSHA256        string    `json:"spec_sha256"`
+	ManifestSHA256    string    `json:"manifest_sha256"`
+	FixturesSHA256    string    `json:"fixtures_sha256"`
+	ChecksSHA256      string    `json:"checks_sha256"`
+	FixturesUnchanged bool      `json:"fixtures_unchanged"`
+	PreflightCommands []Command `json:"preflight_commands"`
+	Error             string    `json:"error,omitempty"`
+	Results           []Result  `json:"results"`
+}
+
+var checkNames = []string{"dependencies", "protected_paths", "build", "baseline_tests", "test_preservation", "context_propagation"}
+
+func digest(data []byte) string {
+	sum := sha256.Sum256(data)
+	return hex.EncodeToString(sum[:])
+}
+
+func readManifest(path string) (Manifest, []byte, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return Manifest{}, nil, err
+	}
+	var m Manifest
+	d := json.NewDecoder(bytes.NewReader(data))
+	d.DisallowUnknownFields()
+	if err := d.Decode(&m); err != nil {
+		return m, nil, err
+	}
+	if err := d.Decode(new(any)); err != io.EOF {
+		return m, nil, fmt.Errorf("manifest must contain exactly one JSON document")
+	}
+	if m.SchemaVersion != 1 || len(m.Cases) == 0 {
+		return m, nil, fmt.Errorf("invalid manifest version or empty cases")
+	}
+	seen := map[string]bool{}
+	for _, c := range m.Cases {
+		if c.ID == "" || strings.ContainsAny(c.ID, "/\\.") || seen[c.ID] {
+			return m, nil, fmt.Errorf("invalid or duplicate case ID %q", c.ID)
+		}
+		seen[c.ID] = true
+		if !safeRelative(c.Patch) {
+			return m, nil, fmt.Errorf("unsafe patch path")
+		}
+		if len(c.Expected.Checks) != len(checkNames) {
+			return m, nil, fmt.Errorf("case %s must declare every check", c.ID)
+		}
+		for _, name := range checkNames {
+			switch c.Expected.Checks[name] {
+			case "pass", "fail", "blocked", "not_run":
+			default:
+				return m, nil, fmt.Errorf("invalid expected check %s/%s", c.ID, name)
+			}
+		}
+		if c.Expected.Verdict != "ReadyForReview" && c.Expected.Verdict != "Rejected" && c.Expected.Verdict != "NeedsAttention" {
+			return m, nil, fmt.Errorf("invalid expected verdict")
+		}
+	}
+	if !safeRelative(m.Spec) {
+		return m, nil, fmt.Errorf("unsafe spec path")
+	}
+	return m, data, nil
+}
+
+func safeRelative(path string) bool {
+	return path != "" && filepath.IsLocal(path)
+}
+
+// snapshot hashes every regular file, including its relative path. Symlinks are
+// rejected so fixture copies cannot silently reach outside their source tree.
+func snapshot(root string) (map[string]string, error) {
+	files := map[string]string{}
+	err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if entry.IsDir() {
+			return nil
+		}
+		info, err := entry.Info()
+		if err != nil {
+			return err
+		}
+		if !info.Mode().IsRegular() {
+			return fmt.Errorf("non-regular fixture file: %s", path)
+		}
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		rel, err := filepath.Rel(root, path)
+		if err != nil {
+			return err
+		}
+		files[filepath.ToSlash(rel)] = digest(data)
+		return nil
+	})
+	return files, err
+}
+
+func treeDigest(files map[string]string) string {
+	data, _ := json.Marshal(files) // encoding/json sorts map keys.
+	return digest(data)
+}
+
+func copyTree(source, dest string) error {
+	files, err := snapshot(source)
+	if err != nil {
+		return err
+	}
+	for rel := range files {
+		path := filepath.Join(dest, filepath.FromSlash(rel))
+		if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+			return err
+		}
+		data, err := os.ReadFile(filepath.Join(source, filepath.FromSlash(rel)))
+		if err != nil {
+			return err
+		}
+		if err := os.WriteFile(path, data, 0644); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func offlineEnv(root, ceiling string) []string {
+	overrides := map[string]string{
+		"GOPROXY": "off", "GOSUMDB": "off", "GOWORK": "off", "GOTOOLCHAIN": "local",
+		"GOFLAGS": "-mod=readonly", "GOCACHE": filepath.Join(root, "runs", "go-cache"),
+		"GIT_CEILING_DIRECTORIES": ceiling,
+	}
+	env := []string{}
+	for _, item := range os.Environ() {
+		key, _, _ := strings.Cut(item, "=")
+		if _, replaced := overrides[key]; !replaced && !strings.HasPrefix(key, "GIT_") {
+			env = append(env, item)
+		}
+	}
+	for k, v := range overrides {
+		env = append(env, k+"="+v)
+	}
+	return env
+}
+
+// command distinguishes execution failures from an ordinary non-zero exit.
+// Command logs and metadata survive failed cases.
+func command(root, dir, log string, args ...string) (Command, []byte, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, args[0], args[1:]...)
+	cmd.Dir = dir
+	cmd.Env = offlineEnv(root, filepath.Dir(dir))
+	started := time.Now()
+	output, err := cmd.CombinedOutput()
+	meta := Command{Args: args, Directory: dir, Log: log, DurationMS: time.Since(started).Milliseconds()}
+	if ctx.Err() != nil {
+		meta.TimedOut = true
+	}
+	if err != nil {
+		if exit, ok := err.(*exec.ExitError); ok {
+			meta.ExitCode = exit.ExitCode()
+		} else {
+			return meta, output, err
+		}
+	}
+	if err := os.WriteFile(log, output, 0644); err != nil {
+		return meta, output, err
+	}
+	return meta, output, nil
+}
+
+type testEvent struct{ Action, Package, Test string }
+
+func testEvents(data []byte) (map[string]string, error) {
+	states := map[string]string{}
+	d := json.NewDecoder(bytes.NewReader(data))
+	for {
+		var event testEvent
+		if err := d.Decode(&event); err == io.EOF {
+			break
+		} else if err != nil {
+			return nil, err
+		}
+		if event.Test != "" {
+			states[event.Package+"/"+event.Test] = event.Action
+		}
+	}
+	return states, nil
+}
+
+func preservationCheck(baselineNames map[string]bool, baselineEvents map[string]string, names map[string]bool, states map[string]string) Check {
+	missing := []string{}
+	for name := range baselineNames {
+		if !names[name] || states[name] != "pass" {
+			missing = append(missing, name)
+		}
+	}
+	for name, state := range baselineEvents {
+		if state == "pass" && states[name] != "pass" && !baselineNames[name] {
+			missing = append(missing, name)
+		}
+	}
+	sort.Strings(missing)
+	if len(missing) != 0 {
+		return Check{"fail", "TEST-001: missing, skipped or failed: " + strings.Join(missing, ", ")}
+	}
+	return Check{"pass", fmt.Sprintf("all %d original tests executed and passed", len(baselineNames))}
+}
+
+func probeCheck(data []byte, meta Command) Check {
+	if meta.TimedOut {
+		return Check{"blocked", "context behavior probe timed out"}
+	}
+	if meta.ExitCode != 0 {
+		return Check{"fail", "context behavior probe failed; see context-probes.log"}
+	}
+	states, err := testEvents(data)
+	if err != nil {
+		return Check{"blocked", "context probe output could not be decoded"}
+	}
+	prefix := "example.com/demo-orders/cmd/server/TestHarnessRequestContext"
+	for _, operation := range []string{"Place", "Cancel"} {
+		for _, mode := range []string{"metadata", "already-cancelled", "cancel-in-backend"} {
+			name := prefix + "/" + operation + "/" + mode
+			if states[name] != "pass" {
+				return Check{"fail", "required probe did not execute and pass: " + name}
+			}
+		}
+	}
+	return Check{"pass", "CTX-001/002/003: both request chains preserve metadata, deadline and cancellation"}
+}
+
+func testNames(root string) (map[string]bool, error) {
+	names := map[string]bool{}
+	err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if entry.IsDir() || !strings.HasSuffix(path, "_test.go") {
+			return nil
+		}
+		file, err := parser.ParseFile(token.NewFileSet(), path, nil, 0)
+		if err != nil {
+			return err
+		}
+		rel, err := filepath.Rel(root, filepath.Dir(path))
+		if err != nil {
+			return err
+		}
+		pkg := "example.com/demo-orders"
+		if rel != "." {
+			pkg += "/" + filepath.ToSlash(rel)
+		}
+		for _, decl := range file.Decls {
+			if f, ok := decl.(*ast.FuncDecl); ok && f.Recv == nil && strings.HasPrefix(f.Name.Name, "Test") {
+				names[pkg+"/"+f.Name.Name] = true
+			}
+		}
+		return nil
+	})
+	return names, err
+}
+
+func protectedCheck(baseline, candidate string) Check {
+	before, err := snapshot(filepath.Join(baseline, "internal/pb"))
+	if err != nil {
+		return Check{"fail", err.Error()}
+	}
+	after, err := snapshot(candidate)
+	if err != nil {
+		return Check{"fail", err.Error()}
+	}
+	filtered := map[string]string{}
+	for path, hash := range after {
+		if strings.HasPrefix(path, "internal/pb/") {
+			filtered[strings.TrimPrefix(path, "internal/pb/")] = hash
+		}
+	}
+	if treeDigest(before) != treeDigest(filtered) {
+		return Check{"fail", "PATH-001: protected file list or contents changed"}
+	}
+	return Check{"pass", "PATH-001: protected file list and SHA-256 match baseline"}
+}
+
+func dependencyCheck(root, candidate, log string) (Check, Command, error) {
+	meta, data, err := command(root, candidate, log, "go", "mod", "edit", "-json")
+	if err != nil {
+		return Check{}, meta, err
+	}
+	if meta.TimedOut {
+		return Check{"blocked", "dependency inspection timed out"}, meta, nil
+	}
+	if meta.ExitCode != 0 {
+		return Check{"fail", "DEP-001: invalid go.mod"}, meta, nil
+	}
+	var mod struct {
+		Module  struct{ Path string }
+		Require []struct{ Path, Version string }
+		Replace []struct {
+			Old, New struct{ Path, Version string }
+		}
+	}
+	if err := json.Unmarshal(data, &mod); err != nil {
+		return Check{}, meta, err
+	}
+	if mod.Module.Path != "example.com/demo-orders" || len(mod.Require) != 1 || mod.Require[0].Path != "example.com/rpcx/v2" || mod.Require[0].Version != "v2.0.0" || len(mod.Replace) != 1 || mod.Replace[0].Old.Path != "example.com/rpcx/v2" || mod.Replace[0].Old.Version != "" || mod.Replace[0].New.Path != "../rpcx-v2" || mod.Replace[0].New.Version != "" {
+		return Check{"fail", "DEP-001: expected only rpcx/v2 v2.0.0 with local ../rpcx-v2 replacement"}, meta, nil
+	}
+	err = filepath.WalkDir(candidate, func(path string, entry fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if entry.IsDir() || !strings.HasSuffix(path, ".go") {
+			return nil
+		}
+		file, err := parser.ParseFile(token.NewFileSet(), path, nil, parser.ImportsOnly)
+		if err != nil {
+			return err
+		}
+		for _, imp := range file.Imports {
+			value, _ := strconv.Unquote(imp.Path.Value)
+			if value == "example.com/rpcx" {
+				return fmt.Errorf("DEP-001: v1 import in %s", path)
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return Check{"fail", err.Error()}, meta, nil
+	}
+	return Check{"pass", "DEP-001: module, local replacement and imports migrated"}, meta, nil
+}
+
+// contextPolicy supplements behavioral probes with a narrow syntax check.
+// It is not a general Go data-flow analysis or sandbox.
+func contextPolicy(candidate string) error {
+	return filepath.WalkDir(candidate, func(path string, entry fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if entry.IsDir() || !strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_test.go") {
+			return nil
+		}
+		file, err := parser.ParseFile(token.NewFileSet(), path, nil, 0)
+		if err != nil {
+			return err
+		}
+		aliases := map[string]bool{}
+		for _, imp := range file.Imports {
+			if imp.Path.Value == `"context"` {
+				name := "context"
+				if imp.Name != nil {
+					name = imp.Name.Name
+				}
+				if name == "." {
+					return fmt.Errorf("CTX-003: context dot import cannot be verified")
+				}
+				aliases[name] = true
+			}
+		}
+		var violation error
+		ast.Inspect(file, func(node ast.Node) bool {
+			selector, ok := node.(*ast.SelectorExpr)
+			if !ok {
+				return true
+			}
+			id, ok := selector.X.(*ast.Ident)
+			if ok && aliases[id.Name] && (selector.Sel.Name == "Background" || selector.Sel.Name == "TODO" || selector.Sel.Name == "WithoutCancel") {
+				violation = fmt.Errorf("CTX-003: %s in %s", selector.Sel.Name, path)
+			}
+			return true
+		})
+		return violation
+	})
+}
+
+func verdict(checks map[string]Check) string {
+	unknown := false
+	for _, name := range checkNames {
+		c := checks[name]
+		if c.Status == "fail" {
+			return "Rejected"
+		}
+		if c.Status != "pass" {
+			unknown = true
+		}
+	}
+	if unknown {
+		return "NeedsAttention"
+	}
+	return "ReadyForReview"
+}
+
+// Verify runs every public case. Expected results are consulted only after all
+// actual checks and the actual verdict have been computed.
+func Verify(root, runDir string) (*Report, error) {
+	scenario := filepath.Join(root, "scenarios/rpcx")
+	manifest, rawManifest, err := readManifest(filepath.Join(scenario, "cases/manifest.yaml"))
+	if err != nil {
+		return nil, err
+	}
+	spec, err := os.ReadFile(filepath.Join(scenario, manifest.Spec))
+	if err != nil {
+		return nil, err
+	}
+	fixtures := filepath.Join(scenario, "fixtures")
+	before, err := snapshot(fixtures)
+	if err != nil {
+		return nil, err
+	}
+	if err := os.MkdirAll(runDir, 0755); err != nil {
+		return nil, err
+	}
+	if err := os.MkdirAll(filepath.Join(root, "runs/go-cache"), 0755); err != nil {
+		return nil, err
+	}
+	report := &Report{StartedAt: time.Now().UTC().Format(time.RFC3339), Spec: manifest.Spec, SpecSHA256: digest(spec), ManifestSHA256: digest(rawManifest), FixturesSHA256: treeDigest(before)}
+	checkFiles, err := snapshot(filepath.Join(scenario, "checks"))
+	if err != nil {
+		return report, err
+	}
+	report.ChecksSHA256 = treeDigest(checkFiles)
+	for name, data := range map[string][]byte{"spec.md": spec, "manifest.yaml": rawManifest} {
+		if err := os.WriteFile(filepath.Join(runDir, name), data, 0644); err != nil {
+			return report, err
+		}
+	}
+	// SDK and baseline tests are preconditions, not candidate verdicts.
+	preflight := filepath.Join(runDir, "preflight")
+	if err := copyTree(fixtures, preflight); err != nil {
+		return report, err
+	}
+	version, data, err := command(root, preflight, filepath.Join(runDir, "go-version.log"), "go", "version")
+	report.PreflightCommands = append(report.PreflightCommands, version)
+	if err != nil || version.ExitCode != 0 {
+		return report, fmt.Errorf("go version: %v", err)
+	}
+	report.GoVersion = strings.TrimSpace(string(data))
+	var baselineEvents map[string]string
+	for _, module := range []string{"rpcx-v1", "rpcx-v2", "demo-orders"} {
+		meta, data, err := command(root, filepath.Join(preflight, module), filepath.Join(runDir, "baseline-"+module+".log"), "go", "test", "-json", "-count=1", "-timeout=30s", "./...")
+		report.PreflightCommands = append(report.PreflightCommands, meta)
+		if err != nil {
+			return report, err
+		}
+		if meta.ExitCode != 0 || meta.TimedOut {
+			return report, fmt.Errorf("baseline %s failed: see %s", module, meta.Log)
+		}
+		if module == "demo-orders" {
+			baselineEvents, err = testEvents(data)
+			if err != nil {
+				return report, err
+			}
+		}
+	}
+	baseline := filepath.Join(fixtures, "demo-orders")
+	baselineNames, err := testNames(baseline)
+	if err != nil {
+		return report, err
+	}
+	for name := range baselineNames {
+		if baselineEvents[name] != "pass" {
+			return report, fmt.Errorf("baseline test not passed: %s", name)
+		}
+	}
+	for _, c := range manifest.Cases {
+		result, err := verifyCase(root, scenario, fixtures, baseline, runDir, c, baselineNames, baselineEvents)
+		if err != nil {
+			return report, fmt.Errorf("case %s: %w", c.ID, err)
+		}
+		report.Results = append(report.Results, result)
+	}
+	after, err := snapshot(fixtures)
+	if err != nil {
+		return report, err
+	}
+	report.FixturesUnchanged = treeDigest(before) == treeDigest(after)
+	return report, nil
+}
+
+func verifyCase(root, scenario, fixtures, baseline, runDir string, c Case, baselineNames map[string]bool, baselineEvents map[string]string) (Result, error) {
+	result := Result{ID: c.ID, Checks: map[string]Check{}}
+	for _, name := range checkNames {
+		result.Checks[name] = Check{"not_run", "not executed"}
+	}
+	dir := filepath.Join(runDir, c.ID)
+	workspace := filepath.Join(dir, "workspace")
+	if err := copyTree(fixtures, workspace); err != nil {
+		return result, err
+	}
+	candidate := filepath.Join(workspace, "demo-orders")
+	patchPath := filepath.Join(scenario, "cases", c.Patch)
+	patch, err := os.ReadFile(patchPath)
+	if err != nil {
+		return result, err
+	}
+	result.PatchSHA256 = digest(patch)
+	if err := os.WriteFile(filepath.Join(dir, "candidate.patch"), patch, 0644); err != nil {
+		return result, err
+	}
+	run := func(label string, args ...string) ([]byte, Command, error) {
+		meta, data, err := command(root, candidate, filepath.Join(dir, label+".log"), args...)
+		result.Commands = append(result.Commands, meta)
+		return data, meta, err
+	}
+	for i, args := range [][]string{{"git", "apply", "--check", patchPath}, {"git", "apply", patchPath}} {
+		_, meta, err := run(fmt.Sprintf("patch-%d", i), args...)
+		if err != nil {
+			return result, err
+		}
+		if meta.ExitCode != 0 || meta.TimedOut {
+			return result, fmt.Errorf("patch application failed: see %s", meta.Log)
+		}
+	}
+	candidateFiles, err := snapshot(candidate)
+	if err != nil {
+		return result, err
+	}
+	result.CandidateSHA256 = treeDigest(candidateFiles)
+	result.Checks["protected_paths"] = protectedCheck(baseline, candidate)
+	dep, meta, err := dependencyCheck(root, candidate, filepath.Join(dir, "dependencies.log"))
+	result.Commands = append(result.Commands, meta)
+	if err != nil {
+		return result, err
+	}
+	result.Checks["dependencies"] = dep
+	if err := os.MkdirAll(filepath.Join(dir, "build"), 0755); err != nil {
+		return result, err
+	}
+	_, build, err := run("build", "go", "build", "-o", filepath.Join(dir, "build"), "./...")
+	if err != nil {
+		return result, err
+	}
+	result.Checks["build"] = Check{"pass", "all candidate packages build"}
+	if build.ExitCode != 0 || build.TimedOut {
+		status := "fail"
+		if build.TimedOut {
+			status = "blocked"
+		}
+		result.Checks["build"] = Check{status, "candidate build did not complete successfully"}
+		for _, name := range []string{"baseline_tests", "test_preservation", "context_propagation"} {
+			result.Checks[name] = Check{"blocked", "candidate build prerequisite failed"}
+		}
+	} else {
+		data, tests, err := run("business-tests", "go", "test", "-json", "-count=1", "-timeout=30s", "./...")
+		if err != nil {
+			return result, err
+		}
+		states, err := testEvents(data)
+		if err != nil {
+			return result, err
+		}
+		status := "pass"
+		if tests.ExitCode != 0 {
+			status = "fail"
+		}
+		if tests.TimedOut {
+			status = "blocked"
+		}
+		result.Checks["baseline_tests"] = Check{status, "candidate business test command; see business-tests.log"}
+		names, err := testNames(candidate)
+		if err != nil {
+			return result, err
+		}
+		result.Checks["test_preservation"] = preservationCheck(baselineNames, baselineEvents, names, states)
+		probe, err := probes.ReadFile("probes/context_test.go.txt")
+		if err != nil {
+			return result, err
+		}
+		probePath := filepath.Join(candidate, "cmd/server/harness_context_test.go")
+		if _, err := os.Lstat(probePath); !os.IsNotExist(err) {
+			return result, fmt.Errorf("candidate occupies trusted probe path")
+		}
+		if err := os.WriteFile(probePath, probe, 0644); err != nil {
+			return result, err
+		}
+		probeData, probeRun, err := run("context-probes", "go", "test", "-json", "-count=1", "-timeout=30s", "-run", "^TestHarnessRequestContext$", "./cmd/server")
+		removeErr := os.Remove(probePath)
+		if err != nil {
+			return result, err
+		}
+		if removeErr != nil {
+			return result, removeErr
+		}
+		result.Checks["context_propagation"] = probeCheck(probeData, probeRun)
+		if err := contextPolicy(candidate); err != nil {
+			result.Checks["context_propagation"] = Check{"fail", err.Error()}
+		}
+	}
+	// Verify shared SDK copies stayed unchanged as well as protected candidate paths.
+	for _, sdk := range []string{"rpcx-v1", "rpcx-v2"} {
+		original, err := snapshot(filepath.Join(fixtures, sdk))
+		if err != nil {
+			return result, err
+		}
+		copy, err := snapshot(filepath.Join(workspace, sdk))
+		if err != nil {
+			return result, err
+		}
+		if treeDigest(original) != treeDigest(copy) {
+			result.Checks["dependencies"] = Check{"fail", "DEP-001: SDK fixture changed"}
+		}
+	}
+	afterFiles, err := snapshot(candidate)
+	if err != nil {
+		return result, err
+	}
+	if treeDigest(afterFiles) != result.CandidateSHA256 {
+		return result, fmt.Errorf("candidate changed during verification; evidence is stale")
+	}
+	result.Verdict = verdict(result.Checks)
+	result.ExpectationMatched = result.Verdict == c.Expected.Verdict
+	for _, name := range checkNames {
+		if result.Checks[name].Status != c.Expected.Checks[name] {
+			result.ExpectationMatched = false
+		}
+	}
+	return result, nil
+}

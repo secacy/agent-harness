@@ -1,0 +1,83 @@
+package main
+
+import (
+	"context"
+	"errors"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+	"time"
+
+	"example.com/demo-orders/internal/inventory"
+	"example.com/demo-orders/internal/orders"
+	"example.com/rpcx/v2"
+)
+
+// The probe enters through real HTTP handlers and observes the RPC boundary.
+// It never waits for wall-clock deadlines or starts network listeners.
+func TestHarnessRequestContext(t *testing.T) {
+	for _, operation := range []string{"Place", "Cancel"} {
+		for _, mode := range []string{"metadata", "already-cancelled", "cancel-in-backend"} {
+			t.Run(operation+"/"+mode, func(t *testing.T) {
+				type requestKey struct{}
+				parent := context.WithValue(context.Background(), requestKey{}, "request-42")
+				ctx, cancel := context.WithDeadline(parent, time.Now().Add(time.Hour))
+				defer cancel()
+				deadline, _ := ctx.Deadline()
+				active := false
+				calls := 0
+				t.Cleanup(rpcx.Register(t.Name(), func(got context.Context, method string, req rpcx.Request) error {
+					if !active { return nil } // Seed the order before probing cancellation.
+					calls++
+					wantMethod := "Inventory.Reserve"
+					if operation == "Cancel" { wantMethod = "Inventory.Release" }
+					if method != wantMethod || req.SKU != "book" || req.Quantity != 2 {
+						t.Fatalf("unexpected call: %s %+v", method, req)
+					}
+					if got.Value(requestKey{}) != "request-42" { t.Error("request value lost") }
+					if d, ok := got.Deadline(); !ok || d.After(deadline) { t.Error("request deadline lost or extended") }
+					if mode == "cancel-in-backend" {
+						cancel()
+						select {
+						case <-got.Done():
+						default: t.Error("request cancellation did not reach backend")
+						}
+						if !errors.Is(got.Err(), context.Canceled) { t.Errorf("context error: %v", got.Err()) }
+						return got.Err()
+					}
+					return nil
+				}))
+				inv, err := inventory.New(t.Name())
+				if err != nil { t.Fatal(err) }
+				service := orders.New(inv)
+				if operation == "Cancel" {
+					if err := service.Place(context.Background(), "o1", "book", 2); err != nil { t.Fatal(err) }
+				}
+				h := &Handler{service: service}
+				active = true
+				if mode == "already-cancelled" { cancel() }
+				w := httptest.NewRecorder()
+				if operation == "Place" {
+					r := httptest.NewRequest(http.MethodPost, "/orders", strings.NewReader(`{"ID":"o1","SKU":"book","Quantity":2}`)).WithContext(ctx)
+					h.Place(w, r)
+				} else {
+					h.Cancel(w, httptest.NewRequest(http.MethodDelete, "/orders?id=o1", nil).WithContext(ctx))
+				}
+				wantStatus := http.StatusBadGateway
+				wantCalls := 1
+				if mode == "metadata" {
+					wantStatus = http.StatusCreated
+					if operation == "Cancel" { wantStatus = http.StatusNoContent }
+				}
+				if mode == "already-cancelled" { wantCalls = 0 }
+				if w.Code != wantStatus || calls != wantCalls {
+					t.Errorf("status/calls = %d/%d, want %d/%d", w.Code, calls, wantStatus, wantCalls)
+				}
+				_, exists := service.Get("o1")
+				wantExists := operation == "Place" && mode == "metadata" || operation == "Cancel" && mode != "metadata"
+				if exists != wantExists { t.Errorf("order exists = %v, want %v", exists, wantExists) }
+			})
+		}
+	}
+}

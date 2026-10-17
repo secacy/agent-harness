@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "spec": "specs/v0.1.0.md",
+  "cases": [
+    {
+      "id": "correct",
+      "patch": "patches/correct.patch",
+      "expected": {
+        "checks": {
+          "dependencies": "pass",
+          "protected_paths": "pass",
+          "build": "pass",
+          "baseline_tests": "pass",
+          "test_preservation": "pass",
+          "context_propagation": "pass"
+        },
+        "verdict": "ReadyForReview"
+      }
+    },
+    {
+      "id": "background-fallback",
+      "patch": "patches/background-fallback.patch",
+      "expected": {
+        "checks": {
+          "dependencies": "pass",
+          "protected_paths": "pass",
+          "build": "pass",
+          "baseline_tests": "pass",
+          "test_preservation": "pass",
+          "context_propagation": "fail"
+        },
+        "verdict": "Rejected"
+      }
+    },
+    {
+      "id": "missed-callsite",
+      "patch": "patches/missed-callsite.patch",
+      "expected": {
+        "checks": {
+          "dependencies": "pass",
+          "protected_paths": "pass",
+          "build": "fail",
+          "baseline_tests": "blocked",
+          "test_preservation": "blocked",
+          "context_propagation": "blocked"
+        },
+        "verdict": "Rejected"
+      }
+    },
+    {
+      "id": "deleted-test",
+      "patch": "patches/deleted-test.patch",
+      "expected": {
+        "checks": {
+          "dependencies": "pass",
+          "protected_paths": "pass",
+          "build": "pass",
+          "baseline_tests": "pass",
+          "test_preservation": "fail",
+          "context_propagation": "pass"
+        },
+        "verdict": "Rejected"
+      }
+    },
+    {
+      "id": "protected-path",
+      "patch": "patches/protected-path.patch",
+      "expected": {
+        "checks": {
+          "dependencies": "pass",
+          "protected_paths": "fail",
+          "build": "pass",
+          "baseline_tests": "pass",
+          "test_preservation": "pass",
+          "context_propagation": "pass"
+        },
+        "verdict": "Rejected"
+      }
+    }
+  ]
+}
