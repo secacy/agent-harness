@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 )
@@ -24,10 +25,8 @@ func preparePaths(config Config) (map[string]string, []string, error) {
 		if err != nil {
 			return nil, nil, fmt.Errorf("root %s: %w", name, err)
 		}
-		for otherName, other := range roots {
-			if overlaps(root, other) {
-				return nil, nil, fmt.Errorf("roots %s and %s overlap", name, otherName)
-			}
+		if overlaps(root, workspace) {
+			return nil, nil, fmt.Errorf("read-only root %s overlaps workspace", name)
 		}
 		roots[name] = root
 	}
@@ -76,10 +75,8 @@ func validRelative(path string) error {
 	if !fs.ValidPath(path) || strings.Contains(path, `\`) || strings.ContainsRune(path, 0) || filepath.IsAbs(path) {
 		return fmt.Errorf("path must be a clean relative path: %q", path)
 	}
-	for _, part := range strings.Split(path, "/") {
-		if part == ".git" {
-			return errors.New("Git metadata is not accessible")
-		}
+	if slices.Contains(strings.Split(path, "/"), ".git") {
+		return errors.New("Git metadata is not accessible")
 	}
 	return nil
 }

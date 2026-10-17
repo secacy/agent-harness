@@ -36,9 +36,14 @@ func (o *boundedOutput) full() bool {
 }
 
 func (o *boundedOutput) String() string {
+	return o.stringWithPrefix("")
+}
+
+// stringWithPrefix 将状态前缀和原始输出一起截断，只生成一次截断标记。
+func (o *boundedOutput) stringWithPrefix(prefix string) string {
 	o.mu.Lock()
 	defer o.mu.Unlock()
-	text := strings.ToValidUTF8(string(o.data), "�")
+	text := prefix + strings.ToValidUTF8(string(o.data), "�")
 	if !o.truncated && len(text) <= o.limit {
 		return text
 	}

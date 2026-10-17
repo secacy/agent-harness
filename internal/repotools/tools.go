@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"strings"
 
 	"example.com/agent-harness/internal/agent"
@@ -171,11 +170,5 @@ func decode(raw string, target any, required ...string) error {
 	}
 	decoder := json.NewDecoder(strings.NewReader(raw))
 	decoder.DisallowUnknownFields()
-	if err := decoder.Decode(target); err != nil {
-		return err
-	}
-	if err := decoder.Decode(new(any)); err != io.EOF {
-		return errors.New("arguments must contain one JSON object")
-	}
-	return nil
+	return decoder.Decode(target)
 }

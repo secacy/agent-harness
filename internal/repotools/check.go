@@ -103,27 +103,20 @@ func (c *localGoChecker) run(parent context.Context, kind string) (agent.ToolRes
 	err := command.Run()
 	// 正常退出后也回收仍留在该进程组中的后代；主动脱离进程组的进程不在保证内。
 	cleanupErr := terminateProcessGroup(command)
-	result := agent.ToolResult{Content: output.String()}
 	if ctx.Err() != nil {
-		return result, errors.Join(ctx.Err(), cleanupErr)
+		return agent.ToolResult{Content: output.String()}, errors.Join(ctx.Err(), cleanupErr)
 	}
 	if cleanupErr != nil {
-		return result, fmt.Errorf("clean up Go process group: %w", cleanupErr)
+		return agent.ToolResult{Content: output.String()}, fmt.Errorf("clean up Go process group: %w", cleanupErr)
 	}
+	status := fmt.Sprintf("go %s passed\n", kind)
 	if err != nil {
 		var exit *exec.ExitError
 		if !errors.As(err, &exit) {
-			return result, fmt.Errorf("run Go check: %w", err)
+			return agent.ToolResult{Content: output.String()}, fmt.Errorf("run Go check: %w", err)
 		}
-		result.IsError = true
-		// 状态放在输出之前，即使命令输出截断，模型也能看到退出码。
-		output = newOutput(c.maxOutput)
-		fmt.Fprintf(output, "go %s exited with code %d\n%s", kind, exit.ExitCode(), result.Content)
-		result.Content = output.String()
-		return result, nil
+		status = fmt.Sprintf("go %s exited with code %d\n", kind, exit.ExitCode())
 	}
-	output = newOutput(c.maxOutput)
-	fmt.Fprintf(output, "go %s passed\n%s", kind, result.Content)
-	result.Content = output.String()
-	return result, nil
+	// 状态放在输出之前，即使命令输出截断，模型也能看到退出码。
+	return agent.ToolResult{Content: output.stringWithPrefix(status), IsError: err != nil}, nil
 }

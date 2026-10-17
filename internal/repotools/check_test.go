@@ -72,12 +72,26 @@ exit 1
 }
 
 func TestLocalCheckOutputLimitAndDeadline(t *testing.T) {
-	executor := checkerWithScript(t, "printf '%0500d' 0\n")
-	result := execute(t, executor, "go_check", `{"kind":"build"}`)
-	if result.IsError || len(result.Content) > 256 || !strings.Contains(result.Content, "[output truncated]") || !strings.HasPrefix(result.Content, "go build passed") {
-		t.Fatalf("unbounded or misleading output: %+v", result)
+	for _, tc := range []struct {
+		name     string
+		bytes    int
+		exitCode int
+		status   string
+	}{
+		{"success", 500, 0, "go build passed\n"},
+		{"failure", 500, 1, "go build exited with code 1\n"},
+		{"prefix-exceeds-limit", 250, 0, "go build passed\n"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			script := fmt.Sprintf("printf '%%0%dd' 0\nexit %d\n", tc.bytes, tc.exitCode)
+			executor := checkerWithScript(t, script)
+			result := execute(t, executor, "go_check", `{"kind":"build"}`)
+			if result.IsError != (tc.exitCode != 0) || len(result.Content) > 256 || strings.Count(result.Content, "[output truncated]") != 1 || !strings.HasPrefix(result.Content, tc.status) || !strings.HasSuffix(result.Content, "[output truncated]\n") {
+				t.Fatalf("unbounded or misleading output: %+v", result)
+			}
+		})
 	}
-	executor = checkerWithScript(t, "sleep 60\n")
+	executor := checkerWithScript(t, "sleep 60\n")
 	executor.goCheck.timeout = 50 * time.Millisecond
 	start := time.Now()
 	_, err := executor.Execute(context.Background(), agent.ToolCall{Name: "go_check", Arguments: `{"kind":"test"}`})

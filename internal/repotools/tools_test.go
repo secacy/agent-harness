@@ -214,3 +214,27 @@ func TestConfigurationRejectsOverlappingRoots(t *testing.T) {
 		}
 	}
 }
+
+func TestReadOnlyRootsMayOverlap(t *testing.T) {
+	workspace, sdk := t.TempDir(), t.TempDir()
+	writeFile(t, filepath.Join(sdk, "v2/client.go"), "package rpcx\n")
+	executor, err := New(Config{
+		Workspace: workspace,
+		ReadOnlyRoots: map[string]string{
+			"sdk": sdk, "sdk-alias": sdk, "sdk-v2": filepath.Join(sdk, "v2"),
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for name, path := range map[string]string{"sdk": "v2/client.go", "sdk-alias": "v2/client.go", "sdk-v2": "client.go"} {
+		raw, _ := json.Marshal(map[string]string{"root": name, "path": path})
+		result := execute(t, executor, "read_file", string(raw))
+		if result.IsError || result.Content != "package rpcx\n" {
+			t.Fatalf("cannot read overlapping root %s: %+v", name, result)
+		}
+		if _, err := executor.resolve(name, path, true); err == nil {
+			t.Fatalf("overlapping root %s became writable", name)
+		}
+	}
+}
