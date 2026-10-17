@@ -78,3 +78,60 @@ func TestEncodeMessagesDoesNotModifyOrAliasInput(t *testing.T) {
 		t.Fatal("protocol conversion modified caller-owned messages")
 	}
 }
+
+func TestEncodeToolsJSON(t *testing.T) {
+	tools := []agent.ToolSpec{
+		{
+			Name: "read_file", Description: "Read a text file.",
+			Parameters: json.RawMessage(`{
+				"type":"object",
+				"properties":{"path":{"type":"string"}},
+				"required":["path"],"additionalProperties":false
+			}`),
+		},
+		{
+			Name: "go_check", Description: "Build or test the workspace.",
+			Parameters: json.RawMessage(`{
+				"type":"object",
+				"properties":{"kind":{"type":"string","enum":["build","test"]}},
+				"required":["kind"],"additionalProperties":false
+			}`),
+		},
+	}
+	before, err := json.Marshal(tools)
+	if err != nil {
+		t.Fatal(err)
+	}
+	data, err := json.Marshal(encodeTools(tools))
+	if err != nil {
+		t.Fatal(err)
+	}
+	// 对照协议 JSON，确保参数规则是嵌套对象，而非字符串或字节数组。
+	wantJSON := `[
+		{"type":"function","function":{
+			"name":"read_file","description":"Read a text file.",
+			"parameters":{"type":"object","properties":{"path":{"type":"string"}},"required":["path"],"additionalProperties":false}
+		}},
+		{"type":"function","function":{
+			"name":"go_check","description":"Build or test the workspace.",
+			"parameters":{"type":"object","properties":{"kind":{"type":"string","enum":["build","test"]}},"required":["kind"],"additionalProperties":false}
+		}}
+	]`
+	var got, want any
+	if err := json.Unmarshal(data, &got); err != nil {
+		t.Fatal(err)
+	}
+	if err := json.Unmarshal([]byte(wantJSON), &want); err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("unexpected tool definitions:\n%s", data)
+	}
+	after, err := json.Marshal(tools)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(before) != string(after) {
+		t.Fatal("tool conversion modified caller-owned definitions")
+	}
+}

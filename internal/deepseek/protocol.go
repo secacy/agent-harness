@@ -1,6 +1,10 @@
 package deepseek
 
-import "example.com/agent-harness/internal/agent"
+import (
+	"encoding/json"
+
+	"example.com/agent-harness/internal/agent"
+)
 
 const toolTypeFunction = "function"
 
@@ -20,6 +24,17 @@ type chatToolCall struct {
 type chatFunctionCall struct {
 	Name      string `json:"name"`
 	Arguments string `json:"arguments"`
+}
+
+type chatTool struct {
+	Type     string           `json:"type"`
+	Function chatFunctionSpec `json:"function"`
+}
+
+type chatFunctionSpec struct {
+	Name        string          `json:"name"`
+	Description string          `json:"description"`
+	Parameters  json.RawMessage `json:"parameters"`
 }
 
 // encodeMessages 构造独立的协议消息，保留调用顺序、关联标识及参数原文。
@@ -47,6 +62,22 @@ func encodeMessages(messages []agent.Message) []chatMessage {
 					Arguments: call.Arguments,
 				},
 			}
+		}
+	}
+	return encoded
+}
+
+// encodeTools 包装工具定义；参数规则仅供读取，编码时保持为 JSON 对象。
+func encodeTools(tools []agent.ToolSpec) []chatTool {
+	encoded := make([]chatTool, len(tools))
+	for i, tool := range tools {
+		encoded[i] = chatTool{
+			Type: toolTypeFunction,
+			Function: chatFunctionSpec{
+				Name:        tool.Name,
+				Description: tool.Description,
+				Parameters:  tool.Parameters,
+			},
 		}
 	}
 	return encoded

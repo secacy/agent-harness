@@ -17,5 +17,5 @@
 - 首项任务：已实现 `Evaluate(ctx, EvaluationRequest) (Evaluation, error)`；独立于 cases manifest、补丁应用和预期比较，命令在验证副本运行，支持父 context 和规范内容绑定。验收细节见工作记录。
 - 当前成果：`internal/agent.Loop.Run` 串行组织模型与工具交互，保存完整消息和调用 ID，处理错误反馈、预算及取消；使用替身完成机制测试。
 - 当前成果：`internal/repotools.Executor` 提供读取、搜索、精确替换与可选 Go 检查；预设模型已连通真实夹具的构建失败、修复和测试反馈。见 [仓库工具记录](worklog/2026-10-17-repository-tools.md)。
-- DeepSeek 接入进度：已实现消息协议结构与 `encodeMessages`，覆盖多工具调用、结果关联、错误文本反馈和输入只读；工具定义转换、响应转换与 HTTP 客户端尚未实现。
+- DeepSeek 接入进度：已实现 `encodeMessages` 与 `encodeTools`，覆盖多工具调用、结果关联、错误文本反馈、工具 Schema 对象编码和输入只读；响应转换与 HTTP 客户端尚未实现。
 - 证据缺口：DeepSeek 适配、隔离执行后端、Runner 状态、产物发布与完整进程树回收尚未实现；本地检查仅回收普通进程组，不是进程沙箱；预设模型测试不证明自主迁移能力。
