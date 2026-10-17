@@ -1,9 +1,9 @@
 # 最小 Agent 循环：从模型回复到工具反馈
 
 - 日期：2026-10-17
-- 状态：设计中
+- 状态：实现中（有界 Agent 循环已实现）
 - 对应里程碑：[M1](../MILESTONES.md)
-- 当前结论：`Evaluate` 已可独立验证候选；当前任务是实现有界的模型—工具循环。本文接口、工具及模型接入均未实现。
+- 当前结论：已实现 `Loop.Run`，保留并沿用开发者准备的消息、工具和预算类型。真实仓库工具与模型服务尚未接入，当前验证的是循环机制。
 
 ## 目标与推进顺序
 
@@ -13,7 +13,7 @@
 
 ## 当前第一小步
 
-拟议文件：`internal/agent/types.go`、`loop.go` 和 `loop_test.go`。开发者负责实现，助手负责评审与验证；直接代写核心代码遵循具体委托。
+实现文件：`internal/agent/types.go`、`loop.go` 和 `loop_test.go`。本次由开发者明确委托助手实现。
 
 循环只依赖两个边界：
 
@@ -27,7 +27,7 @@ type ToolExecutor interface {
 }
 ```
 
-类型应保留以下信息，不需要提前抽象 provider SDK：
+已实现的类型保留以下信息：
 
 | 类型 | 必需信息 |
 | --- | --- |
@@ -69,7 +69,62 @@ type ToolExecutor interface {
 | 已取消或执行中取消 | 父 context 传递到 Model 和 ToolExecutor，停止后续调用并保留已有记录 |
 | 输出截断、重复调用 ID 或模型/API 错误 | 明确失败，不宣称完成 |
 
-以上测试尚未编写或执行。测试重点是消息关联、反馈与副作用边界，不验证 rpcx 迁移正确性。
+以上测试已实现并通过。测试重点是消息关联、反馈与副作用边界，不验证 rpcx 迁移正确性。
+
+## 实际接口与退出契约
+
+```go
+loop := agent.Loop{
+    Model:    model,
+    Executor: executor,
+    Tools:    toolSpecs,
+    Limits:   agent.Limits{MaxModelCalls: 20, MaxToolCalls: 40},
+}
+result, err := loop.Run(ctx, initialMessages)
+```
+
+`Run` 返回自己的对话副本和本次调用计数。传给 Model 的消息、工具列表及参数 schema 也复制，避免适配器意外修改调用方输入或历史记录；模型返回的工具列表在执行前复制。初始历史支持已完成的工具轮次，要求调用与结果配对完整。计数不包含初始历史，不提供中断批次续跑。
+
+| 返回原因 | Go error | 含义 |
+| --- | --- | --- |
+| `completed` | nil | 模型明确正常结束，候选可交给独立验证器 |
+| `limit_reached` | nil | 达到模型调用或工具尝试预算；必须读取 Reason，不能因 err 为 nil 就视作完成 |
+| `cancelled` | 非 nil，可用 errors.Is 判断 context.Canceled | 用户取消或依赖返回取消错误 |
+| `deadline_exceeded` | 非 nil，可用 errors.Is 判断 context.DeadlineExceeded | 父 deadline 或依赖 deadline 耗尽 |
+| `failed` | 非 nil | 输入无效、回复协议错误、输出截断、模型/API 或工具执行基础设施错误 |
+
+父 context 的结束原因优先决定取消分类，原始依赖错误仍保留。`ErrInvalidInput`、`ErrProtocol` 和 `ErrOutputTruncated` 可用 `errors.Is` 区分。超限或错误退出的历史可能含未执行/未完成的工具批次，仅作为部分证据保留，不能直接当作完整对话续跑。
+
+未知工具由循环拒绝且计入工具尝试预算；已公布工具的参数 JSON 和具体参数要求由 ToolExecutor 校验。输入 schema 当前只检查是合法 JSON 对象，没有实现 JSON Schema 校验器。`ToolResult.IsError` 表示可反馈给模型修正的错误；工具返回 Go error 时保留该调用的部分诊断并退出，不执行批次内后续工具。
+
+## 代码阅读与运行示例
+
+先看 `types.go` 的 `Message`、`ToolCall` 和 `Reply`，再看 `loop.go` 的 `Loop.Run`。后者按以下顺序推进：
+
+1. 校验输入和预算，复制初始历史。
+2. 在预算内调用 Model，保存完整 assistant 回复。
+3. 根据 Finish 决定正常结束、协议失败或执行工具。
+4. 在任何工具副作用之前验证整批调用 ID 和剩余工具预算。
+5. 顺序执行，将每条结果按 ToolCallID 追加，回到下一次模型调用。
+
+`ExampleLoop_Run` 提供可执行示例，其模型与文件读取均为替身：
+
+```text
+user:      Read client.go
+assistant: read_file({"path":"client.go"}), ID=read-1
+tool:      package inventory, ToolCallID=read-1
+assistant: Done, Finish=stop
+
+Result: completed，模型调用 2 次，工具尝试 1 次
+```
+
+## 验收记录
+
+- `go test ./internal/agent`：通过，覆盖模型/工具消息关联、多调用顺序、未知工具和参数错误反馈、预算边界、截断及非法回复、重复 ID、输入校验、执行错误、取消/deadline 和数据所有权；可执行示例通过。
+- 根模块 `go test ./...`：通过，包含已有单候选验证器的回归测试。
+- 本阶段未执行真实模型迁移；没有新增真实 API 调用、仓库工具或模型成本成绩。
+
+当前调用同步执行，依赖 Model/ToolExecutor 响应 context，不通过遗留后台 goroutine 伪装成取消成功。输出/Token 上限、实际模型 usage、进程树管理与恢复由后续适配和运行层落实。
 
 ## 随后的两个小步
 
