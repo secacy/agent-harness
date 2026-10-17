@@ -110,6 +110,7 @@ func TestRunDockerDeliversVerifiedCandidateAndKeepsHistory(t *testing.T) {
 
 func testRunDelivery(t *testing.T, backend execution.Executor) {
 	config := configForTest(t, nil)
+	config.Limits.MaxModelCalls = 3
 	expectedMode := "trusted_local"
 	if backend != nil {
 		config.Backend, config.TrustedLocal = backend, false
@@ -131,6 +132,9 @@ func testRunDelivery(t *testing.T, backend execution.Executor) {
 		calls++
 		switch calls {
 		case 1:
+			if !strings.Contains(messages[0].Content, "A final response without tool calls submits the current candidate") || !strings.Contains(messages[0].Content, "rerun the affected checks") {
+				t.Fatal("missing submission and verification instructions")
+			}
 			if !strings.Contains(messages[1].Content, "CTX-002") || strings.Contains(messages[1].Content, "correct.patch") {
 				t.Fatal("task did not contain the specification, or leaked a reference patch")
 			}
@@ -159,10 +163,10 @@ func testRunDelivery(t *testing.T, backend execution.Executor) {
 				{ID: "forbidden", Name: "replace_text", Arguments: `{"path":"internal/pb/orders.pb.go","old":"package pb","new":"package changed"}`},
 			}}, nil
 		case 2:
-			if last := messages[len(messages)-1]; !last.IsError || !strings.Contains(last.Content, "protected path") {
+			if last := messages[len(messages)-2]; !last.IsError || !strings.Contains(last.Content, "protected path") {
 				t.Fatalf("missing path protection feedback: %+v", last)
 			}
-			if text := messages[len(messages)-2].Content; !strings.Contains(text, "spec.md") || strings.Contains(text, "task.json") {
+			if text := messages[len(messages)-3].Content; !strings.Contains(text, "spec.md") || strings.Contains(text, "task.json") {
 				t.Fatalf("unexpected spec root: %s", text)
 			}
 			var edits []agent.ToolCall
@@ -172,8 +176,11 @@ func testRunDelivery(t *testing.T, backend execution.Executor) {
 			edits = append(edits, agent.ToolCall{ID: "build", Name: "go_check", Arguments: `{"kind":"build"}`})
 			return agent.Reply{Finish: agent.FinishToolCalls, ToolCalls: edits, Usage: &agent.Usage{InputTokens: 100, OutputTokens: 50, TotalTokens: 150}}, nil
 		case 3:
-			if last := messages[len(messages)-1]; last.IsError || !strings.Contains(last.Content, "go build passed") {
+			if last := messages[len(messages)-2]; last.IsError || !strings.Contains(last.Content, "go build passed") {
 				t.Fatalf("build feedback: %+v", last)
+			}
+			if !strings.Contains(messages[len(messages)-1].Content, "last model call") {
+				t.Fatal("final submission did not receive the last-call notice")
 			}
 			return agent.Reply{Finish: agent.FinishStop, Content: "Migration submitted."}, nil
 		default:
@@ -210,6 +217,15 @@ func testRunDelivery(t *testing.T, backend execution.Executor) {
 	trace := readJSON[agent.Result](t, filepath.Join(first.Directory, "artifacts/agent.json"))
 	if trace.ModelCalls != 3 || len(trace.Usage) != 3 || trace.Usage[1].TotalTokens != 150 || trace.Usage[0] != nil {
 		t.Fatalf("unexpected agent trace: %+v", trace)
+	}
+	notices := 0
+	for _, message := range trace.Messages[2:] {
+		if message.Role == agent.RoleUser && strings.HasPrefix(message.Content, "Harness budget") {
+			notices++
+		}
+	}
+	if notices != trace.ModelCalls {
+		t.Fatalf("saved budget notices = %d, model calls = %d", notices, trace.ModelCalls)
 	}
 	if _, err := os.Stat(filepath.Join(first.Directory, "workspace/demo-orders/.git")); !os.IsNotExist(err) {
 		t.Fatal("patch export created Git metadata inside the candidate")

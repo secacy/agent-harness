@@ -56,20 +56,30 @@ func TestClientLoopWithRealFileTool(t *testing.T) {
 		if request.Model != "test-model" || request.MaxTokens != 123 || request.Stream || request.Thinking.Type != "disabled" || len(request.Tools) != 4 {
 			t.Errorf("unexpected completion settings: %+v", request)
 		}
+		if len(request.Messages) == 0 {
+			t.Error("missing request history")
+			http.Error(w, "missing history", http.StatusBadRequest)
+			return
+		}
+		notice := request.Messages[len(request.Messages)-1]
+		wantCounts := fmt.Sprintf("Model calls remaining: %d (including this call).\nTool calls remaining: %d.", 4-step, 3-step)
+		if notice.Role != "user" || !strings.Contains(notice.Content, wantCounts) {
+			t.Errorf("budget notice was not sent over HTTP: %+v", notice)
+		}
 		w.Header().Set("Content-Type", "application/json")
 		switch step {
 		case 1:
-			if len(request.Messages) != 1 {
+			if len(request.Messages) != 2 {
 				t.Errorf("unexpected initial history: %+v", request.Messages)
 			}
 			io.WriteString(w, `{"choices":[{"message":{"role":"assistant","content":null,"tool_calls":[{"id":"bad","type":"function","function":{"name":"read_file","arguments":"not JSON"}}]},"finish_reason":"tool_calls"}],"usage":{"prompt_tokens":10,"completion_tokens":2,"total_tokens":12,"prompt_cache_hit_tokens":6,"prompt_cache_miss_tokens":4}}`)
 		case 2:
-			if len(request.Messages) != 3 || request.Messages[1].ToolCalls[0].Function.Arguments != "not JSON" || request.Messages[2].ToolCallID != "bad" || !strings.HasPrefix(request.Messages[2].Content, "Tool error: ") {
+			if len(request.Messages) != 5 || request.Messages[2].ToolCalls[0].Function.Arguments != "not JSON" || request.Messages[3].ToolCallID != "bad" || !strings.HasPrefix(request.Messages[3].Content, "Tool error: ") {
 				t.Errorf("tool error was not fed back: %+v", request.Messages)
 			}
 			io.WriteString(w, `{"choices":[{"message":{"role":"assistant","tool_calls":[{"id":"read-1","type":"function","function":{"name":"read_file","arguments":"{\"root\":\"workspace\",\"path\":\"go.mod\"}"}}]},"finish_reason":"tool_calls"}]}`)
 		case 3:
-			if len(request.Messages) != 5 || request.Messages[4].Role != "tool" || request.Messages[4].ToolCallID != "read-1" || request.Messages[4].Content != "module example.com/demo\n" {
+			if len(request.Messages) != 8 || request.Messages[6].Role != "tool" || request.Messages[6].ToolCallID != "read-1" || request.Messages[6].Content != "module example.com/demo\n" {
 				t.Errorf("file contents were not fed back: %+v", request.Messages)
 			}
 			io.WriteString(w, `{"choices":[{"message":{"role":"assistant","content":"done"},"finish_reason":"stop"}],"usage":{"prompt_tokens":20,"completion_tokens":3,"total_tokens":23}}`)
@@ -228,7 +238,7 @@ func TestClientLengthReplyStopsLoop(t *testing.T) {
 	}
 	loop := agent.Loop{Model: newTestClient(t, server.URL), Executor: executor, Tools: executor.Specs(), Limits: agent.Limits{MaxModelCalls: 1, MaxToolCalls: 1}}
 	result, err := loop.Run(context.Background(), initialMessages())
-	if !errors.Is(err, agent.ErrOutputTruncated) || result.Reason != agent.ExitFailed || result.ToolCalls != 0 || result.Messages[1].Content != "partial" || len(result.Usage) != 1 || result.Usage[0].TotalTokens != 7 {
+	if !errors.Is(err, agent.ErrOutputTruncated) || result.Reason != agent.ExitFailed || result.ToolCalls != 0 || result.Messages[2].Content != "partial" || len(result.Usage) != 1 || result.Usage[0].TotalTokens != 7 {
 		t.Fatalf("truncated reply was lost or executed: %+v %v", result, err)
 	}
 }

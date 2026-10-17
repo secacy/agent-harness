@@ -189,7 +189,7 @@ func TestLoopRepairsRealFixtureUsingToolFeedback(t *testing.T) {
 			t.Fatal("real tools were not advertised")
 		}
 		if step > 0 {
-			last := messages[len(messages)-1]
+			last := messages[len(messages)-2]
 			if last.Role != agent.RoleTool || last.IsError != (step == 3) {
 				t.Fatalf("real tool feedback lost: %+v", last)
 			}

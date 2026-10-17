@@ -37,7 +37,7 @@ func testCommandRun(t *testing.T, trusted bool) {
 				Content string `json:"content"`
 			} `json:"messages"`
 		}
-		if err := json.NewDecoder(r.Body).Decode(&request); err != nil || request.Model != "test-model" || len(request.Messages) != 2 || !strings.Contains(request.Messages[1].Content, "CTX-002") {
+		if err := json.NewDecoder(r.Body).Decode(&request); err != nil || request.Model != "test-model" || len(request.Messages) != 3 || !strings.Contains(request.Messages[1].Content, "CTX-002") || !strings.Contains(request.Messages[2].Content, "Harness budget") {
 			t.Errorf("unexpected request: %+v %v", request, err)
 		}
 		w.Header().Set("Content-Type", "application/json")

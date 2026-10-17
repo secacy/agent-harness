@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 )
@@ -48,14 +49,17 @@ func TestLoopPreservesBatchAndFeedsResultsBeforeNextModelCall(t *testing.T) {
 			if !reflect.DeepEqual(executed, []string{"read-client", "read-service"}) {
 				t.Fatalf("model called before entire batch finished: %v", executed)
 			}
-			if len(messages) != 4 || messages[1].Content != requested.Content || !reflect.DeepEqual(messages[1].ToolCalls, requested.ToolCalls) {
+			if len(messages) != 6 || messages[2].Content != requested.Content || !reflect.DeepEqual(messages[2].ToolCalls, requested.ToolCalls) {
 				t.Fatalf("assistant message lost: %+v", messages)
 			}
 			for i, id := range executed {
-				message := messages[i+2]
+				message := messages[i+3]
 				if message.Role != RoleTool || message.ToolCallID != id || message.Content != "contents:"+id || message.IsError {
 					t.Fatalf("wrong tool result: %+v", message)
 				}
+			}
+			if messages[5].Role != RoleUser || !strings.Contains(messages[5].Content, "Tool calls remaining: 0.") {
+				t.Fatalf("budget notice missing after complete batch: %+v", messages[5])
 			}
 			return Reply{Content: "Candidate ready", Finish: FinishStop}, nil
 		}),
@@ -65,8 +69,11 @@ func TestLoopPreservesBatchAndFeedsResultsBeforeNextModelCall(t *testing.T) {
 		}),
 	}
 	result, err := loop.Run(context.Background(), testInitial())
-	if err != nil || result.Reason != ExitCompleted || result.ModelCalls != 2 || result.ToolCalls != 2 || len(result.Messages) != 5 {
+	if err != nil || result.Reason != ExitCompleted || result.ModelCalls != 2 || result.ToolCalls != 2 || len(result.Messages) != 7 {
 		t.Fatalf("%+v %v", result, err)
+	}
+	if _, err := validateHistory(result.Messages); err != nil {
+		t.Fatalf("budget notice broke tool pairing: %v", err)
 	}
 }
 
@@ -76,7 +83,7 @@ func TestLoopFeedsRecoverableErrorsAndBlocksUnadvertisedTools(t *testing.T) {
 	loop.Model = modelFunc(func(_ context.Context, messages []Message, _ []ToolSpec) (Reply, error) {
 		step++
 		if step > 1 {
-			last := messages[len(messages)-1]
+			last := messages[len(messages)-2]
 			if last.Role != RoleTool || last.ToolCallID != fmt.Sprint(step-1) || last.IsError != (step <= 3) {
 				t.Fatalf("feedback lost: %+v", last)
 			}
@@ -122,6 +129,7 @@ func TestLoopBudgets(t *testing.T) {
 		{"model-limit", []Reply{calls("1")}, Limits{1, 2}, ExitLimitReached, 1, 1},
 		{"batch-exceeds-tool-budget", []Reply{calls("1", "2")}, Limits{2, 1}, ExitLimitReached, 1, 0},
 		{"remaining-tool-budget", []Reply{calls("1"), calls("2", "3")}, Limits{3, 2}, ExitLimitReached, 2, 1},
+		{"no-tools-remain", []Reply{calls("1"), calls("2")}, Limits{3, 1}, ExitLimitReached, 2, 1},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			modelCalls, executions := 0, 0
@@ -144,6 +152,69 @@ func TestLoopBudgets(t *testing.T) {
 				t.Fatalf("%+v %v executions=%d", result, err, executions)
 			}
 		})
+	}
+}
+
+func TestLoopReportsRemainingBudgetAndPreservesNotices(t *testing.T) {
+	initial := append(testInitial(),
+		Message{Role: RoleAssistant, ToolCalls: calls("old").ToolCalls},
+		Message{Role: RoleTool, ToolCallID: "old", Content: "previous run"},
+	)
+	remainingTools := []int{5, 3, 2, 1, 0}
+	notices := []string{}
+	attempts, executions := 0, 0
+	loop := Loop{Tools: testTools(), Limits: Limits{5, 5},
+		Model: modelFunc(func(_ context.Context, messages []Message, _ []ToolSpec) (Reply, error) {
+			remaining := 5 - attempts
+			notice := messages[len(messages)-1]
+			wantCounts := fmt.Sprintf("Model calls remaining: %d (including this call).\nTool calls remaining: %d.", remaining, remainingTools[attempts])
+			if notice.Role != RoleUser || !strings.Contains(notice.Content, wantCounts) {
+				t.Fatalf("incorrect budget before call %d: %+v", attempts+1, notice)
+			}
+			if got := strings.Contains(notice.Content, "Budget is low."); got != (remaining == 2 || remaining == 3) {
+				t.Fatalf("incorrect wrap-up reminder: %s", notice.Content)
+			}
+			if got := strings.Contains(notice.Content, "last model call"); got != (remaining == 1) {
+				t.Fatalf("incorrect final-call reminder: %s", notice.Content)
+			}
+			if got := strings.Contains(notice.Content, "No tool calls remain."); got != (remainingTools[attempts] == 0) {
+				t.Fatalf("incorrect tool-budget reminder: %s", notice.Content)
+			}
+			if _, err := validateHistory(messages); err != nil {
+				t.Fatalf("notice interrupted tool results: %v", err)
+			}
+			notices = append(notices, notice.Content)
+			attempts++
+			switch attempts {
+			case 1:
+				return calls("1", "2"), nil
+			case 2:
+				reply := calls("3")
+				reply.ToolCalls[0].Name = "unknown_tool"
+				return reply, nil
+			case 3, 4:
+				return calls(fmt.Sprint(attempts + 1)), nil
+			default:
+				return Reply{Finish: FinishStop, Content: "Submitted with unresolved issues."}, nil
+			}
+		}),
+		Executor: executorFunc(func(context.Context, ToolCall) (ToolResult, error) {
+			executions++
+			return ToolResult{}, nil
+		}),
+	}
+	result, err := loop.Run(context.Background(), initial)
+	if err != nil || result.Reason != ExitCompleted || result.ModelCalls != 5 || result.ToolCalls != 5 || executions != 4 {
+		t.Fatalf("budget or final submission changed: %+v %v executions=%d", result, err, executions)
+	}
+	saved := []string{}
+	for _, message := range result.Messages[len(initial):] {
+		if message.Role == RoleUser {
+			saved = append(saved, message.Content)
+		}
+	}
+	if !reflect.DeepEqual(saved, notices) {
+		t.Fatalf("notices changed or were not saved: %v, want %v", saved, notices)
 	}
 }
 
@@ -170,7 +241,7 @@ func TestLoopRejectsInvalidReplyBeforeAnyBatchSideEffect(t *testing.T) {
 				}),
 			}
 			result, err := loop.Run(context.Background(), testInitial())
-			if !errors.Is(err, tc.want) || result.Reason != ExitFailed || result.ToolCalls != 0 || len(result.Messages) != 2 || result.Messages[1].Content != tc.reply.Content {
+			if !errors.Is(err, tc.want) || result.Reason != ExitFailed || result.ToolCalls != 0 || len(result.Messages) != 3 || result.Messages[2].Content != tc.reply.Content {
 				t.Fatalf("%+v %v", result, err)
 			}
 		})
@@ -217,6 +288,9 @@ func TestLoopInfrastructureErrorsStopWithPartialEvidence(t *testing.T) {
 			result, err := loop.Run(context.Background(), testInitial())
 			if !errors.Is(err, want) || result.Reason != ExitFailed || result.ModelCalls != 1 {
 				t.Fatalf("%+v %v", result, err)
+			}
+			if result.Messages[1].Role != RoleUser || !strings.Contains(result.Messages[1].Content, "Model calls remaining: 3 (including this call).") {
+				t.Fatalf("request budget evidence lost: %+v", result.Messages)
 			}
 			if stage == "tool" {
 				last := result.Messages[len(result.Messages)-1]
@@ -299,7 +373,7 @@ func TestLoopCancellation(t *testing.T) {
 				if stage == "before-start" && out.result.ModelCalls != 0 {
 					t.Fatal("pre-cancelled loop called model")
 				}
-				if stage == "after-model-success" && (out.result.ToolCalls != 0 || len(out.result.Messages) != 2) {
+				if stage == "after-model-success" && (out.result.ToolCalls != 0 || len(out.result.Messages) != 3) {
 					t.Fatal("model response lost or tool started after cancellation")
 				}
 				if stage == "after-tool-success" && out.result.Messages[len(out.result.Messages)-1].Content != "edit completed" {
@@ -394,7 +468,7 @@ func TestLoopSnapshotsInputsAndReply(t *testing.T) {
 			if step == 1 {
 				return reply, nil
 			}
-			if messages[3].ToolCalls[0].Arguments != `{"path":"client.go"}` {
+			if messages[4].ToolCalls[0].Arguments != `{"path":"client.go"}` {
 				t.Fatal("reply alias mutated transcript")
 			}
 			return Reply{Finish: FinishStop}, nil
@@ -425,7 +499,7 @@ func ExampleLoop_Run() {
 	// 使用预设回复的模型和工具替身演示循环，不读取真实文件或执行迁移。
 	loop := Loop{Tools: testTools(), Limits: Limits{MaxModelCalls: 2, MaxToolCalls: 1},
 		Model: modelFunc(func(_ context.Context, messages []Message, _ []ToolSpec) (Reply, error) {
-			if messages[len(messages)-1].Role == RoleTool {
+			if len(messages) >= 2 && messages[len(messages)-2].Role == RoleTool {
 				return Reply{Content: "Done", Finish: FinishStop}, nil
 			}
 			return calls("read-1"), nil

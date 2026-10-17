@@ -17,6 +17,7 @@
 - [开发与运行命令](docs/command.md)
 - [本阶段实现与验证记录](docs/worklog/2026-10-17-rpcx-t1-t2-fixtures.md)
 - [Agent 循环实现与示例](docs/worklog/2026-10-17-minimal-agent-loop.md)
+- [预算感知与及时提交的设计及验证](docs/worklog/2026-10-18-budget-awareness.md)
 - [仓库工具实现与边界](docs/worklog/2026-10-17-repository-tools.md)
 - [DeepSeek 适配器与验收](docs/worklog/2026-10-17-deepseek-adapter.md)
 - [单仓库 Runner、状态与交付](docs/worklog/2026-10-17-single-repo-runner.md)

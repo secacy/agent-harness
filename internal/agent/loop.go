@@ -14,6 +14,9 @@ var (
 	ErrOutputTruncated = errors.New("model output truncated")
 )
 
+// 临近上限时提示收尾，硬预算仍由循环统一检查。
+const wrapUpModelCalls = 3
+
 // Loop 管理一次运行的对话与调用预算。
 // 模型与执行器必须响应上下文取消；循环同步等待调用结束，不遗留后台任务。
 type Loop struct {
@@ -27,6 +30,7 @@ type Loop struct {
 // 正常完成仅表示模型提交了候选，不代表通过独立验证；失败时保留已有对话。
 // 初始历史中的工具调用必须已有对应结果，当前不支持续跑中断的批次。
 // 调用计数仅覆盖本次运行，不包含初始历史。
+// 每次请求前追加宿主预算通知，剩余模型调用次数包含即将发起的本次调用。
 func (l Loop) Run(ctx context.Context, initial []Message) (Result, error) {
 	result := Result{Messages: cloneMessages(initial)}
 	if err := ctx.Err(); err != nil {
@@ -52,6 +56,10 @@ func (l Loop) Run(ctx context.Context, initial []Message) (Result, error) {
 			result.Reason = ExitLimitReached
 			return result, nil
 		}
+		result.Messages = append(result.Messages, budgetMessage(
+			l.Limits.MaxModelCalls-result.ModelCalls,
+			l.Limits.MaxToolCalls-result.ToolCalls,
+		))
 		result.ModelCalls++
 		reply, err := l.Model.Complete(ctx, result.Messages, tools)
 		result.Usage = append(result.Usage, cloneUsage(reply.Usage))
@@ -125,6 +133,20 @@ func (l Loop) Run(ctx context.Context, initial []Message) (Result, error) {
 			}
 		}
 	}
+}
+
+func budgetMessage(modelCalls, toolCalls int) Message {
+	content := fmt.Sprintf("Harness budget (current run):\nModel calls remaining: %d (including this call).\nTool calls remaining: %d.", modelCalls, toolCalls)
+	switch {
+	case modelCalls == 1:
+		content += "\nThis is your last model call; there will be no follow-up after tool execution. Prefer a final response describing completed work, checks and unresolved issues."
+	case modelCalls <= wrapUpModelCalls:
+		content += "\nBudget is low. Prioritize necessary fixes, verification and a final response; avoid expanding scope."
+	}
+	if toolCalls == 0 {
+		content += "\nNo tool calls remain. Give a final response describing completed work and any unverified or unresolved issues."
+	}
+	return Message{Role: RoleUser, Content: content}
 }
 
 func stopWithError(ctx context.Context, result Result, err error) (Result, error) {

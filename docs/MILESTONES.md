@@ -21,4 +21,5 @@
 - Runner 进度：`scenarios/rpcx/runner.Run` 已串联目录准备、Agent 生成、独立 Evaluate 和补丁/报告交付；`cmd/harness` 负责组装模型。已验证状态与判定分离、失败证据、取消/超时、落盘错误、历史保留和补丁还原一致性。见 [Runner 记录](worklog/2026-10-17-single-repo-runner.md)。
 - 执行后端：`internal/execution` 为 Agent 检查和 Evaluate 提供共享接口；Docker 固定本地镜像 ID、只读挂载、禁网、限制资源，取消/超时后显式删除容器。真实容器已验证边界、OOM/输出超限、回收以及正确/被拒绝候选的交付。见 [Docker 执行记录](worklog/2026-10-17-docker-execution.md)。
 - 真实模型实验 01：deepseek-flash 调用 20 次、工具调用 47 次后预算耗尽；原 Run 为 Failed 且无质量判定。保留补丁的事后独立诊断六项通过，不能计作预算内自动完成。条件、轨迹和用量见 [实验记录](experiments/2026-10-17-rpcx-real-model-01.md)。
+- 预算感知：每次请求前告知剩余模型与工具次数，临近上限软提醒收尾；Runner 明确验证与提交要求，保留原有硬限制和独立判定。循环机制、本地模拟 API、Runner 联调及根模块回归已通过，真实模型复测未执行。见 [设计与验证记录](worklog/2026-10-18-budget-awareness.md)。
 - 证据缺口：真实模型迁移、崩溃恢复、容器引擎中断后的遗留清理与独立离线评测尚未验收；本地后端仍只用于可信仓库，普通进程组回收不约束主动脱离的后代。容器边界测试不证明自主迁移能力。

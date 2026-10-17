@@ -44,7 +44,7 @@ type ToolExecutor interface {
 ## 循环规则
 
 1. 验证限制和初始消息，循环持有消息历史；Model 和 ToolExecutor 不得修改它们收到的输入。
-2. 每次调用模型前检查父 context 和模型调用预算；调用尝试计入预算，首版模型/API 错误直接退出并保留历史。
+2. 每次调用模型前检查父 context 和模型调用预算，追加一条宿主生成的 user 预算通知，再计入本次调用。通知说明本次运行的剩余模型与工具调用次数，模型次数包含本次请求；临近上限提示收尾。模型/API 错误直接退出并保留历史。
 3. 完整追加 assistant 回复，保留文本、全部工具调用及其 ID。
 4. 正常结束且无工具调用时返回 completed。无工具调用但输出截断时返回失败；其他不一致回复按协议错误退出。
 5. 执行工具前检查名称是否在公布的工具集合中、调用 ID 是否非空且不重复，以及整批工具调用是否超过剩余预算。整批超出预算时退出，避免本轮执行部分写操作后才发现预算不足。
@@ -54,6 +54,8 @@ type ToolExecutor interface {
 工具拒绝也计入工具尝试预算，避免反复错误请求绕过限制。模型调用预算在发起下一次请求前检查，因此最后一次允许的模型回复仍然可以正常完成。没有剩余预算却尚未结束时明确返回 limit_reached。
 
 对话记录是循环的返回证据；当前不实现独立事件存储。模型适配器后续负责保留协议需要的额外字段、映射结束原因与统计实际 usage，不能在循环中写死某个模型的 HTTP 格式。
+
+预算通知及软提醒于 2026-10-18 加入；具体取舍、阈值和验收见[预算感知记录](2026-10-18-budget-awareness.md)。通知在完整工具批次之后追加，也随模型请求失败的历史保留。原有硬限制与提交判定继续生效。
 
 ## 第一小步的验收
 
@@ -102,7 +104,7 @@ result, err := loop.Run(ctx, initialMessages)
 先看 `types.go` 的 `Message`、`ToolCall` 和 `Reply`，再看 `loop.go` 的 `Loop.Run`。后者按以下顺序推进：
 
 1. 校验输入和预算，复制初始历史。
-2. 在预算内调用 Model，保存完整 assistant 回复。
+2. 追加剩余预算通知，在预算内调用 Model，保存完整 assistant 回复。
 3. 根据 Finish 决定正常结束、协议失败或执行工具。
 4. 在任何工具副作用之前验证整批调用 ID 和剩余工具预算。
 5. 顺序执行，将每条结果按 ToolCallID 追加，回到下一次模型调用。
@@ -111,12 +113,16 @@ result, err := loop.Run(ctx, initialMessages)
 
 ```text
 user:      Read client.go
+user:      Harness budget: model=2（含本次），tools=1，提示收尾
 assistant: read_file({"path":"client.go"}), ID=read-1
 tool:      package inventory, ToolCallID=read-1
+user:      Harness budget: model=1（含本次），tools=0，提示最后一次回复
 assistant: Done, Finish=stop
 
 Result: completed，模型调用 2 次，工具尝试 1 次
 ```
+
+预算通知在示例中为缩写，实际内容为英文，完整保存在对话记录中。
 
 ## 验收记录
 
