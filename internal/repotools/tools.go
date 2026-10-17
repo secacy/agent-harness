@@ -1,4 +1,4 @@
-// Package repotools 为单个候选仓库提供文件操作和可选的本地 Go 检查。
+// Package repotools 为单个候选仓库提供文件操作和可选的 Go 检查。
 // 文件访问限制不构成进程沙箱；启用本地检查时只能运行可信仓库。
 package repotools
 
@@ -35,8 +35,8 @@ type Config struct {
 	ReadOnlyRoots  map[string]string
 	ProtectedPaths []string
 	MaxOutputBytes int
-	// 为空时不公布或执行 Go 检查；启用意味着允许在宿主执行可信仓库代码。
-	LocalGo *LocalGoConfig
+	// 为空时不公布或执行 Go 检查；后端和挂载由宿主提供。
+	GoCheck *GoCheckConfig
 }
 
 // Executor 持有一次仓库任务的访问范围，应配合循环串行使用。
@@ -45,7 +45,7 @@ type Executor struct {
 	roots     map[string]string
 	protected []string
 	maxOutput int
-	goCheck   *localGoChecker
+	goCheck   *goChecker
 }
 
 var _ agent.ToolExecutor = (*Executor)(nil)
@@ -63,8 +63,8 @@ func New(config Config) (*Executor, error) {
 		return nil, errors.New("output limit must be between 256 bytes and 1 MiB")
 	}
 	executor := &Executor{roots: roots, protected: protected, maxOutput: limit}
-	if config.LocalGo != nil {
-		executor.goCheck, err = newLocalGoChecker(roots, *config.LocalGo, limit)
+	if config.GoCheck != nil {
+		executor.goCheck, err = newGoChecker(roots, *config.GoCheck, limit)
 		if err != nil {
 			return nil, err
 		}
@@ -88,7 +88,7 @@ func (e *Executor) Specs() []agent.ToolSpec {
 			[]string{"path", "old", "new"}, map[string]any{"path": text, "old": text, "new": text}),
 	}
 	if e.goCheck != nil {
-		specs = append(specs, toolSpec(toolGoCheck, "Run a fixed offline Go build or test in the workspace. Success does not imply independent validation has passed.",
+		specs = append(specs, toolSpec(toolGoCheck, "Run a fixed offline Go build or test using the configured backend. Success does not imply independent validation has passed.",
 			[]string{"kind"}, map[string]any{"kind": map[string]any{"type": "string", "enum": []string{checkBuild, checkTest}}}))
 	}
 	return specs

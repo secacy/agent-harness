@@ -1,6 +1,6 @@
 //go:build !darwin && !linux
 
-package repotools
+package execution
 
 import (
 	"errors"

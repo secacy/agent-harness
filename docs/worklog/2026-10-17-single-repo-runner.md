@@ -3,7 +3,7 @@
 - 日期：2026-10-17
 - 状态：串行 Runner、任务入口、状态保存与产物交付已通过离线联调
 - 对应里程碑：[M1](../MILESTONES.md)
-- 验收范围：可控替身模型和本地模拟 API 驱动真实工具与独立验证器；真实模型自主迁移和执行隔离尚未验收。
+- 验收范围：可控替身模型和本地模拟 API 驱动真实工具与独立验证器；真实模型自主迁移尚未验收；Docker 后端已通过真实容器验收，见 [执行记录](2026-10-17-docker-execution.md)。
 
 ## 目标与职责
 
@@ -83,7 +83,7 @@ runs/rpcx-agent-<随机 ID>/
     candidate.patch          # 实际候选与基线的差异；失败时也尽量导出
     report.json              # 输入摘要、候选/补丁摘要、验证证据与异常
   evidence/                  # Evaluate 的执行副本、命令日志及专项验证证据
-  cache/                     # 本次 Agent 和最终验证各自的 Go 缓存
+  cache/                     # 本地后端缓存；Docker 的可写缓存随命令容器销毁
 ```
 
 `run.json` 在工作开始前创建，每次阶段变化使用同目录临时文件加 rename 更新。初始输入错误可能在创建 Run 前直接返回。进程崩溃可能遗留 Running；当前没有崩溃恢复、逐轮对话落盘或断点续跑。
@@ -96,9 +96,9 @@ runs/rpcx-agent-<随机 ID>/
 
 ## 执行环境边界
 
-当前只提供显式选择的 `trusted_local` 后端；库必须设置 `TrustedLocal: true`，CLI 必须提供 `--trusted-local`。该设置表示允许在宿主执行受控代码，不提供容器、网络或文件系统隔离。文件工具限制无法约束被执行的 Go 代码。
+命令入口默认创建 Docker 后端，将同一实例传给 Agent 检查和 Evaluate。库调用通过 `Config.Backend` 显式注入后端；原 `TrustedLocal: true` 和 CLI 的 `--trusted-local` 保留为可信宿主执行选项，不能与容器后端同时使用。
 
-Agent 本地检查沿用已有进程组回收；Evaluate 的取消机制仍不代表完整进程树回收验收。验证命令现改为环境变量白名单，不将模型 API Key 等宿主变量继承给测试进程；这不限制进程访问宿主文件系统。对不可信仓库或模型任意生成代码的自动执行，需要后续隔离后端同时覆盖 go_check 和 Evaluate。
+本地后端现由共享执行层负责环境白名单、输出硬上限和普通进程组回收；该后端仍不限制宿主文件访问，也不约束主动脱离进程组的后代。Docker 后端只读挂载本次模块、禁网并限制资源，退出时删除容器；详细边界见 [执行记录](2026-10-17-docker-execution.md)。
 
 本阶段未调用真实 DeepSeek API、未读取本地密钥文件，也未据此统计自主迁移成功率。
 
@@ -116,9 +116,9 @@ Agent 本地检查沿用已有进程组回收；Evaluate 的取消机制仍不�
 | 基线构建失败保存命令证据；验证中取消保存部分证据 | TestRunPreservesFailedBaselineEvidence、TestRunCancellationDuringValidationPersistsEvidence |
 | 新增/删除/二进制/无末尾换行/空文件可由补丁还原 | TestExportPatchRoundTripsAllFileChanges |
 | 命令入口 → 模拟 HTTP API → DeepSeek 适配器 → Loop → Evaluate → 报告；密钥不入 JSON | TestCommandRunsAdapterLoopAndIndependentValidation |
-| 候选进程不继承模型凭证或宿主 Git 配置 | TestOfflineEnvDoesNotInheritServiceCredentials |
+| 候选进程不继承模型凭证或宿主 Git 配置 | TestLocalPreservesStreamsExitAndControlledEnvironment |
 
-上述为可控模型的机制验收。下一步是落实执行隔离，然后开展真实模型的迁移实验；批量调度、持久化重试和独立离线评测仍待实现。
+上述为可控模型的机制验收。Docker 执行隔离已完成基础验收，下一步开展真实模型迁移实验；批量调度、持久化重试和独立离线评测仍待实现。
 
 ## 第一项任务：单候选验证接口
 

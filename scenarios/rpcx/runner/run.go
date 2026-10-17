@@ -10,11 +10,12 @@ import (
 	"time"
 
 	"example.com/agent-harness/internal/agent"
+	"example.com/agent-harness/internal/execution"
 	"example.com/agent-harness/internal/repotools"
 	"example.com/agent-harness/scenarios/rpcx/checks"
 )
 
-type execution struct {
+type runState struct {
 	config     Config
 	record     Record
 	input      Input
@@ -67,14 +68,14 @@ func Run(parent context.Context, config Config) (record Record, err error) {
 		return record, err
 	}
 	now := time.Now().UTC()
-	r := execution{
+	r := runState{
 		config: config, fixtures: fixtures, spec: spec,
 		record: Record{
 			SchemaVersion: 1, ID: filepath.Base(dir), Directory: dir,
 			Status: StatusRunning, Phase: PhasePreparing, StartedAt: now, UpdatedAt: now,
 		},
 		input: Input{
-			ScenarioDir: config.ScenarioDir, ModelName: config.ModelName, ExecutionMode: "trusted_local",
+			ScenarioDir: config.ScenarioDir, ModelName: config.ModelName, ExecutionMode: config.Backend.Info().Kind, Backend: config.Backend.Info(),
 			MaxModelCalls: config.Limits.MaxModelCalls, MaxToolCalls: config.Limits.MaxToolCalls,
 			Timeout: config.Timeout.String(), SpecVersion: "v0.1.0", SpecSHA256: digest(spec),
 			BaselineSHA256: fixtures.module("demo-orders").hash(), Files: fixtures.manifest(),
@@ -112,7 +113,7 @@ func Run(parent context.Context, config Config) (record Record, err error) {
 	validation, err := checks.Evaluate(ctx, checks.EvaluationRequest{
 		BaselineDir: r.path("baseline/demo-orders"), CandidateDir: r.path("workspace/demo-orders"),
 		SpecPath: r.path("inputs/spec/spec.md"), EvidenceDir: r.path("evidence"),
-		CacheDir: r.path("cache/validation"),
+		CacheDir: r.path("cache/validation"), Backend: config.Backend,
 	})
 	r.validation = &validation
 	if err != nil {
@@ -132,8 +133,17 @@ func validateConfig(config Config) (Config, error) {
 		config.Limits.MaxModelCalls <= 0 || config.Limits.MaxToolCalls <= 0 || config.Timeout <= 0 {
 		return config, errors.New("model, model name, positive limits and timeout are required")
 	}
-	if !config.TrustedLocal {
-		return config, errors.New("trusted local execution must be explicitly enabled; an isolated backend is not available")
+	if config.Backend == nil {
+		if !config.TrustedLocal {
+			return config, errors.New("an execution backend or explicit trusted local execution is required")
+		}
+		config.Backend = execution.Local{}
+	}
+	if config.Backend.Info().Kind == execution.KindLocal && !config.TrustedLocal {
+		return config, errors.New("trusted local execution must be explicitly enabled")
+	}
+	if config.Backend.Info().Kind != execution.KindLocal && config.TrustedLocal {
+		return config, errors.New("trusted local mode cannot be combined with a container backend")
 	}
 	if config.ScenarioDir == "" || config.RunsDir == "" {
 		return config, errors.New("scenario and runs directories are required")
@@ -153,11 +163,11 @@ func validateConfig(config Config) (Config, error) {
 	return config, nil
 }
 
-func (r *execution) path(relative string) string {
+func (r *runState) path(relative string) string {
 	return filepath.Join(r.record.Directory, filepath.FromSlash(relative))
 }
 
-func (r *execution) transition(ctx context.Context, phase Phase) error {
+func (r *runState) transition(ctx context.Context, phase Phase) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
@@ -165,7 +175,7 @@ func (r *execution) transition(ctx context.Context, phase Phase) error {
 	return writeJSON(r.path("run.json"), r.record)
 }
 
-func (r *execution) prepare(ctx context.Context) error {
+func (r *runState) prepare(ctx context.Context) error {
 	for _, dir := range []string{"inputs/spec", "artifacts", "cache/agent"} {
 		if err := os.MkdirAll(r.path(dir), 0700); err != nil {
 			return err
@@ -186,7 +196,7 @@ func (r *execution) prepare(ctx context.Context) error {
 	return nil
 }
 
-func (r *execution) generate(ctx context.Context) error {
+func (r *runState) generate(ctx context.Context) error {
 	executor, err := repotools.New(repotools.Config{
 		Workspace: r.path("workspace/demo-orders"),
 		ReadOnlyRoots: map[string]string{
@@ -194,7 +204,10 @@ func (r *execution) generate(ctx context.Context) error {
 			"spec": r.path("inputs/spec"),
 		},
 		ProtectedPaths: []string{"internal/pb"},
-		LocalGo:        &repotools.LocalGoConfig{CacheDir: r.path("cache/agent")},
+		GoCheck: &repotools.GoCheckConfig{
+			CacheDir: r.path("cache/agent"), Backend: r.config.Backend,
+			ReadOnlyDirs: []string{r.path("workspace/rpcx-v1"), r.path("workspace/rpcx-v2")},
+		},
 	})
 	if err != nil {
 		return err
@@ -219,7 +232,7 @@ func (r *execution) generate(ctx context.Context) error {
 	return nil
 }
 
-func (r *execution) checkInputs(ctx context.Context) error {
+func (r *runState) checkInputs(ctx context.Context) error {
 	baseline, err := readTree(ctx, r.path("baseline"))
 	if err != nil {
 		return err
@@ -257,7 +270,7 @@ func (r *execution) checkInputs(ctx context.Context) error {
 	return nil
 }
 
-func (r *execution) finish(parent context.Context, runErr error) error {
+func (r *runState) finish(parent context.Context, runErr error) error {
 	ctx, cancel := context.WithTimeout(context.WithoutCancel(parent), 10*time.Second)
 	defer cancel()
 	runErr = errors.Join(runErr, os.MkdirAll(r.path("artifacts"), 0700))
@@ -314,7 +327,7 @@ func (r *execution) finish(parent context.Context, runErr error) error {
 	return runErr
 }
 
-func (r *execution) setTerminal(err error) {
+func (r *runState) setTerminal(err error) {
 	now := time.Now().UTC()
 	r.record.UpdatedAt, r.record.FinishedAt = now, &now
 	r.record.Status, r.record.Verdict, r.record.Error = StatusCompleted, "", ""

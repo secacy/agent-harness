@@ -13,6 +13,7 @@ import (
 
 	"example.com/agent-harness/internal/agent"
 	"example.com/agent-harness/internal/deepseek"
+	"example.com/agent-harness/internal/execution"
 	"example.com/agent-harness/scenarios/rpcx/runner"
 )
 
@@ -35,6 +36,10 @@ func run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 	modelCalls := flags.Int("max-model-calls", 20, "model call budget")
 	toolCalls := flags.Int("max-tool-calls", 80, "tool call budget")
 	timeout := flags.Duration("timeout", 5*time.Minute, "overall run timeout")
+	image := flags.String("image", execution.DefaultImage, "pre-pulled Docker toolchain image")
+	cpus := flags.Int("cpus", 2, "container CPU limit")
+	memory := flags.Int64("memory-mib", 2048, "container memory limit in MiB")
+	pids := flags.Int("pids", 128, "container process limit")
 	trusted := flags.Bool("trusted-local", false, "allow Go checks on this host for a controlled, trusted experiment")
 	if err := flags.Parse(args); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
@@ -42,8 +47,8 @@ func run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 		}
 		return 2
 	}
-	if flags.NArg() != 0 || !*trusted || *timeout <= 0 || *modelCalls <= 0 || *toolCalls <= 0 || *maxTokens <= 0 {
-		fmt.Fprintln(stderr, "positive budgets, no positional arguments and --trusted-local are required; local execution is not sandboxed")
+	if flags.NArg() != 0 || *timeout <= 0 || *modelCalls <= 0 || *toolCalls <= 0 || *maxTokens <= 0 {
+		fmt.Fprintln(stderr, "positive budgets and no positional arguments are required")
 		return 2
 	}
 	model, err := deepseek.New(deepseek.Config{
@@ -53,10 +58,27 @@ func run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, err)
 		return 2
 	}
+	var backend execution.Executor
+	if *trusted {
+		backend = execution.Local{}
+	} else {
+		if *memory < 32 || *memory > 1<<20 || *cpus < 1 || *pids < 8 {
+			fmt.Fprintln(stderr, "invalid container resource limits")
+			return 2
+		}
+		backend, err = execution.NewDocker(ctx, execution.DockerConfig{Image: *image, CPUs: *cpus, MemoryBytes: *memory * 1024 * 1024, Pids: *pids})
+		if err != nil {
+			fmt.Fprintln(stderr, err)
+			if errors.Is(err, context.Canceled) {
+				return 130
+			}
+			return 1
+		}
+	}
 	record, err := runner.Run(ctx, runner.Config{
 		ScenarioDir: *scenario, RunsDir: *runs, Model: model, ModelName: *modelName,
 		Limits:  agent.Limits{MaxModelCalls: *modelCalls, MaxToolCalls: *toolCalls},
-		Timeout: *timeout, TrustedLocal: *trusted,
+		Timeout: *timeout, TrustedLocal: *trusted, Backend: backend,
 	})
 	if record.Directory != "" {
 		fmt.Fprintln(stdout, "Run:", record.Directory)

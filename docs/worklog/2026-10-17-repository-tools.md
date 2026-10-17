@@ -23,7 +23,7 @@
 
 ## 与循环连接
 
-宿主先在运行目录准备候选和 SDK 副本，以及独立缓存目录，再配置执行器。下面的路径变量由宿主提供，`model` 后续接真实模型适配器：
+宿主先在运行目录准备候选和 SDK 副本，以及独立缓存目录，再配置执行器。下面的路径变量由宿主提供；`backend` 为共享执行后端，命令入口默认创建 Docker 后端，本地测试显式选择 `execution.Local{}`：
 
 ```go
 executor, err := repotools.New(repotools.Config{
@@ -33,7 +33,9 @@ executor, err := repotools.New(repotools.Config{
         "rpcx-v2": sdkV2Dir,
     },
     ProtectedPaths: []string{"internal/pb"},
-    LocalGo: &repotools.LocalGoConfig{
+    GoCheck: &repotools.GoCheckConfig{
+        Backend: backend,
+        ReadOnlyDirs: []string{sdkV1Dir, sdkV2Dir},
         CacheDir: cacheDir,
     },
 })
@@ -49,7 +51,7 @@ loop := agent.Loop{
 result, err := loop.Run(ctx, initialMessages)
 ```
 
-不设置 `LocalGo` 时，执行器只公布四个文件工具，并拒绝直接请求 `go_check`。规范文本由宿主提供给模型；参考补丁、cases、oracle 不应被配置成可见目录，也不应放入候选目录。
+不设置 `GoCheck` 时，执行器只公布四个文件工具，并拒绝直接请求 `go_check`。规范文本由宿主提供给模型；参考补丁、cases、oracle 不应被配置成可见目录，也不应放入候选目录。
 
 ## 文件边界与错误反馈
 
@@ -69,7 +71,7 @@ result, err := loop.Run(ctx, initialMessages)
 
 执行环境关闭模块代理、校验服务、工作区、自动工具链下载和 CGO，固定只读模块模式，使用独立缓存与临时目录，不继承宿主凭证变量和自定义 Go 参数。这里的“离线”约束针对 Go 依赖解析，不能阻止测试代码自行访问网络。
 
-macOS 和 Linux 使用独立进程组，取消时终止组内进程；命令结束后也尝试回收留在组内的后代。输出持续排空但只保留有限前缀。普通非零退出反馈给模型；启动失败、取消、超时和回收异常终止循环。
+macOS 和 Linux 使用独立进程组，取消时终止组内进程；命令结束后也尝试回收留在组内的后代。工具展示仍按配置截断；执行层对 stdout、stderr 分别设置 4 MiB 硬上限，超过时终止命令并返回执行错误。普通非零退出反馈给模型；启动失败、取消、超时和回收异常终止循环。
 
 **本地执行器不提供进程沙箱。** 仓库测试可执行任意代码，包括绕过文件工具访问宿主、修改 SDK 或受保护文件；主动脱离进程组的后代也不在回收保证内。因此这里只启用可信夹具测试，不能将这些路径规则宣称为真实模型运行时的隔离保证。接入真实模型前，需要明确采用隔离执行后端或受控运行环境，并由独立门禁再次检查候选与保护路径。
 
@@ -91,4 +93,4 @@ macOS 和 Linux 使用独立进程组，取消时终止组内进程；命令结�
 
 ## 下一步
 
-接入 DeepSeek 模型适配器，将工具描述、调用与反馈映射到实际 API；核对模型协议和使用量字段，并用可控服务测试适配层。真实模型迁移之前落实执行环境边界，然后串联候选提交、独立 `Evaluate`、补丁与报告导出。
+DeepSeek、Runner 和 Docker 执行后端现已接通。`go_check` 与最终 `Evaluate` 共用 `internal/execution`，其容器边界和验收见 [Docker 执行记录](2026-10-17-docker-execution.md)。上面的本地执行限制仍适用于显式选择的本地后端；下一步开展真实模型迁移实验。

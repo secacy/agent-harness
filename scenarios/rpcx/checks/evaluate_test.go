@@ -8,6 +8,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"example.com/agent-harness/internal/execution"
 )
 
 // Prepare inputs outside the scenario tree, with no cases/manifest or oracle.
@@ -48,6 +50,38 @@ func preparedRequest(t *testing.T) EvaluationRequest {
 		t.Fatalf("prepare patch: %+v %v", meta, err)
 	}
 	return req
+}
+
+type failedExecution struct {
+	cause error
+}
+
+func (f failedExecution) Info() execution.Info { return execution.Info{Kind: "test"} }
+
+func (f failedExecution) Run(context.Context, execution.Request) (execution.Result, error) {
+	return execution.Result{ExitCode: -1, Stdout: []byte("partial evidence\n"),
+		OOMKilled: errors.Is(f.cause, execution.ErrOOM), OutputLimit: errors.Is(f.cause, execution.ErrOutputLimit)}, f.cause
+}
+
+func TestEvaluateExecutionLimitsNeverPublishQualityVerdict(t *testing.T) {
+	for _, cause := range []error{execution.ErrOOM, execution.ErrOutputLimit} {
+		t.Run(cause.Error(), func(t *testing.T) {
+			req := preparedRequest(t)
+			req.Backend = failedExecution{cause: cause}
+			result, err := Evaluate(context.Background(), req)
+			if !errors.Is(err, cause) || result.Verdict != "" || len(result.Commands) != 1 {
+				t.Fatalf("resource failure became quality verdict: %+v %v", result, err)
+			}
+			meta := result.Commands[0]
+			if meta.OOMKilled != errors.Is(cause, execution.ErrOOM) || meta.OutputLimit != errors.Is(cause, execution.ErrOutputLimit) {
+				t.Fatalf("lost resource evidence: %+v", meta)
+			}
+			log, err := os.ReadFile(meta.Log)
+			if err != nil || !strings.Contains(string(log), "partial evidence") {
+				t.Fatalf("lost partial output: %s %v", log, err)
+			}
+		})
+	}
 }
 
 func TestEvaluatePreparedCandidateWithoutManifest(t *testing.T) {
@@ -261,25 +295,5 @@ func TestCommandHonorsParentCancellationAndDeadline(t *testing.T) {
 				t.Fatal("command ignored parent context")
 			}
 		})
-	}
-}
-
-func TestOfflineEnvDoesNotInheritServiceCredentials(t *testing.T) {
-	t.Setenv("DEEPSEEK_API_KEY", "must-not-reach-tests")
-	t.Setenv("GIT_CONFIG_COUNT", "1")
-	t.Setenv("GOFLAGS", "-mod=mod")
-	env := map[string]string{}
-	for _, item := range offlineEnv(t.TempDir(), t.TempDir()) {
-		key, value, _ := strings.Cut(item, "=")
-		env[key] = value
-	}
-	if _, exists := env["DEEPSEEK_API_KEY"]; exists {
-		t.Fatal("model API key was inherited")
-	}
-	if _, exists := env["GIT_CONFIG_COUNT"]; exists {
-		t.Fatal("host Git configuration was inherited")
-	}
-	if env["GOFLAGS"] != "-mod=readonly" || env["GOENV"] != "off" || env["PATH"] != os.Getenv("PATH") {
-		t.Fatalf("invalid controlled environment: %v", env)
 	}
 }

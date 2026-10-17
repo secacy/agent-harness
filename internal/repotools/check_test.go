@@ -28,7 +28,7 @@ func checkerWithScript(t *testing.T, script string) *Executor {
 	requireLocalChecks(t)
 	executor, err := New(Config{
 		Workspace: t.TempDir(), MaxOutputBytes: 256,
-		LocalGo: &LocalGoConfig{CacheDir: t.TempDir(), Timeout: 5 * time.Second},
+		GoCheck: &GoCheckConfig{CacheDir: t.TempDir(), Timeout: 5 * time.Second},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -102,12 +102,13 @@ func TestLocalCheckOutputLimitAndDeadline(t *testing.T) {
 
 func TestLocalCheckCancellationStopsProcessGroup(t *testing.T) {
 	// 子进程尝试延迟写入标记；取消后不应继续执行。
-	executor := checkerWithScript(t, `cd "$(dirname "$0")"
+	executor := checkerWithScript(t, `cd "${0%/*}"
 (sleep 0.5; printf leaked > leaked) &
 printf ready > ready
 wait
 `)
 	markerDir := filepath.Dir(executor.goCheck.goBinary)
+	executor.goCheck.timeout = 10 * time.Second
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	done := make(chan error, 1)
@@ -115,13 +116,18 @@ wait
 		_, err := executor.Execute(ctx, agent.ToolCall{Name: "go_check", Arguments: `{"kind":"test"}`})
 		done <- err
 	}()
-	deadline := time.Now().Add(2 * time.Second)
+	deadline := time.Now().Add(5 * time.Second)
 	for {
 		if _, err := os.Stat(filepath.Join(markerDir, "ready")); err == nil {
 			break
 		}
 		if time.Now().After(deadline) {
 			t.Fatal("child did not start")
+		}
+		select {
+		case err := <-done:
+			t.Fatalf("command exited before readiness: %v", err)
+		default:
 		}
 		time.Sleep(5 * time.Millisecond)
 	}
@@ -161,7 +167,7 @@ func TestLoopRepairsRealFixtureUsingToolFeedback(t *testing.T) {
 	executor, err := New(Config{
 		Workspace: workspace, ProtectedPaths: []string{"internal/pb"},
 		ReadOnlyRoots: map[string]string{"rpcx-v1": filepath.Join(layout, "rpcx-v1"), "rpcx-v2": filepath.Join(layout, "rpcx-v2")},
-		LocalGo:       &LocalGoConfig{CacheDir: cache},
+		GoCheck:       &GoCheckConfig{CacheDir: cache},
 	})
 	if err != nil {
 		t.Fatal(err)

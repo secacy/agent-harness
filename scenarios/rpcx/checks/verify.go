@@ -16,12 +16,13 @@ import (
 	"io"
 	"io/fs"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
+
+	"example.com/agent-harness/internal/execution"
 )
 
 //go:embed probes/*.txt
@@ -46,13 +47,17 @@ type Check struct {
 	Detail string `json:"detail"`
 }
 type Command struct {
-	Args       []string `json:"args"`
-	Directory  string   `json:"directory"`
-	Log        string   `json:"log"`
-	ExitCode   int      `json:"exit_code"`
-	TimedOut   bool     `json:"timed_out"`
-	Cancelled  bool     `json:"cancelled,omitempty"`
-	DurationMS int64    `json:"duration_ms"`
+	Args        []string       `json:"args"`
+	Directory   string         `json:"directory"`
+	Log         string         `json:"log"`
+	ExitCode    int            `json:"exit_code"`
+	TimedOut    bool           `json:"timed_out"`
+	Cancelled   bool           `json:"cancelled,omitempty"`
+	DurationMS  int64          `json:"duration_ms"`
+	Backend     execution.Info `json:"backend"`
+	ContainerID string         `json:"container_id,omitempty"`
+	OOMKilled   bool           `json:"oom_killed,omitempty"`
+	OutputLimit bool           `json:"output_limit,omitempty"`
 }
 type Result struct {
 	ID                 string           `json:"id"`
@@ -206,69 +211,33 @@ func copyTreeContext(ctx context.Context, source, dest string) error {
 	return nil
 }
 
-func offlineEnv(cacheDir, ceiling string) []string {
-	overrides := map[string]string{
-		"GOPROXY": "off", "GOSUMDB": "off", "GOWORK": "off", "GOTOOLCHAIN": "local",
-		"GOFLAGS": "-mod=readonly", "GOCACHE": cacheDir, "GOENV": "off",
-		"GOTELEMETRY": "off", "CGO_ENABLED": "0",
-		"GOPATH": filepath.Join(cacheDir, "gopath"), "GOMODCACHE": filepath.Join(cacheDir, "modules"),
-		"GIT_CEILING_DIRECTORIES": ceiling,
-	}
-	env := []string{}
-	// 命令只继承运行所需变量，避免模型服务密钥进入候选测试进程。
-	for _, key := range []string{"PATH", "HOME", "TMPDIR", "TMP", "TEMP", "SYSTEMROOT", "WINDIR"} {
-		if value, exists := os.LookupEnv(key); exists {
-			env = append(env, key+"="+value)
-		}
-	}
-	for k, v := range overrides {
-		env = append(env, k+"="+v)
-	}
-	return env
+// command 保留可信本地入口，供公开夹具与命令机制测试使用。
+func command(parent context.Context, cacheDir, dir, log string, args ...string) (Command, []byte, error) {
+	return commandOn(parent, execution.Local{}, cacheDir, dir, log, args...)
 }
 
-// command distinguishes execution failures from an ordinary non-zero exit.
-// Command logs and metadata survive failed cases.
-func command(parent context.Context, cacheDir, dir, log string, args ...string) (Command, []byte, error) {
+func commandOn(parent context.Context, backend execution.Executor, cacheDir, dir, log string, args ...string) (Command, []byte, error) {
 	ctx, cancel := context.WithTimeout(parent, 2*time.Minute)
 	defer cancel()
-	cmd := exec.CommandContext(ctx, args[0], args[1:]...)
-	cmd.Dir = dir
-	cmd.Env = offlineEnv(cacheDir, filepath.Dir(dir))
-	cmd.WaitDelay = 2 * time.Second
 	started := time.Now()
-	var stdout, stderr bytes.Buffer
-	cmd.Stdout, cmd.Stderr = &stdout, &stderr
-	err := cmd.Run()
-	output := stdout.Bytes()
-	meta := Command{Args: args, Directory: dir, Log: log, DurationMS: time.Since(started).Milliseconds()}
-	meta.TimedOut = errors.Is(ctx.Err(), context.DeadlineExceeded)
-	meta.Cancelled = errors.Is(ctx.Err(), context.Canceled)
-	if cmd.ProcessState == nil {
-		meta.ExitCode = -1
-	}
-	var executionErr error
-	if err != nil {
-		if exit, ok := err.(*exec.ExitError); ok {
-			meta.ExitCode = exit.ExitCode()
-		} else {
-			executionErr = err
+	mounts := []string{dir}
+	if backend.Info().Kind == execution.KindDocker {
+		for _, sdk := range []string{"rpcx-v1", "rpcx-v2"} {
+			mounts = append(mounts, filepath.Join(filepath.Dir(dir), sdk))
 		}
 	}
-	logData := append([]byte(nil), output...)
-	if stderr.Len() != 0 {
-		logData = append(append(logData, []byte("\n--- stderr ---\n")...), stderr.Bytes()...)
+	output, err := backend.Run(ctx, execution.Request{Args: args, Directory: dir, ReadOnlyDirs: mounts, CacheDir: cacheDir})
+	meta := Command{Args: args, Directory: dir, Log: log, ExitCode: output.ExitCode,
+		DurationMS: time.Since(started).Milliseconds(), TimedOut: errors.Is(ctx.Err(), context.DeadlineExceeded), Cancelled: errors.Is(ctx.Err(), context.Canceled),
+		Backend: backend.Info(), ContainerID: output.ContainerID, OOMKilled: output.OOMKilled, OutputLimit: output.OutputLimit}
+	data := append([]byte(nil), output.Stdout...)
+	if len(output.Stderr) != 0 {
+		data = append(append(data, []byte("\n--- stderr ---\n")...), output.Stderr...)
 	}
-	if err := os.WriteFile(log, logData, 0644); err != nil {
-		return meta, output, err
+	if output.OutputLimit {
+		data = append(data, []byte("\n[output limit exceeded]\n")...)
 	}
-	if ctx.Err() != nil {
-		return meta, output, ctx.Err()
-	}
-	if errors.Is(err, exec.ErrWaitDelay) {
-		return meta, output, err
-	}
-	return meta, output, executionErr
+	return meta, output.Stdout, errors.Join(err, os.WriteFile(log, data, 0644))
 }
 
 type testEvent struct{ Action, Package, Test string }
@@ -384,8 +353,8 @@ func protectedCheck(baseline, candidate string) Check {
 	return Check{"pass", "PATH-001: protected file list and SHA-256 match baseline"}
 }
 
-func dependencyCheck(ctx context.Context, cacheDir, candidate, log string) (Check, Command, error) {
-	meta, data, err := command(ctx, cacheDir, candidate, log, "go", "mod", "edit", "-json")
+func dependencyCheck(candidate string, run func(string, string, ...string) ([]byte, Command, error)) (Check, Command, error) {
+	data, meta, err := run(candidate, "dependencies", "go", "mod", "edit", "-json")
 	if err != nil {
 		return Check{}, meta, err
 	}

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"example.com/agent-harness/internal/agent"
+	"example.com/agent-harness/internal/execution"
 	"example.com/agent-harness/scenarios/rpcx/checks"
 )
 
@@ -22,8 +23,9 @@ type Config struct {
 	ModelName   string
 	Limits      agent.Limits
 	Timeout     time.Duration
-	// 当前后端在宿主执行代码，调用方必须明确选择可信本地执行。
+	// 仅使用宿主后端时启用，不能与容器后端同时设置。
 	TrustedLocal bool
+	Backend      execution.Executor
 }
 
 type Status string
@@ -65,6 +67,7 @@ type Record struct {
 type Input struct {
 	ScenarioDir    string            `json:"scenario_dir"`
 	ModelName      string            `json:"model_name"`
+	Backend        execution.Info    `json:"backend"`
 	ExecutionMode  string            `json:"execution_mode"`
 	MaxModelCalls  int               `json:"max_model_calls"`
 	MaxToolCalls   int               `json:"max_tool_calls"`

@@ -7,6 +7,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"example.com/agent-harness/internal/execution"
 )
 
 // SupportedSpecSHA256 binds these checks to the frozen v0.1.0 specification.
@@ -24,6 +26,7 @@ type EvaluationRequest struct {
 	SpecPath     string
 	EvidenceDir  string
 	CacheDir     string
+	Backend      execution.Executor // 为空时仅用于原有可信本地夹具检查。
 }
 
 // Evaluation contains actual evidence, never expected case outcomes.
@@ -116,7 +119,7 @@ func Evaluate(ctx context.Context, req EvaluationRequest) (result Evaluation, er
 		}
 	}
 	run := func(dir, label string, args ...string) ([]byte, Command, error) {
-		meta, data, err := command(ctx, req.CacheDir, dir, filepath.Join(req.EvidenceDir, label+".log"), args...)
+		meta, data, err := commandOn(ctx, req.Backend, req.CacheDir, dir, filepath.Join(req.EvidenceDir, label+".log"), args...)
 		result.Commands = append(result.Commands, meta)
 		return data, meta, err
 	}
@@ -144,8 +147,7 @@ func Evaluate(ctx context.Context, req EvaluationRequest) (result Evaluation, er
 		}
 	}
 	result.Checks["protected_paths"] = protectedCheck(baseline, candidate)
-	dep, meta, err := dependencyCheck(ctx, req.CacheDir, candidate, filepath.Join(req.EvidenceDir, "dependencies.log"))
-	result.Commands = append(result.Commands, meta)
+	dep, _, err := dependencyCheck(candidate, run)
 	if err != nil {
 		return result, err
 	}
@@ -157,7 +159,11 @@ func Evaluate(ctx context.Context, req EvaluationRequest) (result Evaluation, er
 	if err := os.MkdirAll(buildDir, 0755); err != nil {
 		return result, err
 	}
-	_, build, err := run(candidate, "build", "go", "build", "-o", buildDir, "./...")
+	outputDir := buildDir
+	if req.Backend.Info().Kind == execution.KindDocker {
+		outputDir = "/tmp/"
+	}
+	_, build, err := run(candidate, "build", "go", "build", "-o", outputDir, "./...")
 	if err != nil {
 		return result, err
 	}
@@ -254,6 +260,9 @@ func copyLayout(ctx context.Context, source, dest, trustedSDKDir string) error {
 }
 
 func normalizeRequest(req EvaluationRequest) (EvaluationRequest, error) {
+	if req.Backend == nil {
+		req.Backend = execution.Local{}
+	}
 	for _, path := range []*string{&req.BaselineDir, &req.CandidateDir, &req.SpecPath, &req.EvidenceDir} {
 		if *path == "" {
 			return req, fmt.Errorf("baseline, candidate, specification and evidence paths are required")

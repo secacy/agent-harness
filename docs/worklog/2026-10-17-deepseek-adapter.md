@@ -67,4 +67,4 @@ result, err := loop.Run(ctx, initialMessages)
 
 HTTP 测试使用 `httptest.Server`，需要本机临时监听权限，不调用真实 DeepSeek 服务；其响应和 Token 数都是测试数据。没有验证真实模型迁移、真实服务可用性或迁移成功率。
 
-上述组件现已由 [单仓库 Runner](2026-10-17-single-repo-runner.md) 串联，并通过可控模型和本地模拟 API 验收。当前仓库 Go 检查仍是可信夹具的宿主执行，不提供进程沙箱；真实模型实验待执行隔离完成。
+上述组件现已由 [单仓库 Runner](2026-10-17-single-repo-runner.md) 串联，并通过可控模型和本地模拟 API 验收。命令入口现默认使用 [Docker 后端](2026-10-17-docker-execution.md) 执行构建和验收；真实模型迁移实验仍未开展。

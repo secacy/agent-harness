@@ -60,11 +60,29 @@ go run ./cmd/harness --help
 
 入口接收 `--scenario`（默认 `scenarios/rpcx`）、`--runs`（默认 `runs`）、`--model`、`--timeout`、`--max-model-calls`、`--max-tool-calls`、`--max-tokens` 及测试用完整 `--endpoint`。模型名也可由 `DEEPSEEK_MODEL` 提供；密钥只从 `DEEPSEEK_API_KEY` 读取，不提供密钥参数，也不会自动加载 `.env`。
 
-受控环境中的实际调用形式如下；会请求模型服务并在宿主运行候选代码，必须显式选择 `--trusted-local`。此入口仅经模拟服务验收，真实模型实验仍待执行隔离完成。
+命令默认使用 Docker。先启动本机 Docker 引擎并准备固定工具链镜像；任务执行使用本地镜像 ID，缺失镜像时报错，不自动下载：
 
 ```sh
-# 预先在当前终端配置 DEEPSEEK_API_KEY 和 DEEPSEEK_MODEL。
-go run ./cmd/harness --trusted-local --model "$DEEPSEEK_MODEL" --timeout 5m
+docker pull golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd
 ```
 
+真实模型调用形式如下，会使用当前终端的模型凭证。当前只完成可控模型的验收，尚未开展真实模型迁移实验：
+
+```sh
+# 预先配置 DEEPSEEK_API_KEY 和 DEEPSEEK_MODEL。
+go run ./cmd/harness --model "$DEEPSEEK_MODEL" --timeout 5m
+```
+
+`--image` 可指定预先准备的 Linux Go 镜像，构造后端时记录并固定其镜像 ID；要求包含 `/usr/bin/env` 和 Go，且不能声明额外匿名卷。`--cpus` 默认 2，`--memory-mib` 默认 2048，`--pids` 默认 128。默认禁网、只读根文件系统及只读源码/SDK，只向容器开放 1 GiB 临时空间，每条命令独立销毁。`--trusted-local` 显式切换到原可信宿主后端，用于受控夹具调试；不会在 Docker 失败时自动降级。
+
 命令打印 Run 和报告路径。直接运行编译出的程序时，完整交付返回 0（含 `Rejected`），参数/配置错误返回 2，执行失败/超时返回 1，取消返回 130；`go run` 自身可能将程序非零退出码转换为 1，脚本需要精确退出码时先 `go build -o runs/harness ./cmd/harness` 再运行该二进制。审核材料及状态语义见 [Runner 记录](worklog/2026-10-17-single-repo-runner.md)。
+
+## Docker 执行后端验收
+
+```sh
+env HARNESS_DOCKER_TEST=1 GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly GOCACHE="$PWD/runs/go-cache" go test ./internal/execution ./scenarios/rpcx/runner ./cmd/harness
+```
+
+需要可访问的本机 Linux 容器引擎、上述已拉取镜像和本地临时端口权限。不需要模型密钥，不访问真实模型服务。覆盖源码/根文件系统只读、未挂载宿主文件和密钥不可见、网络受限、资源限制、OOM、输出超限、取消/超时回收，以及容器内候选迁移、独立验证和补丁还原。全新命令容器不复用 Go 缓存，因此明显慢于本地测试。
+
+不设置 `HARNESS_DOCKER_TEST=1` 的常规 `go test ./...` 会明确跳过真实 Docker 集成，仍执行本地后端、容器参数校验、回收失败替身、Runner 和模拟 API 测试；不能把该结果记作容器验收。

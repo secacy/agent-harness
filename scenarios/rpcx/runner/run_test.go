@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"example.com/agent-harness/internal/agent"
+	"example.com/agent-harness/internal/execution"
 )
 
 type modelFunc func(context.Context, []agent.Message, []agent.ToolSpec) (agent.Reply, error)
@@ -94,8 +95,27 @@ func replacement(t *testing.T, id, path string, old, new []byte) agent.ToolCall 
 	return agent.ToolCall{ID: id, Name: "replace_text", Arguments: string(data)}
 }
 
-func TestRunDeliversVerifiedCandidateAndKeepsHistory(t *testing.T) {
+func TestRunDeliversVerifiedCandidateAndKeepsHistory(t *testing.T) { testRunDelivery(t, nil) }
+
+func TestRunDockerDeliversVerifiedCandidateAndKeepsHistory(t *testing.T) {
+	if os.Getenv("HARNESS_DOCKER_TEST") != "1" {
+		t.Skip("set HARNESS_DOCKER_TEST=1 for real Docker integration")
+	}
+	backend, err := execution.NewDocker(context.Background(), execution.DockerConfig{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	testRunDelivery(t, backend)
+}
+
+func testRunDelivery(t *testing.T, backend execution.Executor) {
 	config := configForTest(t, nil)
+	expectedMode := "trusted_local"
+	if backend != nil {
+		config.Backend, config.TrustedLocal = backend, false
+		expectedMode = "docker"
+		config.Timeout = 4 * time.Minute
+	}
 	before := mustReadTree(t, filepath.Join(config.ScenarioDir, "fixtures"))
 	baseline := before.module("demo-orders")
 	migrated := migratedTree(t, config.ScenarioDir)
@@ -172,8 +192,15 @@ func TestRunDeliversVerifiedCandidateAndKeepsHistory(t *testing.T) {
 	if report.Validation == nil || report.Validation.Verdict != first.Verdict || report.CandidateSHA256 != migrated.hash() || report.Validation.CandidateSHA256 != first.CandidateSHA256 {
 		t.Fatalf("report does not bind the candidate: %+v", report)
 	}
-	if report.Input.BaselineSHA256 != baseline.hash() || report.Input.ExecutionMode != "trusted_local" || report.Input.SpecSHA256 == "" {
+	if report.Input.BaselineSHA256 != baseline.hash() || report.Input.ExecutionMode != expectedMode || report.Input.SpecSHA256 == "" {
 		t.Fatalf("missing input provenance: %+v", report.Input)
+	}
+	if backend != nil {
+		for _, command := range report.Validation.Commands {
+			if command.Backend.Kind != "docker" || command.ContainerID == "" || command.Backend.Image != backend.Info().Image {
+				t.Fatalf("validation bypassed Docker: %+v", command)
+			}
+		}
 	}
 	for name, check := range report.Validation.Checks {
 		if check.Status != "pass" {

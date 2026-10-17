@@ -207,7 +207,7 @@ func TestConfigurationRejectsOverlappingRoots(t *testing.T) {
 		{Workspace: root, ReadOnlyRoots: map[string]string{"workspace": child}},
 		{Workspace: root, ProtectedPaths: []string{"../pb"}},
 		{Workspace: root, MaxOutputBytes: -1},
-		{Workspace: root, LocalGo: &LocalGoConfig{CacheDir: child}},
+		{Workspace: root, GoCheck: &GoCheckConfig{CacheDir: child}},
 	} {
 		if _, err := New(config); err == nil {
 			t.Fatalf("invalid configuration accepted: %+v", config)

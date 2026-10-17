@@ -13,7 +13,16 @@ import (
 	"testing"
 )
 
-func TestCommandRunsAdapterLoopAndIndependentValidation(t *testing.T) {
+func TestCommandRunsAdapterLoopAndIndependentValidation(t *testing.T) { testCommandRun(t, true) }
+
+func TestCommandRunsDockerByDefault(t *testing.T) {
+	if os.Getenv("HARNESS_DOCKER_TEST") != "1" {
+		t.Skip("set HARNESS_DOCKER_TEST=1 for real Docker integration")
+	}
+	testCommandRun(t, false)
+}
+
+func testCommandRun(t *testing.T, trusted bool) {
 	const secret = "test-key-must-not-be-persisted"
 	t.Setenv("DEEPSEEK_API_KEY", secret)
 	var requests atomic.Int32
@@ -41,10 +50,11 @@ func TestCommandRunsAdapterLoopAndIndependentValidation(t *testing.T) {
 	}
 	runs := filepath.Join(t.TempDir(), "runs")
 	var stdout, stderr bytes.Buffer
-	code := run(context.Background(), []string{
-		"--trusted-local", "--model", "test-model", "--endpoint", server.URL,
-		"--scenario", scenario, "--runs", runs,
-	}, &stdout, &stderr)
+	args := []string{"--model", "test-model", "--endpoint", server.URL, "--scenario", scenario, "--runs", runs}
+	if trusted {
+		args = append(args, "--trusted-local")
+	}
+	code := run(context.Background(), args, &stdout, &stderr)
 	if code != 0 || requests.Load() != 1 || !strings.Contains(stdout.String(), "Status: Completed; verdict: Rejected") || stderr.Len() != 0 {
 		t.Fatalf("command: exit=%d, requests=%d, stdout=%s, stderr=%s", code, requests.Load(), &stdout, &stderr)
 	}
