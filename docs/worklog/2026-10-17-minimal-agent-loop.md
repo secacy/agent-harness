@@ -3,7 +3,7 @@
 - 日期：2026-10-17
 - 状态：实现中（有界 Agent 循环已实现）
 - 对应里程碑：[M1](../MILESTONES.md)
-- 当前结论：已实现 `Loop.Run`，保留并沿用开发者准备的消息、工具和预算类型。本记录覆盖循环机制；后续 [仓库工具](2026-10-17-repository-tools.md) 已实现并与预设模型联调，真实模型服务尚未接入。
+- 当前结论：已实现 `Loop.Run`，保留并沿用开发者准备的消息、工具和预算类型。本记录覆盖循环机制；后续 [仓库工具](2026-10-17-repository-tools.md) 与 [DeepSeek 适配器](2026-10-17-deepseek-adapter.md) 已分别通过本地联调，真实模型迁移尚未验收。
 
 ## 目标与推进顺序
 
@@ -35,9 +35,9 @@ type ToolExecutor interface {
 | `ToolSpec` | 名称、说明、参数 JSON Schema |
 | `ToolCall` | 非空 ID、工具名、参数字符串（保留模型原始输出，执行器负责解析 JSON） |
 | `ToolResult` | 内容、是否为可反馈给模型的工具错误 |
-| `Reply` | assistant 文本、工具调用、结束原因；区分正常结束、工具调用与输出截断 |
+| `Reply` | assistant 文本、工具调用、结束原因及可选用量；区分正常结束、工具调用与输出截断 |
 | `Limits` | 正整数 `MaxModelCalls`、`MaxToolCalls` |
-| `Result` | 结束原因、对话记录、已用模型调用次数和工具执行次数 |
+| `Result` | 结束原因、对话记录、已用模型调用次数和工具执行次数，以及按调用顺序保存的用量快照 |
 
 结束原因至少区分 `completed`、`limit_reached`、`cancelled`、`deadline_exceeded` 和 `failed`。模型明确正常结束才记录 completed；这仅表示提交候选，不代表迁移通过门禁。输出截断或不一致的工具调用回复不能视为完成。
 
@@ -124,7 +124,7 @@ Result: completed，模型调用 2 次，工具尝试 1 次
 - 根模块 `go test ./...`：通过，包含已有单候选验证器的回归测试。
 - 本阶段未执行真实模型迁移；没有新增真实 API 调用、仓库工具或模型成本成绩。
 
-当前调用同步执行，依赖 Model/ToolExecutor 响应 context，不通过遗留后台 goroutine 伪装成取消成功。输出/Token 上限、实际模型 usage、进程树管理与恢复由后续适配和运行层落实。
+当前调用同步执行，依赖 Model/ToolExecutor 响应 context，不通过遗留后台 goroutine 伪装成取消成功。后续仓库工具已限制输出，DeepSeek 适配器已设置单次输出 Token 上限并返回服务用量，循环按调用保存快照；总 Token/成本预算、完整进程树管理与恢复仍待运行层落实。
 
 ## 随后的两个小步
 

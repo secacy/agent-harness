@@ -135,3 +135,54 @@ func TestEncodeToolsJSON(t *testing.T) {
 		t.Fatal("tool conversion modified caller-owned definitions")
 	}
 }
+
+func TestDecodeReply(t *testing.T) {
+	for _, tc := range []struct {
+		name      string
+		body      string
+		finish    agent.FinishReason
+		calls     int
+		wantError bool
+	}{
+		{"text", `{"choices":[{"message":{"role":"assistant","content":"done"},"finish_reason":"stop"}]}`, agent.FinishStop, 0, false},
+		{"null-text-and-multiple-calls", `{"choices":[{"message":{"role":"assistant","content":null,"tool_calls":[{"id":"a","type":"function","function":{"name":"read_file","arguments":"not JSON"}},{"id":"b","type":"function","function":{"name":"search","arguments":"{}"}}]},"finish_reason":"tool_calls"}]}`, agent.FinishToolCalls, 2, false},
+		{"truncated-call", `{"choices":[{"message":{"role":"assistant","content":"partial","tool_calls":[{"function":{"arguments":"{"}}]},"finish_reason":"length"}]}`, agent.FinishLength, 1, false},
+		{"empty-choices", `{"choices":[]}`, "", 0, true},
+		{"multiple-choices", `{"choices":[{},{}]}`, "", 0, true},
+		{"missing-message", `{"choices":[{"finish_reason":"stop"}]}`, "", 0, true},
+		{"wrong-role", `{"choices":[{"message":{"role":"user"},"finish_reason":"stop"}]}`, "", 0, true},
+		{"unknown-finish", `{"choices":[{"message":{"role":"assistant"},"finish_reason":"content_filter"}]}`, "", 0, true},
+		{"wrong-tool-type", `{"choices":[{"message":{"role":"assistant","tool_calls":[{"type":"custom"}]},"finish_reason":"tool_calls"}]}`, "", 0, true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			var response chatResponse
+			if err := json.Unmarshal([]byte(tc.body), &response); err != nil {
+				t.Fatal(err)
+			}
+			reply, err := decodeReply(response)
+			if (err != nil) != tc.wantError {
+				t.Fatalf("reply=%+v error=%v", reply, err)
+			}
+			if tc.wantError {
+				return
+			}
+			if reply.Finish != tc.finish || len(reply.ToolCalls) != tc.calls || reply.Usage != nil {
+				t.Fatalf("unexpected reply: %+v", reply)
+			}
+			if tc.name == "null-text-and-multiple-calls" && (reply.Content != "" || reply.ToolCalls[0].ID != "a" || reply.ToolCalls[0].Arguments != "not JSON" || reply.ToolCalls[1].ID != "b") {
+				t.Fatalf("tool calls were changed: %+v", reply)
+			}
+		})
+	}
+}
+
+func TestDecodeReplyRetainsUsageOnProtocolError(t *testing.T) {
+	var response chatResponse
+	if err := json.Unmarshal([]byte(`{"choices":[],"usage":{"prompt_tokens":10,"completion_tokens":2,"total_tokens":12,"prompt_cache_hit_tokens":0}}`), &response); err != nil {
+		t.Fatal(err)
+	}
+	reply, err := decodeReply(response)
+	if err == nil || reply.Usage == nil || reply.Usage.InputTokens != 10 || reply.Usage.OutputTokens != 2 || reply.Usage.TotalTokens != 12 || reply.Usage.CacheHitTokens == nil || *reply.Usage.CacheHitTokens != 0 || reply.Usage.CacheMissTokens != nil {
+		t.Fatalf("usage lost or invented: %+v %v", reply.Usage, err)
+	}
+}

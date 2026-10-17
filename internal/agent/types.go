@@ -51,6 +51,16 @@ type Reply struct {
 	Content   string
 	ToolCalls []ToolCall
 	Finish    FinishReason
+	Usage     *Usage
+}
+
+// Usage 保存服务实际返回的用量；缓存计数为空时表示服务未提供该字段。
+type Usage struct {
+	InputTokens     int64
+	OutputTokens    int64
+	TotalTokens     int64
+	CacheHitTokens  *int64
+	CacheMissTokens *int64
 }
 
 type Model interface {
@@ -84,5 +94,6 @@ type Result struct {
 	Reason     ExitReason
 	Messages   []Message
 	ModelCalls int
-	ToolCalls  int // 工具尝试数，包括循环直接拒绝的未知工具调用。
+	ToolCalls  int      // 工具尝试数，包括循环直接拒绝的未知工具调用。
+	Usage      []*Usage // 与模型调用顺序对应，空项表示未知用量，不能视为零成本。
 }

@@ -54,6 +54,7 @@ func (l Loop) Run(ctx context.Context, initial []Message) (Result, error) {
 		}
 		result.ModelCalls++
 		reply, err := l.Model.Complete(ctx, result.Messages, tools)
+		result.Usage = append(result.Usage, cloneUsage(reply.Usage))
 		if err != nil {
 			return stopWithError(ctx, result, fmt.Errorf("model call %d: %w", result.ModelCalls, err))
 		}
@@ -228,4 +229,20 @@ func cloneTools(tools []ToolSpec) []ToolSpec {
 		cloned[i].Parameters = append(json.RawMessage(nil), tools[i].Parameters...)
 	}
 	return cloned
+}
+
+func cloneUsage(usage *Usage) *Usage {
+	if usage == nil {
+		return nil
+	}
+	cloned := *usage
+	if usage.CacheHitTokens != nil {
+		value := *usage.CacheHitTokens
+		cloned.CacheHitTokens = &value
+	}
+	if usage.CacheMissTokens != nil {
+		value := *usage.CacheMissTokens
+		cloned.CacheMissTokens = &value
+	}
+	return &cloned
 }

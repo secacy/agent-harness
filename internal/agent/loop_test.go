@@ -438,3 +438,43 @@ func ExampleLoop_Run() {
 	fmt.Println(result.Reason, result.ModelCalls, result.ToolCalls, err)
 	// Output: completed 2 1 <nil>
 }
+
+func TestLoopRecordsUsageForEachAttempt(t *testing.T) {
+	for _, reportedOnFailure := range []bool{false, true} {
+		t.Run(fmt.Sprint(reportedOnFailure), func(t *testing.T) {
+			hit, miss := int64(6), int64(4)
+			usage := &Usage{InputTokens: 10, OutputTokens: 2, TotalTokens: 12, CacheHitTokens: &hit, CacheMissTokens: &miss}
+			wantError := errors.New("model failed")
+			attempts := 0
+			loop := Loop{Tools: testTools(), Limits: Limits{MaxModelCalls: 2, MaxToolCalls: 1},
+				Model: modelFunc(func(context.Context, []Message, []ToolSpec) (Reply, error) {
+					attempts++
+					if attempts == 1 {
+						reply := calls("read-1")
+						reply.Usage = usage
+						return reply, nil
+					}
+					if reportedOnFailure {
+						return Reply{Usage: &Usage{InputTokens: 20, OutputTokens: 3, TotalTokens: 23}}, wantError
+					}
+					return Reply{}, wantError
+				}),
+				Executor: executorFunc(func(context.Context, ToolCall) (ToolResult, error) {
+					usage.InputTokens, hit, miss = 999, 999, 999
+					return ToolResult{}, nil
+				}),
+			}
+			result, err := loop.Run(context.Background(), testInitial())
+			if !errors.Is(err, wantError) || result.Reason != ExitFailed || len(result.Usage) != result.ModelCalls || result.ModelCalls != 2 {
+				t.Fatalf("attempt usage missing: %+v %v", result, err)
+			}
+			first := result.Usage[0]
+			if first == nil || first.InputTokens != 10 || first.OutputTokens != 2 || first.TotalTokens != 12 || *first.CacheHitTokens != 6 || *first.CacheMissTokens != 4 {
+				t.Fatalf("usage snapshot changed: %+v", first)
+			}
+			if (result.Usage[1] != nil) != reportedOnFailure || reportedOnFailure && result.Usage[1].TotalTokens != 23 {
+				t.Fatalf("failure usage lost or invented: %+v", result.Usage[1])
+			}
+		})
+	}
+}

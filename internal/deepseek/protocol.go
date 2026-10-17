@@ -2,6 +2,7 @@ package deepseek
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"example.com/agent-harness/internal/agent"
 )
@@ -35,6 +36,37 @@ type chatFunctionSpec struct {
 	Name        string          `json:"name"`
 	Description string          `json:"description"`
 	Parameters  json.RawMessage `json:"parameters"`
+}
+
+type chatRequest struct {
+	Model     string         `json:"model"`
+	Messages  []chatMessage  `json:"messages"`
+	Tools     []chatTool     `json:"tools,omitempty"`
+	MaxTokens int            `json:"max_tokens"`
+	Stream    bool           `json:"stream"`
+	Thinking  thinkingConfig `json:"thinking"`
+}
+
+type thinkingConfig struct {
+	Type string `json:"type"`
+}
+
+type chatResponse struct {
+	Choices []chatChoice `json:"choices"`
+	Usage   *chatUsage   `json:"usage"`
+}
+
+type chatChoice struct {
+	Message      chatMessage `json:"message"`
+	FinishReason string      `json:"finish_reason"`
+}
+
+type chatUsage struct {
+	PromptTokens          int64  `json:"prompt_tokens"`
+	CompletionTokens      int64  `json:"completion_tokens"`
+	TotalTokens           int64  `json:"total_tokens"`
+	PromptCacheHitTokens  *int64 `json:"prompt_cache_hit_tokens"`
+	PromptCacheMissTokens *int64 `json:"prompt_cache_miss_tokens"`
 }
 
 // encodeMessages 构造独立的协议消息，保留调用顺序、关联标识及参数原文。
@@ -81,4 +113,43 @@ func encodeTools(tools []agent.ToolSpec) []chatTool {
 		}
 	}
 	return encoded
+}
+
+func decodeReply(response chatResponse) (agent.Reply, error) {
+	var reply agent.Reply
+	if usage := response.Usage; usage != nil {
+		reply.Usage = &agent.Usage{
+			InputTokens:     usage.PromptTokens,
+			OutputTokens:    usage.CompletionTokens,
+			TotalTokens:     usage.TotalTokens,
+			CacheHitTokens:  usage.PromptCacheHitTokens,
+			CacheMissTokens: usage.PromptCacheMissTokens,
+		}
+	}
+	if len(response.Choices) != 1 {
+		return reply, fmt.Errorf("expected one completion choice, got %d", len(response.Choices))
+	}
+	choice := response.Choices[0]
+	if choice.Message.Role != string(agent.RoleAssistant) {
+		return reply, fmt.Errorf("expected assistant role, got %q", choice.Message.Role)
+	}
+	reply.Content = choice.Message.Content
+	switch agent.FinishReason(choice.FinishReason) {
+	case agent.FinishStop, agent.FinishToolCalls, agent.FinishLength:
+		reply.Finish = agent.FinishReason(choice.FinishReason)
+	default:
+		return reply, fmt.Errorf("unsupported finish reason %q", choice.FinishReason)
+	}
+	for _, call := range choice.Message.ToolCalls {
+		// 截断回复可能含不完整调用，保留原文交给循环按截断退出，不执行工具。
+		if reply.Finish != agent.FinishLength && call.Type != toolTypeFunction {
+			return reply, fmt.Errorf("unsupported tool call type %q", call.Type)
+		}
+		reply.ToolCalls = append(reply.ToolCalls, agent.ToolCall{
+			ID:        call.ID,
+			Name:      call.Function.Name,
+			Arguments: call.Function.Arguments,
+		})
+	}
+	return reply, nil
 }
