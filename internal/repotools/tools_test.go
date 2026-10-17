@@ -175,7 +175,7 @@ func TestOutputAndInputLimits(t *testing.T) {
 		{"search", `{"root":"workspace","path":".","text":"中文"}`},
 	} {
 		result := execute(t, executor, tool.name, tool.args)
-		if result.IsError || len(result.Content) > 256 || !utf8.ValidString(result.Content) || !strings.Contains(result.Content, "输出已截断") {
+		if result.IsError || len(result.Content) > 256 || !utf8.ValidString(result.Content) || !strings.Contains(result.Content, "[output truncated]") {
 			t.Fatalf("bad truncation: %+v", result)
 		}
 	}

@@ -65,7 +65,7 @@ func (e *Executor) list(ctx context.Context, args pathArgs, output *boundedOutpu
 		if entry.IsDir() {
 			suffix = "/"
 		} else if !entry.Type().IsRegular() {
-			suffix = " [不可访问]"
+			suffix = " [inaccessible]"
 		}
 		fmt.Fprintln(output, entry.Name()+suffix)
 		if output.full() {
@@ -154,7 +154,7 @@ func (e *Executor) search(ctx context.Context, args searchArgs, output *boundedO
 		}
 		visited++
 		if visited > maxEntries {
-			fmt.Fprintln(output, "[搜索达到路径数量上限，请缩小目录范围]")
+			fmt.Fprintln(output, "[search entry limit reached; choose a smaller directory]")
 			return fs.SkipAll
 		}
 		if entry.Name() == ".git" {
@@ -190,7 +190,7 @@ func (e *Executor) search(ctx context.Context, args searchArgs, output *boundedO
 		return nil
 	})
 	if skipped > 0 {
-		fmt.Fprintf(output, "[跳过 %d 个不可读取、非文本、过大或特殊文件]\n", skipped)
+		fmt.Fprintf(output, "[skipped %d unreadable, non-text, oversized or special files]\n", skipped)
 	}
 	return err
 }
@@ -199,7 +199,7 @@ func (e *Executor) replace(ctx context.Context, args replaceArgs, output *bounde
 	if args.Old == "" {
 		return errors.New("old text cannot be empty")
 	}
-	path, err := e.resolve("workspace", args.Path, true)
+	path, err := e.resolve(workspaceRoot, args.Path, true)
 	if err != nil {
 		return err
 	}
@@ -240,6 +240,6 @@ func (e *Executor) replace(ctx context.Context, args replaceArgs, output *bounde
 	if err := os.Rename(temp.Name(), path); err != nil {
 		return err
 	}
-	fmt.Fprintln(output, "已替换 1 处匹配文本。")
+	fmt.Fprintln(output, "Replaced 1 matching fragment.")
 	return nil
 }

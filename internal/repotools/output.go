@@ -6,7 +6,7 @@ import (
 	"unicode/utf8"
 )
 
-const truncatedMarker = "\n[输出已截断]\n"
+const truncatedMarker = "\n[output truncated]\n"
 
 // boundedOutput 持续接收命令输出但只保留有限前缀，避免管道阻塞或内存无界增长。
 type boundedOutput struct {

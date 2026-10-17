@@ -28,6 +28,22 @@ type localGoChecker struct {
 	maxOutput int
 }
 
+func (e *Executor) checkKind(raw string) (string, error) {
+	if e.goCheck == nil {
+		return "", errors.New("local Go checks are disabled")
+	}
+	var args struct {
+		Kind string `json:"kind"`
+	}
+	if err := decode(raw, &args, "kind"); err != nil {
+		return "", err
+	}
+	if args.Kind != checkBuild && args.Kind != checkTest {
+		return "", errors.New("kind must be build or test")
+	}
+	return args.Kind, nil
+}
+
 func newLocalGoChecker(roots map[string]string, config LocalGoConfig, limit int) (*localGoChecker, error) {
 	cache, err := canonicalDir(config.CacheDir)
 	if err != nil {
@@ -65,15 +81,15 @@ func newLocalGoChecker(roots map[string]string, config LocalGoConfig, limit int)
 		"GOPROXY=off", "GOSUMDB=off", "GOWORK=off", "GOENV=off",
 		"GOTOOLCHAIN=local", "GOFLAGS=-mod=readonly", "GOTELEMETRY=off", "CGO_ENABLED=0",
 	}
-	return &localGoChecker{workspace: roots["workspace"], goBinary: goBinary, env: env, timeout: timeout, maxOutput: limit}, nil
+	return &localGoChecker{workspace: roots[workspaceRoot], goBinary: goBinary, env: env, timeout: timeout, maxOutput: limit}, nil
 }
 
 func (c *localGoChecker) run(parent context.Context, kind string) (agent.ToolResult, error) {
 	ctx, cancel := context.WithTimeout(parent, c.timeout)
 	defer cancel()
-	args := []string{"build", "./..."}
-	if kind == "test" {
-		args = []string{"test", "-count=1", "-timeout=" + c.timeout.String(), "./..."}
+	args := []string{checkBuild, "./..."}
+	if kind == checkTest {
+		args = []string{checkTest, "-count=1", "-timeout=" + c.timeout.String(), "./..."}
 	}
 	command := exec.CommandContext(ctx, c.goBinary, args...)
 	command.Dir = c.workspace
@@ -102,12 +118,12 @@ func (c *localGoChecker) run(parent context.Context, kind string) (agent.ToolRes
 		result.IsError = true
 		// 状态放在输出之前，即使命令输出截断，模型也能看到退出码。
 		output = newOutput(c.maxOutput)
-		fmt.Fprintf(output, "go %s 退出码：%d\n%s", kind, exit.ExitCode(), result.Content)
+		fmt.Fprintf(output, "go %s exited with code %d\n%s", kind, exit.ExitCode(), result.Content)
 		result.Content = output.String()
 		return result, nil
 	}
 	output = newOutput(c.maxOutput)
-	fmt.Fprintf(output, "go %s 通过\n%s", kind, result.Content)
+	fmt.Fprintf(output, "go %s passed\n%s", kind, result.Content)
 	result.Content = output.String()
 	return result, nil
 }

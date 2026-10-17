@@ -15,9 +15,9 @@ func preparePaths(config Config) (map[string]string, []string, error) {
 	if err != nil {
 		return nil, nil, fmt.Errorf("workspace: %w", err)
 	}
-	roots := map[string]string{"workspace": workspace}
+	roots := map[string]string{workspaceRoot: workspace}
 	for name, path := range config.ReadOnlyRoots {
-		if name == "workspace" || name == "" || strings.ContainsAny(name, `/\\`) {
+		if name == workspaceRoot || name == "" || strings.ContainsAny(name, `/\\`) {
 			return nil, nil, fmt.Errorf("invalid read-only root name %q", name)
 		}
 		root, err := canonicalDir(path)
@@ -94,7 +94,7 @@ func (e *Executor) resolve(rootName, path string, writing bool) (string, error) 
 		return "", err
 	}
 	if writing {
-		if rootName != "workspace" {
+		if rootName != workspaceRoot {
 			return "", errors.New("root is read-only")
 		}
 		for _, protected := range e.protected {

@@ -14,6 +14,17 @@ import (
 )
 
 const (
+	// 工具名称是对外协议，描述与分发共用同一组常量。
+	toolListFiles   = "list_files"
+	toolReadFile    = "read_file"
+	toolSearch      = "search"
+	toolReplaceText = "replace_text"
+	toolGoCheck     = "go_check"
+
+	workspaceRoot = "workspace"
+	checkBuild    = "build"
+	checkTest     = "test"
+
 	defaultOutputBytes = 16 * 1024
 	maxFileBytes       = 1024 * 1024
 	maxEntries         = 10000
@@ -68,18 +79,18 @@ func (e *Executor) Specs() []agent.ToolSpec {
 	text := map[string]any{"type": "string"}
 	positive := map[string]any{"type": "integer", "minimum": 1}
 	specs := []agent.ToolSpec{
-		toolSpec("list_files", "列出指定目录的直接子项；root 使用公布的目录别名，path 使用相对路径。",
+		toolSpec(toolListFiles, "List direct children of a directory. Use an advertised root alias and a relative path.",
 			[]string{"root", "path"}, map[string]any{"root": root, "path": text}),
-		toolSpec("read_file", "按行读取文本文件；start_line、end_line 可选，行号从 1 开始。",
+		toolSpec(toolReadFile, "Read a text file. Optional start_line and end_line use inclusive, one-based line numbers.",
 			[]string{"root", "path"}, map[string]any{"root": root, "path": text, "start_line": positive, "end_line": positive}),
-		toolSpec("search", "在指定目录递归搜索字面文本，返回相对路径、行号与匹配行。",
+		toolSpec(toolSearch, "Search a directory recursively for literal text. Return relative paths, line numbers and matching lines.",
 			[]string{"root", "path", "text"}, map[string]any{"root": root, "path": text, "text": text}),
-		toolSpec("replace_text", "仅修改候选仓库中的已有文本文件；old 必须非空且恰好匹配一次。",
+		toolSpec(toolReplaceText, "Replace text in an existing workspace file. The old text must be nonempty and match exactly once.",
 			[]string{"path", "old", "new"}, map[string]any{"path": text, "old": text, "new": text}),
 	}
 	if e.goCheck != nil {
-		specs = append(specs, toolSpec("go_check", "在候选仓库执行固定的离线 Go 构建或测试；结果不代表独立门禁通过。",
-			[]string{"kind"}, map[string]any{"kind": map[string]any{"type": "string", "enum": []string{"build", "test"}}}))
+		specs = append(specs, toolSpec(toolGoCheck, "Run a fixed offline Go build or test in the workspace. Success does not imply independent validation has passed.",
+			[]string{"kind"}, map[string]any{"kind": map[string]any{"type": "string", "enum": []string{checkBuild, checkTest}}}))
 	}
 	return specs
 }
@@ -98,38 +109,31 @@ func (e *Executor) Execute(ctx context.Context, call agent.ToolCall) (agent.Tool
 	output := newOutput(e.maxOutput)
 	var err error
 	switch call.Name {
-	case "list_files":
+	case toolListFiles:
 		var args pathArgs
 		if err = decode(call.Arguments, &args, "root", "path"); err == nil {
 			err = e.list(ctx, args, output)
 		}
-	case "read_file":
+	case toolReadFile:
 		var args readArgs
 		if err = decode(call.Arguments, &args, "root", "path"); err == nil {
 			err = e.read(ctx, args, output)
 		}
-	case "search":
+	case toolSearch:
 		var args searchArgs
 		if err = decode(call.Arguments, &args, "root", "path", "text"); err == nil {
 			err = e.search(ctx, args, output)
 		}
-	case "replace_text":
+	case toolReplaceText:
 		var args replaceArgs
 		if err = decode(call.Arguments, &args, "path", "old", "new"); err == nil {
 			err = e.replace(ctx, args, output)
 		}
-	case "go_check":
-		var args struct {
-			Kind string `json:"kind"`
-		}
-		if err = decode(call.Arguments, &args, "kind"); err == nil {
-			if e.goCheck == nil {
-				err = errors.New("local Go checks are disabled")
-			} else if args.Kind != "build" && args.Kind != "test" {
-				err = errors.New("kind must be build or test")
-			} else {
-				return e.goCheck.run(ctx, args.Kind)
-			}
+	case toolGoCheck:
+		var kind string
+		kind, err = e.checkKind(call.Arguments)
+		if err == nil {
+			return e.goCheck.run(ctx, kind)
 		}
 	default:
 		err = fmt.Errorf("unknown tool %q", call.Name)

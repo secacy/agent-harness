@@ -19,7 +19,7 @@ import (
 func requireLocalChecks(t *testing.T) {
 	t.Helper()
 	if runtime.GOOS != "darwin" && runtime.GOOS != "linux" {
-		t.Skip("本地进程组检查仅支持 macOS 与 Linux")
+		t.Skip("local process group checks require macOS or Linux")
 	}
 }
 
@@ -74,7 +74,7 @@ exit 1
 func TestLocalCheckOutputLimitAndDeadline(t *testing.T) {
 	executor := checkerWithScript(t, "printf '%0500d' 0\n")
 	result := execute(t, executor, "go_check", `{"kind":"build"}`)
-	if result.IsError || len(result.Content) > 256 || !strings.Contains(result.Content, "输出已截断") || !strings.HasPrefix(result.Content, "go build 通过") {
+	if result.IsError || len(result.Content) > 256 || !strings.Contains(result.Content, "[output truncated]") || !strings.HasPrefix(result.Content, "go build passed") {
 		t.Fatalf("unbounded or misleading output: %+v", result)
 	}
 	executor = checkerWithScript(t, "sleep 60\n")
