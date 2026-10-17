@@ -66,11 +66,11 @@ go run ./cmd/harness --help
 docker pull golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd
 ```
 
-真实模型调用形式如下，会使用当前终端的模型凭证。[首次真实试跑](experiments/2026-10-17-rpcx-real-model-01.md) 与加入预算通知后的[实验 02](experiments/2026-10-18-rpcx-real-model-02.md) 均因预算耗尽未提交；实验 02 最后一轮新增测试检查失败，真实模型端到端自动完成尚未验收：
+真实模型调用形式如下，会使用当前终端的模型凭证。[前两次实验](experiments/2026-10-18-rpcx-real-model-02.md) 均因预算耗尽未提交；[实验 03](experiments/2026-10-18-rpcx-real-model-03.md) 在 40 次模型调用上限下正常提交、门禁通过并完成交付。下面显式使用实验 03 的预算，默认模型调用上限仍为 20：
 
 ```sh
 # 预先配置 DEEPSEEK_API_KEY 和 DEEPSEEK_MODEL。
-go run ./cmd/harness --model "$DEEPSEEK_MODEL" --timeout 5m
+go run ./cmd/harness --model "$DEEPSEEK_MODEL" --max-model-calls 40 --max-tool-calls 80 --max-tokens 4096 --timeout 10m
 ```
 
 `--image` 可指定预先准备的 Linux Go 镜像，构造后端时记录并固定其镜像 ID；要求包含 `/usr/bin/env` 和 Go，且不能声明额外匿名卷。`--cpus` 默认 2，`--memory-mib` 默认 2048，`--pids` 默认 128。默认禁网、只读根文件系统及只读源码/SDK，只向容器开放 1 GiB 临时空间，每条命令独立销毁。`--trusted-local` 显式切换到原可信宿主后端，用于受控夹具调试；不会在 Docker 失败时自动降级。
