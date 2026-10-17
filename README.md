@@ -25,3 +25,5 @@
 容器执行的镜像准备、限制和集成测试见 [Docker 执行记录](docs/worklog/2026-10-17-docker-execution.md) 与 [运行命令](docs/command.md)。
 
 [首次真实模型实验](docs/experiments/2026-10-17-rpcx-real-model-01.md) 已执行：模型在预算内未提交，原 Run 保留失败；补丁通过了事后独立诊断，尚不计作自动迁移成功。
+
+[实验 02](docs/experiments/2026-10-18-rpcx-real-model-02.md) 在相同预算下加入预算通知与收尾提示，仍未提交；模型新增测试后检查失败，原样候选事后诊断为 Rejected。M1 继续保留未验收状态。

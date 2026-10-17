@@ -66,7 +66,7 @@ go run ./cmd/harness --help
 docker pull golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd
 ```
 
-真实模型调用形式如下，会使用当前终端的模型凭证。[首次真实试跑](experiments/2026-10-17-rpcx-real-model-01.md) 已完成记录，因预算耗尽未提交；真实模型端到端自动完成尚未验收：
+真实模型调用形式如下，会使用当前终端的模型凭证。[首次真实试跑](experiments/2026-10-17-rpcx-real-model-01.md) 与加入预算通知后的[实验 02](experiments/2026-10-18-rpcx-real-model-02.md) 均因预算耗尽未提交；实验 02 最后一轮新增测试检查失败，真实模型端到端自动完成尚未验收：
 
 ```sh
 # 预先配置 DEEPSEEK_API_KEY 和 DEEPSEEK_MODEL。
