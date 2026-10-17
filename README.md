@@ -22,3 +22,5 @@
 - [单仓库 Runner、状态与交付](docs/worklog/2026-10-17-single-repo-runner.md)
 
 容器执行的镜像准备、限制和集成测试见 [Docker 执行记录](docs/worklog/2026-10-17-docker-execution.md) 与 [运行命令](docs/command.md)。
+
+[首次真实模型实验](docs/experiments/2026-10-17-rpcx-real-model-01.md) 已执行：模型在预算内未提交，原 Run 保留失败；补丁通过了事后独立诊断，尚不计作自动迁移成功。
