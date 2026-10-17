@@ -1,130 +1,124 @@
 # 单仓库 Runner：输入、状态与产物契约
 
 - 日期：2026-10-17
-- 状态：实现中（单候选验证接口已抽出）
+- 状态：串行 Runner、任务入口、状态保存与产物交付已通过离线联调
 - 对应里程碑：[M1](../MILESTONES.md)
-- 当前结论：已实现独立的 `Evaluate` 接口，其余 Runner 接口、任务 CLI、状态保存与产物交付仍为拟议设计。
+- 验收范围：可控替身模型和本地模拟 API 驱动真实工具与独立验证器；真实模型自主迁移和执行隔离尚未验收。
 
-## 问题与目标
+## 目标与职责
 
-M0 的 `checks.Verify` 读取公开 cases manifest，预检基线并遍历全部用例；`verifyCase` 同时复制工作目录、应用补丁、运行检查和比较预期。它可以证明场景用例符合预期，但尚不能接受独立任务并管理一次执行。
+`scenarios/rpcx/runner.Run` 串联准备、生成、验证和交付。初期曾考虑以预制补丁为候选来源；实际实现直接接入 `agent.Loop`，公开参考补丁仅用于测试构造已知期望，不成为 Runner 输入。
 
-M1 的目标是：输入一个仓库快照、规范和预制补丁，生成具有唯一 ID 的 Run，完成候选准备和验证，交付补丁、报告与日志。开发者实现核心代码，助手提供设计指导、代码评审和必要验证；进一步直接实现遵循具体委托。
-
-本阶段先保留预制补丁作为候选来源。Agent 接入时替换候选生成阶段；批量调度、持久化队列、崩溃续跑与 Token 预算留到后续。
-
-## 职责与依赖
-
-| 部件 | 职责 | 输入限制 |
-| --- | --- | --- |
-| Runner | 创建 Run、推进阶段、传递取消信号、保存状态与产物 | 不依赖 rpcx API 或公开用例预期 |
-| rpcx 场景适配代码 | 准备 SDK 相对布局、确定支持的规范与基线验收材料 | 从可信场景资源取得配置，不把 cases 或 oracle 复制进候选目录 |
-| 候选生成步骤 | 首版应用给定补丁，产出候选目录 | 只允许修改本次候选仓库 |
-| 单候选验证器 | 在给定目录执行检查，返回证据与判定 | 不读取 manifest、不选择补丁、不创建 Run、不比较预期 |
-| 公开用例驱动程序 | 对每个用例调用上述流程，再将实际结果与 manifest 比较 | expected 只用于回归检查 |
-
-实现时先完成具体函数拆分，出现实际替换需求后再引入接口。目录复制、命令执行和 JSON 保存等可复用能力按使用情况抽出，不一次性创建调度、插件或存储框架。
-
-## 输入契约
-
-拟议任务文件采用 JSON，与当前零外部依赖约束一致：
-
-```json
-{
-  "schema_version": 1,
-  "scenario": "rpcx-t1-t2",
-  "source_dir": "../scenarios/rpcx/fixtures/demo-orders",
-  "spec_path": "../scenarios/rpcx/specs/v0.1.0.md",
-  "candidate": {
-    "kind": "patch",
-    "path": "../scenarios/rpcx/cases/patches/correct.patch"
-  },
-  "timeout_seconds": 120
-}
+```text
+cmd/harness：解析参数与环境变量，创建 DeepSeek 客户端
+    ↓ 注入 agent.Model
+runner.Run：准备目录 → Loop.Run → 固定候选 → Evaluate → 导出补丁和报告
+                         ↓
+                    repotools.Executor
 ```
 
-相对路径以任务文件所在目录为基准；这个例子假设文件位于项目根目录下的 `tasks/`。`timeout_seconds` 必须为正数，表示整个 Run 的执行预算。场景代码负责拒绝不支持的规范版本或内容，不允许换一份任意规范而继续套用旧检查。
+Runner 接收 `agent.Model`，不导入 `deepseek`。当前 Runner 负责 rpcx 的相邻 SDK 布局并调用专用验证器，因此放在场景目录；待第二个场景出现后，再根据实际重复内容提取公共执行管理。
 
-输入中不包含 Run ID、门禁预期或运行状态。Run ID 由 Runner 生成；每次调用创建新目录，不覆盖历史 Run。`scenario` 先使用明确的内置分支，不实现动态插件注册。
+## 输入与可见范围
 
-本阶段以本地源目录快照为基线，记录文件清单与内容摘要。生成阶段只修改副本；原始仓库有未提交文件时，它们也是明确输入的一部分，报告不能将其误称为某个 Git 提交的内容。后续接入真实仓库时再增加仓库 URL、提交和检出流程。
+库入口为 `Run(ctx context.Context, config Config) (Record, error)`：
 
-建议 CLI 形态为 `harness run --task <task.json>`，尚未加入已验证命令文档。
+```go
+record, err := runner.Run(ctx, runner.Config{
+    ScenarioDir: "scenarios/rpcx",
+    RunsDir: "runs",
+    Model: model,
+    ModelName: modelName,
+    Limits: agent.Limits{MaxModelCalls: 20, MaxToolCalls: 80},
+    Timeout: 5 * time.Minute,
+    TrustedLocal: true,
+})
+```
+
+相对路径以调用进程的工作目录为基准。规范固定为 `specs/v0.1.0.md`，按验证器支持的 SHA-256 检查内容；不支持任意规范或任意源仓库。预算必须为正数，运行输出不能与场景资源重叠，已有祖先的符号链接也参与路径解析。
+
+每次只读取三个已知 fixture 模块及规范。复制时拒绝符号链接、特殊文件和 `.git`，单文件至多 1 MiB，单次读取的目录树至多 10000 个文件、16 MiB。副本文件统一使用 0644；摘要绑定文件路径和内容，当前不描述可执行位或空目录。
+
+模型可见的工具根目录只有：
+
+| 别名 | 内容 | 权限 |
+| --- | --- | --- |
+| workspace | 本次 demo-orders 副本 | 可读写已有文件，保护 internal/pb |
+| rpcx-v1、rpcx-v2 | 本次 SDK 副本 | 只读 |
+| spec | 仅包含冻结规范的目录 | 只读 |
+
+规范同时进入初始用户消息。cases、参考补丁、oracle、验证探针、任务元数据和历史运行均不通过工具暴露给模型。模型结束后不再获得验证器探针或门禁结果；首版没有基于最终门禁反馈的再生成循环。
 
 ## 状态与判定
 
-运行状态与当前阶段分开：
-
 ```text
-Pending → Running → Completed
-                  → Failed
-                  → Cancelled
-
-Running 阶段：Preparing → Generating → Validating → Publishing
+Running → Completed / Failed / Cancelled
+阶段：Preparing → Generating → Validating → Publishing
 ```
 
-| 场景 | Run 状态 | 质量判定 | 原因 |
-| --- | --- | --- | --- |
-| 正确候选完成验证和交付 | Completed | ReadyForReview | 所要求的检查全部通过 |
-| 候选编译失败，报告正常交付 | Completed | Rejected | 候选不满足迁移要求，执行流程本身完成 |
-| 验证正常返回，但有无法确认的规则 | Completed | NeedsAttention | 证据不充分 |
-| 基线原本无法构建、补丁无法应用或验证器异常 | Failed | 空 | 没有完整有效的候选验收结果 |
-| 整体预算耗尽 | Failed，原因 timeout | 空 | 整次任务未完成；保留已有检查证据 |
-| 用户取消 | Cancelled | 空 | 保留现场和已完成的证据 |
-| 报告或最终状态落盘失败 | Failed（进程返回错误） | 不发布终态质量结论 | 不将未交付的结果宣称为完成 |
+| 情况 | 运行状态 | 最终质量判定 |
+| --- | --- | --- |
+| 候选正常提交并完整交付 | Completed | Evaluate 返回的 ReadyForReview、Rejected 或 NeedsAttention |
+| 模型错误、输出截断、调用预算耗尽 | Failed | 空；不开始最终验证 |
+| 整体超时或验证器异常、基线失败 | Failed | 空；保留部分证据 |
+| context 取消 | Cancelled | 空；保留部分证据 |
+| 报告或最终状态写入失败 | 返回错误，内存结果为失败 | 空；不得将旧磁盘状态当作完成 |
 
-验证器正常发现编译错误时返回 `Rejected` 和空 Go error；无法运行检查、日志写入失败或候选在检查期间变化时返回 Go error。部分检查证据可以保留，但不能误当作已发布结果。
+模型的 `completed` 只表示候选提交。`Completed + Rejected` 是合法组合，不构成 Go error。整体任务配置校验后派生超时 context，传递给复制、Agent 和 Evaluate；退出原因保存在运行记录中，逐次用量和完整对话保存在 Agent 记录中。
 
-拟议 Runner 方法为 `Run(ctx context.Context, task TaskSpec) (RunResult, error)`。`Rejected` 和 `NeedsAttention` 本身不构成 Go error；运行失败或取消才返回 error。CLI 首版以运行是否完成决定退出码，质量判定由报告给出：Completed 为 0，输入错误为 2，执行失败为 1，用户中断为 130。未来如需质量判定影响退出码，应作为显式选项增加。
+命令退出码：完整交付为 0（包含 Rejected），参数/配置错误为 2，执行失败或超时为 1，取消为 130。CLI 不根据质量判定自动合并或发布代码。
 
-## 产物与所有权
+## 产物与发布顺序
 
 ```text
-runs/<run-id>/
-  input.json                 # 解析后的任务及输入摘要
-  run.json                   # 当前状态、阶段、时间与失败原因
-  inputs/                    # 规范、输入补丁与基线清单
-  baseline/                  # 独立基线及 SDK 布局
-  workspace/                 # 候选仓库及其 SDK 相对布局
+runs/rpcx-agent-<随机 ID>/
+  run.json                   # 状态、阶段、时间、错误和已发布判定
+  inputs/
+    task.json                # 配置、规范摘要、基线摘要及三个模块的文件摘要
+    spec/spec.md             # 固定规范；模型仅能读取这个子目录
+  baseline/                  # 可信基线及相邻 SDK
+  workspace/                 # Agent 修改的业务仓库及相邻 SDK
   artifacts/
-    candidate.patch          # 基线到实际候选的可审查差异
-    report.json              # 最终检查证据、判定及候选摘要
-  logs/
+    agent.json               # 对话、工具调用、退出原因、调用次数与逐次用量
+    candidate.patch          # 实际候选与基线的差异；失败时也尽量导出
+    report.json              # 输入摘要、候选/补丁摘要、验证证据与异常
+  evidence/                  # Evaluate 的执行副本、命令日志及专项验证证据
+  cache/                     # 本次 Agent 和最终验证各自的 Go 缓存
 ```
 
-Runner 拥有整个 Run 目录。候选生成步骤只修改 workspace 中的业务仓库；场景适配代码准备 SDK；验证器只写指定日志和临时验证副本。输入补丁与最终候选差异分开保存，避免未来 Agent 直接编辑文件时缺少实际交付补丁。
+`run.json` 在工作开始前创建，每次阶段变化使用同目录临时文件加 rename 更新。初始输入错误可能在创建 Run 前直接返回。进程崩溃可能遗留 Running；当前没有崩溃恢复、逐轮对话落盘或断点续跑。
 
-验证接口应显式接受基线、候选、规范与证据目录，以及父 context。为保护候选摘要，可信探针优先注入单独的验证副本；若短期仍采用原地注入，必须清理并核对摘要，异常时不发布有效报告。
+模型正常停止后固定候选摘要，独立验证器只在 evidence 副本运行。验证前后校验原始资源、基线副本、SDK 和规范；最终导出再次核对候选与受测摘要。检测到变化时清空最终质量判定，避免将过期证据视为有效交付。
 
-`run.json` 使用同目录临时文件加 rename 更新，初始记录落盘后再启动工作，每次阶段变化更新一次。报告完整写入并完成产物摘要后，才能写 Completed。终态 Run 不再被复用；重试创建新 Run。
+补丁由独立临时 Git 索引生成，不在候选创建 `.git`，也不产生提交。支持新增、删除、修改、二进制和无末尾换行。报告记录补丁摘要；空补丁是合法文件。先保存 Agent 记录、补丁和报告，最后才写 Completed；`run.json` 是判断整次交付是否完成的依据。文件替换原子性不等同于断电持久性。
 
-进程崩溃可能遗留 Running，M1 不自动恢复，也不凭目录存在推断任务完成。崩溃恢复与重试关联留到后续运行管理阶段。
+父 context 已取消时，收尾使用独立的 10 秒 context，尝试导出部分修改和保存终态；Git 命令响应该 context，普通本地文件写入仍依赖文件系统返回。收尾失败同样返回错误。新运行始终创建新目录，重试不复用旧目录。
 
-## 取消与退出
+## 执行环境边界
 
-Runner 派生整体超时 context，传递到复制、候选生成和所有检查；阶段切换前检查取消。每条命令的超时不能超过整体剩余预算。日志记录实际退出码与取消/超时原因。
+当前只提供显式选择的 `trusted_local` 后端；库必须设置 `TrustedLocal: true`，CLI 必须提供 `--trusted-local`。该设置表示允许在宿主执行受控代码，不提供容器、网络或文件系统隔离。文件工具限制无法约束被执行的 Go 代码。
 
-命令适配层需在首批支持的平台（macOS/Linux）处理命令及后代进程的退出，并验证没有遗留测试进程。只杀死 `go` 父进程不能视为完成该验收。
+Agent 本地检查沿用已有进程组回收；Evaluate 的取消机制仍不代表完整进程树回收验收。验证命令现改为环境变量白名单，不将模型 API Key 等宿主变量继承给测试进程；这不限制进程访问宿主文件系统。对不可信仓库或模型任意生成代码的自动执行，需要后续隔离后端同时覆盖 go_check 和 Evaluate。
 
-执行失败时保留候选、日志和部分证据。终态记录使用有界的收尾路径，不能因为父 context 已取消就跳过记录；收尾失败返回明确错误，磁盘上的旧状态不宣称完整。最终发布前再次检查取消；Completed 已成功写入后到达的取消不追溯修改终态。
+本阶段未调用真实 DeepSeek API、未读取本地密钥文件，也未据此统计自主迁移成功率。
 
-## 实现顺序与验收计划
+## 验收证据
 
-1. **抽出单候选验证接口。** 拆开现有 `verifyCase`，使同一个准备好的候选可以独立验证；原五种用例的实际检查和预期比较仍然全部通过。
-2. **实现串行 Runner。** 加入任务输入、唯一 Run 目录、阶段更新、预制补丁生成与产物发布；从一个任务文件走通正确和被拒绝的候选。
-3. **落实失败与取消。** 验证输入错误、基线失败、补丁应用失败、超时、用户取消、写入失败和连续两次运行的历史保留。
-
-| 完成条件 | 验证方式 |
+| 验收点 | 测试 |
 | --- | --- |
-| 验证器无用例预期依赖 | 使用独立候选目录调用验证器；检查请求类型不含 Case/Expected/Manifest |
-| 单候选结果保持一致 | 五个公开用例回归，检查逐项状态而非仅最终 verdict |
-| Completed 与 Rejected 可同时成立 | missed-callsite 任务完成并输出拒绝报告 |
-| 运行失败与候选失败分开 | 不存在的命令/无法应用的补丁返回执行失败；编译错误返回质量拒绝 |
-| context 和时间预算贯穿执行 | 在长运行的测试子进程中取消/超时，确认进程退出、日志与终态保留 |
-| 重复执行不覆盖成果 | 同一任务运行两次，Run ID 不同且第一次产物摘要不变 |
-| 交付内容确实对应受测代码 | 导出补丁应用到干净基线后，文件树摘要与报告中的候选一致 |
+| 实际工具改动、路径保护反馈、构建通过、六项独立检查通过 | TestRunDeliversVerifiedCandidateAndKeepsHistory |
+| 同一入口交付 Completed + Rejected，重复运行不改写历史和原始夹具 | 同上 |
+| 补丁应用到干净基线后的摘要等于受测候选 | 同上 |
+| API 错误、预算耗尽、取消和超时仍保留部分补丁与 Agent 记录 | TestRunKeepsPartialCandidateOnGenerationFailure |
+| 无显式本地执行配置、输出重叠/别名、规范变化或符号链接输入被拒绝 | TestRunRejectsUnsafeInputsBeforeModelCall |
+| 报告写入失败和终态写入失败不会宣称完成 | TestRunDoesNotPublishSuccessWhenEvidenceCannotBeWritten、TestRunReturnsErrorWhenTerminalStateCannotBeWritten |
+| 基线/SDK/规范副本被改动时不执行最终验收 | TestRunRejectsChangedBaselineBeforeValidation |
+| 基线构建失败保存命令证据；验证中取消保存部分证据 | TestRunPreservesFailedBaselineEvidence、TestRunCancellationDuringValidationPersistsEvidence |
+| 新增/删除/二进制/无末尾换行/空文件可由补丁还原 | TestExportPatchRoundTripsAllFileChanges |
+| 命令入口 → 模拟 HTTP API → DeepSeek 适配器 → Loop → Evaluate → 报告；密钥不入 JSON | TestCommandRunsAdapterLoopAndIndependentValidation |
+| 候选进程不继承模型凭证或宿主 Git 配置 | TestOfflineEnvDoesNotInheritServiceCredentials |
 
-上述完整 M1 验收尚未完成；已实现部分与验证证据见下节。M0 的通过证据不计作完整 M1 验收。
+上述为可控模型的机制验收。下一步是落实执行隔离，然后开展真实模型的迁移实验；批量调度、持久化重试和独立离线评测仍待实现。
 
 ## 第一项任务：单候选验证接口
 
@@ -155,4 +149,4 @@ Runner 派生整体超时 context，传递到复制、候选生成和所有检�
 
 新增测试时修正了 macOS `/var` 与 `/private/var` 别名的路径比较，以及测试辅助子进程的参数分隔。编译失败用例放入真实已有包，避免把通配包枚举行为当作编译验收依据。
 
-下一步可围绕最小单仓库 Agent 循环使用这个接口：Agent 修改候选后，由 Harness 调用 `Evaluate` 独立判定。完整 Runner 的持久化与故障恢复按实际闭环需要逐步补齐。
+该接口现已接入本页描述的 Runner。五种预制补丁仍由原公开用例驱动程序回归，Runner 的生成阶段只使用 Agent。

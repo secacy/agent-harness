@@ -263,3 +263,23 @@ func TestCommandHonorsParentCancellationAndDeadline(t *testing.T) {
 		})
 	}
 }
+
+func TestOfflineEnvDoesNotInheritServiceCredentials(t *testing.T) {
+	t.Setenv("DEEPSEEK_API_KEY", "must-not-reach-tests")
+	t.Setenv("GIT_CONFIG_COUNT", "1")
+	t.Setenv("GOFLAGS", "-mod=mod")
+	env := map[string]string{}
+	for _, item := range offlineEnv(t.TempDir(), t.TempDir()) {
+		key, value, _ := strings.Cut(item, "=")
+		env[key] = value
+	}
+	if _, exists := env["DEEPSEEK_API_KEY"]; exists {
+		t.Fatal("model API key was inherited")
+	}
+	if _, exists := env["GIT_CONFIG_COUNT"]; exists {
+		t.Fatal("host Git configuration was inherited")
+	}
+	if env["GOFLAGS"] != "-mod=readonly" || env["GOENV"] != "off" || env["PATH"] != os.Getenv("PATH") {
+		t.Fatalf("invalid controlled environment: %v", env)
+	}
+}

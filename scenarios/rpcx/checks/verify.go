@@ -209,14 +209,16 @@ func copyTreeContext(ctx context.Context, source, dest string) error {
 func offlineEnv(cacheDir, ceiling string) []string {
 	overrides := map[string]string{
 		"GOPROXY": "off", "GOSUMDB": "off", "GOWORK": "off", "GOTOOLCHAIN": "local",
-		"GOFLAGS": "-mod=readonly", "GOCACHE": cacheDir,
+		"GOFLAGS": "-mod=readonly", "GOCACHE": cacheDir, "GOENV": "off",
+		"GOTELEMETRY": "off", "CGO_ENABLED": "0",
+		"GOPATH": filepath.Join(cacheDir, "gopath"), "GOMODCACHE": filepath.Join(cacheDir, "modules"),
 		"GIT_CEILING_DIRECTORIES": ceiling,
 	}
 	env := []string{}
-	for _, item := range os.Environ() {
-		key, _, _ := strings.Cut(item, "=")
-		if _, replaced := overrides[key]; !replaced && !strings.HasPrefix(key, "GIT_") {
-			env = append(env, item)
+	// 命令只继承运行所需变量，避免模型服务密钥进入候选测试进程。
+	for _, key := range []string{"PATH", "HOME", "TMPDIR", "TMP", "TEMP", "SYSTEMROOT", "WINDIR"} {
+		if value, exists := os.LookupEnv(key); exists {
+			env = append(env, key+"="+value)
 		}
 	}
 	for k, v := range overrides {
