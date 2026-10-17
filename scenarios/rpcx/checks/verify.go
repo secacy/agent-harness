@@ -8,6 +8,7 @@ import (
 	"embed"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"go/ast"
 	"go/parser"
@@ -50,6 +51,7 @@ type Command struct {
 	Log        string   `json:"log"`
 	ExitCode   int      `json:"exit_code"`
 	TimedOut   bool     `json:"timed_out"`
+	Cancelled  bool     `json:"cancelled,omitempty"`
 	DurationMS int64    `json:"duration_ms"`
 }
 type Result struct {
@@ -135,8 +137,15 @@ func safeRelative(path string) bool {
 // snapshot hashes every regular file, including its relative path. Symlinks are
 // rejected so fixture copies cannot silently reach outside their source tree.
 func snapshot(root string) (map[string]string, error) {
+	return snapshotContext(context.Background(), root)
+}
+
+func snapshotContext(ctx context.Context, root string) (map[string]string, error) {
 	files := map[string]string{}
 	err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			return ctxErr
+		}
 		if err != nil {
 			return err
 		}
@@ -170,11 +179,18 @@ func treeDigest(files map[string]string) string {
 }
 
 func copyTree(source, dest string) error {
-	files, err := snapshot(source)
+	return copyTreeContext(context.Background(), source, dest)
+}
+
+func copyTreeContext(ctx context.Context, source, dest string) error {
+	files, err := snapshotContext(ctx, source)
 	if err != nil {
 		return err
 	}
 	for rel := range files {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
 		path := filepath.Join(dest, filepath.FromSlash(rel))
 		if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
 			return err
@@ -190,10 +206,10 @@ func copyTree(source, dest string) error {
 	return nil
 }
 
-func offlineEnv(root, ceiling string) []string {
+func offlineEnv(cacheDir, ceiling string) []string {
 	overrides := map[string]string{
 		"GOPROXY": "off", "GOSUMDB": "off", "GOWORK": "off", "GOTOOLCHAIN": "local",
-		"GOFLAGS": "-mod=readonly", "GOCACHE": filepath.Join(root, "runs", "go-cache"),
+		"GOFLAGS": "-mod=readonly", "GOCACHE": cacheDir,
 		"GIT_CEILING_DIRECTORIES": ceiling,
 	}
 	env := []string{}
@@ -211,29 +227,46 @@ func offlineEnv(root, ceiling string) []string {
 
 // command distinguishes execution failures from an ordinary non-zero exit.
 // Command logs and metadata survive failed cases.
-func command(root, dir, log string, args ...string) (Command, []byte, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+func command(parent context.Context, cacheDir, dir, log string, args ...string) (Command, []byte, error) {
+	ctx, cancel := context.WithTimeout(parent, 2*time.Minute)
 	defer cancel()
 	cmd := exec.CommandContext(ctx, args[0], args[1:]...)
 	cmd.Dir = dir
-	cmd.Env = offlineEnv(root, filepath.Dir(dir))
+	cmd.Env = offlineEnv(cacheDir, filepath.Dir(dir))
+	cmd.WaitDelay = 2 * time.Second
 	started := time.Now()
-	output, err := cmd.CombinedOutput()
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout, cmd.Stderr = &stdout, &stderr
+	err := cmd.Run()
+	output := stdout.Bytes()
 	meta := Command{Args: args, Directory: dir, Log: log, DurationMS: time.Since(started).Milliseconds()}
-	if ctx.Err() != nil {
-		meta.TimedOut = true
+	meta.TimedOut = errors.Is(ctx.Err(), context.DeadlineExceeded)
+	meta.Cancelled = errors.Is(ctx.Err(), context.Canceled)
+	if cmd.ProcessState == nil {
+		meta.ExitCode = -1
 	}
+	var executionErr error
 	if err != nil {
 		if exit, ok := err.(*exec.ExitError); ok {
 			meta.ExitCode = exit.ExitCode()
 		} else {
-			return meta, output, err
+			executionErr = err
 		}
 	}
-	if err := os.WriteFile(log, output, 0644); err != nil {
+	logData := append([]byte(nil), output...)
+	if stderr.Len() != 0 {
+		logData = append(append(logData, []byte("\n--- stderr ---\n")...), stderr.Bytes()...)
+	}
+	if err := os.WriteFile(log, logData, 0644); err != nil {
 		return meta, output, err
 	}
-	return meta, output, nil
+	if ctx.Err() != nil {
+		return meta, output, ctx.Err()
+	}
+	if errors.Is(err, exec.ErrWaitDelay) {
+		return meta, output, err
+	}
+	return meta, output, executionErr
 }
 
 type testEvent struct{ Action, Package, Test string }
@@ -349,8 +382,8 @@ func protectedCheck(baseline, candidate string) Check {
 	return Check{"pass", "PATH-001: protected file list and SHA-256 match baseline"}
 }
 
-func dependencyCheck(root, candidate, log string) (Check, Command, error) {
-	meta, data, err := command(root, candidate, log, "go", "mod", "edit", "-json")
+func dependencyCheck(ctx context.Context, cacheDir, candidate, log string) (Check, Command, error) {
+	meta, data, err := command(ctx, cacheDir, candidate, log, "go", "mod", "edit", "-json")
 	if err != nil {
 		return Check{}, meta, err
 	}
@@ -497,15 +530,14 @@ func Verify(root, runDir string) (*Report, error) {
 	if err := copyTree(fixtures, preflight); err != nil {
 		return report, err
 	}
-	version, data, err := command(root, preflight, filepath.Join(runDir, "go-version.log"), "go", "version")
+	version, data, err := command(context.Background(), filepath.Join(root, "runs/go-cache"), preflight, filepath.Join(runDir, "go-version.log"), "go", "version")
 	report.PreflightCommands = append(report.PreflightCommands, version)
 	if err != nil || version.ExitCode != 0 {
 		return report, fmt.Errorf("go version: %v", err)
 	}
 	report.GoVersion = strings.TrimSpace(string(data))
-	var baselineEvents map[string]string
 	for _, module := range []string{"rpcx-v1", "rpcx-v2", "demo-orders"} {
-		meta, data, err := command(root, filepath.Join(preflight, module), filepath.Join(runDir, "baseline-"+module+".log"), "go", "test", "-json", "-count=1", "-timeout=30s", "./...")
+		meta, _, err := command(context.Background(), filepath.Join(root, "runs/go-cache"), filepath.Join(preflight, module), filepath.Join(runDir, "baseline-"+module+".log"), "go", "test", "-json", "-count=1", "-timeout=30s", "./...")
 		report.PreflightCommands = append(report.PreflightCommands, meta)
 		if err != nil {
 			return report, err
@@ -513,25 +545,10 @@ func Verify(root, runDir string) (*Report, error) {
 		if meta.ExitCode != 0 || meta.TimedOut {
 			return report, fmt.Errorf("baseline %s failed: see %s", module, meta.Log)
 		}
-		if module == "demo-orders" {
-			baselineEvents, err = testEvents(data)
-			if err != nil {
-				return report, err
-			}
-		}
 	}
 	baseline := filepath.Join(fixtures, "demo-orders")
-	baselineNames, err := testNames(baseline)
-	if err != nil {
-		return report, err
-	}
-	for name := range baselineNames {
-		if baselineEvents[name] != "pass" {
-			return report, fmt.Errorf("baseline test not passed: %s", name)
-		}
-	}
 	for _, c := range manifest.Cases {
-		result, err := verifyCase(root, scenario, fixtures, baseline, runDir, c, baselineNames, baselineEvents)
+		result, err := verifyCase(root, scenario, fixtures, baseline, runDir, manifest.Spec, c)
 		if err != nil {
 			return report, fmt.Errorf("case %s: %w", c.ID, err)
 		}
@@ -545,7 +562,7 @@ func Verify(root, runDir string) (*Report, error) {
 	return report, nil
 }
 
-func verifyCase(root, scenario, fixtures, baseline, runDir string, c Case, baselineNames map[string]bool, baselineEvents map[string]string) (Result, error) {
+func verifyCase(root, scenario, fixtures, baseline, runDir, spec string, c Case) (Result, error) {
 	result := Result{ID: c.ID, Checks: map[string]Check{}}
 	for _, name := range checkNames {
 		result.Checks[name] = Check{"not_run", "not executed"}
@@ -566,7 +583,7 @@ func verifyCase(root, scenario, fixtures, baseline, runDir string, c Case, basel
 		return result, err
 	}
 	run := func(label string, args ...string) ([]byte, Command, error) {
-		meta, data, err := command(root, candidate, filepath.Join(dir, label+".log"), args...)
+		meta, data, err := command(context.Background(), filepath.Join(root, "runs/go-cache"), candidate, filepath.Join(dir, label+".log"), args...)
 		result.Commands = append(result.Commands, meta)
 		return data, meta, err
 	}
@@ -579,103 +596,20 @@ func verifyCase(root, scenario, fixtures, baseline, runDir string, c Case, basel
 			return result, fmt.Errorf("patch application failed: see %s", meta.Log)
 		}
 	}
-	candidateFiles, err := snapshot(candidate)
+	evaluation, err := Evaluate(context.Background(), EvaluationRequest{
+		BaselineDir:  baseline,
+		CandidateDir: candidate,
+		SpecPath:     filepath.Join(scenario, spec),
+		EvidenceDir:  filepath.Join(dir, "evaluation"),
+		CacheDir:     filepath.Join(root, "runs/go-cache"),
+	})
+	result.CandidateSHA256 = evaluation.CandidateSHA256
+	result.Checks = evaluation.Checks
+	result.Verdict = evaluation.Verdict
+	result.Commands = append(result.Commands, evaluation.Commands...)
 	if err != nil {
 		return result, err
 	}
-	result.CandidateSHA256 = treeDigest(candidateFiles)
-	result.Checks["protected_paths"] = protectedCheck(baseline, candidate)
-	dep, meta, err := dependencyCheck(root, candidate, filepath.Join(dir, "dependencies.log"))
-	result.Commands = append(result.Commands, meta)
-	if err != nil {
-		return result, err
-	}
-	result.Checks["dependencies"] = dep
-	if err := os.MkdirAll(filepath.Join(dir, "build"), 0755); err != nil {
-		return result, err
-	}
-	_, build, err := run("build", "go", "build", "-o", filepath.Join(dir, "build"), "./...")
-	if err != nil {
-		return result, err
-	}
-	result.Checks["build"] = Check{"pass", "all candidate packages build"}
-	if build.ExitCode != 0 || build.TimedOut {
-		status := "fail"
-		if build.TimedOut {
-			status = "blocked"
-		}
-		result.Checks["build"] = Check{status, "candidate build did not complete successfully"}
-		for _, name := range []string{"baseline_tests", "test_preservation", "context_propagation"} {
-			result.Checks[name] = Check{"blocked", "candidate build prerequisite failed"}
-		}
-	} else {
-		data, tests, err := run("business-tests", "go", "test", "-json", "-count=1", "-timeout=30s", "./...")
-		if err != nil {
-			return result, err
-		}
-		states, err := testEvents(data)
-		if err != nil {
-			return result, err
-		}
-		status := "pass"
-		if tests.ExitCode != 0 {
-			status = "fail"
-		}
-		if tests.TimedOut {
-			status = "blocked"
-		}
-		result.Checks["baseline_tests"] = Check{status, "candidate business test command; see business-tests.log"}
-		names, err := testNames(candidate)
-		if err != nil {
-			return result, err
-		}
-		result.Checks["test_preservation"] = preservationCheck(baselineNames, baselineEvents, names, states)
-		probe, err := probes.ReadFile("probes/context_test.go.txt")
-		if err != nil {
-			return result, err
-		}
-		probePath := filepath.Join(candidate, "cmd/server/harness_context_test.go")
-		if _, err := os.Lstat(probePath); !os.IsNotExist(err) {
-			return result, fmt.Errorf("candidate occupies trusted probe path")
-		}
-		if err := os.WriteFile(probePath, probe, 0644); err != nil {
-			return result, err
-		}
-		probeData, probeRun, err := run("context-probes", "go", "test", "-json", "-count=1", "-timeout=30s", "-run", "^TestHarnessRequestContext$", "./cmd/server")
-		removeErr := os.Remove(probePath)
-		if err != nil {
-			return result, err
-		}
-		if removeErr != nil {
-			return result, removeErr
-		}
-		result.Checks["context_propagation"] = probeCheck(probeData, probeRun)
-		if err := contextPolicy(candidate); err != nil {
-			result.Checks["context_propagation"] = Check{"fail", err.Error()}
-		}
-	}
-	// Verify shared SDK copies stayed unchanged as well as protected candidate paths.
-	for _, sdk := range []string{"rpcx-v1", "rpcx-v2"} {
-		original, err := snapshot(filepath.Join(fixtures, sdk))
-		if err != nil {
-			return result, err
-		}
-		copy, err := snapshot(filepath.Join(workspace, sdk))
-		if err != nil {
-			return result, err
-		}
-		if treeDigest(original) != treeDigest(copy) {
-			result.Checks["dependencies"] = Check{"fail", "DEP-001: SDK fixture changed"}
-		}
-	}
-	afterFiles, err := snapshot(candidate)
-	if err != nil {
-		return result, err
-	}
-	if treeDigest(afterFiles) != result.CandidateSHA256 {
-		return result, fmt.Errorf("candidate changed during verification; evidence is stale")
-	}
-	result.Verdict = verdict(result.Checks)
 	result.ExpectationMatched = result.Verdict == c.Expected.Verdict
 	for _, name := range checkNames {
 		if result.Checks[name].Status != c.Expected.Checks[name] {
