@@ -113,7 +113,7 @@ T3 任务须显式选择新场景和规范版本；以下命令会调用真实�
 go run ./cmd/harness --scenario scenarios/rpcx/t3 --spec-version v0.2.0 --model "$DEEPSEEK_MODEL" --max-model-calls 40 --max-tool-calls 80 --max-tokens 4096 --timeout 10m
 ```
 
-此处预算仅为运行配置示例，尚无 T3 真实模型效果结论。版本/摘要不符或 T3 可信基线、SDK 混装在模型调用前失败，不自动使用旧规则。任务完成后先读 `artifacts/review.md` 的条款、证据与缺口，完整字段见 `artifacts/report.json`。Agent 自述单独展示，不构成验证证据。
+此处预算沿用[实验 04](experiments/2026-10-19-rpcx-real-model-04.md)：该唯一一次 T3 真实运行为 Completed / NeedsAttention，不计自动交付成功；不能由示例推断稳定效果。版本/摘要不符或 T3 可信基线、SDK 混装在模型调用前失败，不自动使用旧规则。任务完成后先读 `artifacts/review.md` 的条款、证据与缺口，完整字段见 `artifacts/report.json`。Agent 自述单独展示，不构成验证证据。
 
 `--image` 可指定预先准备的 Linux Go 镜像，构造后端时记录并固定其镜像 ID；要求包含 `/usr/bin/env` 和 Go，且不能声明额外匿名卷。`--cpus` 默认 2，`--memory-mib` 默认 2048，`--pids` 默认 128。默认禁网、只读根文件系统及只读源码/SDK，只向容器开放 1 GiB 临时空间，每条命令独立销毁。`--trusted-local` 显式切换到原可信宿主后端，用于受控夹具调试；不会在 Docker 失败时自动降级。
 
