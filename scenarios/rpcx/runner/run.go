@@ -42,10 +42,10 @@ func Run(parent context.Context, config Config) (record Record, err error) {
 	if err != nil {
 		return record, fmt.Errorf("read scenario fixtures: %w", err)
 	}
-	specPath := filepath.Join(config.ScenarioDir, "specs/v0.1.0.md")
+	specPath := filepath.Join(config.ScenarioDir, "specs", config.SpecVersion+".md")
 	info, err := os.Lstat(specPath)
 	if err != nil {
-		return record, err
+		return record, fmt.Errorf("%w: read specification: %w", ErrInvalidConfig, err)
 	}
 	if !info.Mode().IsRegular() || info.Size() > 1024*1024 {
 		return record, fmt.Errorf("%w: specification must be a regular file of at most 1 MiB", ErrInvalidConfig)
@@ -54,8 +54,17 @@ func Run(parent context.Context, config Config) (record Record, err error) {
 	if err != nil {
 		return record, err
 	}
-	if digest(spec) != checks.SupportedSpecSHA256 {
+	expectedSpec := checks.SupportedSpecSHA256
+	if config.SpecVersion == "v0.2.0" {
+		expectedSpec = checks.T3SpecSHA256
+	}
+	if digest(spec) != expectedSpec {
 		return record, fmt.Errorf("%w: unsupported rpcx specification", ErrInvalidConfig)
+	}
+	if config.SpecVersion == "v0.2.0" {
+		if err := checks.ValidateT3Baseline(ctx, filepath.Join(config.ScenarioDir, "fixtures/demo-orders")); err != nil {
+			return record, fmt.Errorf("%w: %w", ErrInvalidConfig, err)
+		}
 	}
 	if err := ctx.Err(); err != nil {
 		return record, err
@@ -77,7 +86,7 @@ func Run(parent context.Context, config Config) (record Record, err error) {
 		input: Input{
 			ScenarioDir: config.ScenarioDir, ModelName: config.ModelName, ExecutionMode: config.Backend.Info().Kind, Backend: config.Backend.Info(),
 			MaxModelCalls: config.Limits.MaxModelCalls, MaxToolCalls: config.Limits.MaxToolCalls,
-			Timeout: config.Timeout.String(), SpecVersion: "v0.1.0", SpecSHA256: digest(spec),
+			Timeout: config.Timeout.String(), SpecVersion: config.SpecVersion, SpecSHA256: digest(spec),
 			BaselineSHA256: fixtures.module("demo-orders").hash(), Files: fixtures.manifest(),
 		},
 	}
@@ -119,7 +128,7 @@ func Run(parent context.Context, config Config) (record Record, err error) {
 	if err != nil {
 		return record, fmt.Errorf("validate candidate: %w", err)
 	}
-	if validation.BaselineSHA256 != r.input.BaselineSHA256 || validation.CandidateSHA256 != r.record.CandidateSHA256 {
+	if validation.SpecSHA256 != r.input.SpecSHA256 || validation.BaselineSHA256 != r.input.BaselineSHA256 || validation.CandidateSHA256 != r.record.CandidateSHA256 {
 		return record, errors.New("validation digests do not match the prepared inputs")
 	}
 	if err := r.transition(ctx, PhasePublishing); err != nil {
@@ -129,6 +138,12 @@ func Run(parent context.Context, config Config) (record Record, err error) {
 }
 
 func validateConfig(config Config) (Config, error) {
+	if config.SpecVersion == "" {
+		config.SpecVersion = "v0.1.0"
+	}
+	if config.SpecVersion != "v0.1.0" && config.SpecVersion != "v0.2.0" {
+		return config, errors.New("specification version must be v0.1.0 or v0.2.0")
+	}
 	if config.Model == nil || strings.TrimSpace(config.ModelName) == "" ||
 		config.Limits.MaxModelCalls <= 0 || config.Limits.MaxToolCalls <= 0 || config.Timeout <= 0 {
 		return config, errors.New("model, model name, positive limits and timeout are required")
@@ -222,7 +237,7 @@ func (r *runState) generate(ctx context.Context) error {
 			"Use Harness budget notices to plan your work; as the budget runs low, prioritize necessary fixes, verification and submission over optional additions. " +
 			"A final response without tool calls submits the current candidate, even if issues remain. " +
 			"Summarize changes, checks actually run and any unresolved or unverified issues; do not claim checks you did not run. Independent validation follows submission."},
-		{Role: agent.RoleUser, Content: "Upgrade demo-orders from rpcx v1 to v2 using specification v0.1.0:\n\n" + string(r.spec)},
+		{Role: agent.RoleUser, Content: "Upgrade demo-orders from rpcx v1 to v2 using specification " + r.input.SpecVersion + ":\n\n" + string(r.spec)},
 	})
 	r.agent = &result
 	r.record.AgentExitReason = result.Reason
@@ -263,7 +278,7 @@ func (r *runState) checkInputs(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	sourceSpec, err := os.ReadFile(filepath.Join(r.config.ScenarioDir, "specs/v0.1.0.md"))
+	sourceSpec, err := os.ReadFile(filepath.Join(r.config.ScenarioDir, "specs", r.input.SpecVersion+".md"))
 	if err != nil {
 		return err
 	}
@@ -280,6 +295,7 @@ func (r *runState) finish(parent context.Context, runErr error) error {
 	if r.agent != nil {
 		runErr = errors.Join(runErr, writeJSON(r.path("artifacts/agent.json"), r.agent))
 	}
+	var finalCandidate tree
 	if r.prepared {
 		runErr = errors.Join(runErr, r.checkInputs(ctx))
 		candidate, err := readTree(ctx, r.path("workspace/demo-orders"))
@@ -288,6 +304,7 @@ func (r *runState) finish(parent context.Context, runErr error) error {
 			if r.record.CandidateSHA256 != "" && r.record.CandidateSHA256 != candidate.hash() {
 				runErr = errors.Join(runErr, errors.New("candidate changed after submission; validation evidence is stale"))
 			}
+			finalCandidate = candidate
 			r.record.CandidateSHA256 = candidate.hash()
 			patch, err := exportPatch(ctx, r.record.Directory, r.fixtures.module("demo-orders"), candidate)
 			if err == nil {
@@ -301,30 +318,46 @@ func (r *runState) finish(parent context.Context, runErr error) error {
 	}
 	runErr = errors.Join(runErr, parent.Err())
 	r.setTerminal(runErr)
-	report := Report{
-		RunID: r.record.ID, Input: r.input, CandidateSHA256: r.record.CandidateSHA256,
-		PatchSHA256: r.record.PatchSHA256, Validation: r.validation, Error: r.record.Error,
+	// 先发布可检查的材料，最后发布终态；任一失败都重新生成无判定的诊断材料。
+	publish := func() error {
+		report := Report{
+			RunID: r.record.ID, Status: r.record.Status, Review: "review.md", Input: r.input,
+			CandidateSHA256: r.record.CandidateSHA256, PatchSHA256: r.record.PatchSHA256,
+			Validation: r.validation, Error: r.record.Error,
+		}
+		if r.agent != nil {
+			report.AgentRecord = "agent.json"
+		}
+		reportErr := writeJSON(r.path("artifacts/report.json"), report)
+		reviewErr := writeAtomic(r.path("artifacts/review.md"), renderReview(report, r.fixtures.module("demo-orders"), finalCandidate, r.agent))
+		if reviewErr != nil {
+			// 重写失败时移除可能过期的审核材料，不能保留看似成功的旧结论。
+			reviewErr = errors.Join(reviewErr, removeReview(r.path("artifacts/review.md")))
+		}
+		if reportErr != nil {
+			reportErr = fmt.Errorf("publish report: %w", reportErr)
+		}
+		if reviewErr != nil {
+			reviewErr = fmt.Errorf("publish review: %w", reviewErr)
+		}
+		return errors.Join(reportErr, reviewErr)
 	}
-	if r.agent != nil {
-		report.AgentRecord = "agent.json"
-	}
-	if err := writeJSON(r.path("artifacts/report.json"), report); err != nil {
-		runErr = errors.Join(runErr, fmt.Errorf("publish report: %w", err))
+	if err := publish(); err != nil {
+		runErr = errors.Join(runErr, err)
+		r.setTerminal(runErr)
+		runErr = errors.Join(runErr, publish())
 		r.setTerminal(runErr)
 	}
-	// 报告写入期间也可能收到取消，最终状态发布前再检查一次。
 	if err := parent.Err(); err != nil && !errors.Is(runErr, err) {
 		runErr = errors.Join(runErr, err)
 		r.setTerminal(runErr)
-		report.Error = r.record.Error
-		runErr = errors.Join(runErr, writeJSON(r.path("artifacts/report.json"), report))
+		runErr = errors.Join(runErr, publish())
 		r.setTerminal(runErr)
 	}
 	if err := writeJSON(r.path("run.json"), r.record); err != nil {
 		runErr = errors.Join(runErr, fmt.Errorf("persist terminal state: %w", err))
 		r.setTerminal(runErr)
-		report.Error = r.record.Error
-		runErr = errors.Join(runErr, writeJSON(r.path("artifacts/report.json"), report))
+		runErr = errors.Join(runErr, publish())
 		r.setTerminal(runErr)
 	}
 	return runErr
@@ -345,4 +378,12 @@ func (r *runState) setTerminal(err error) {
 	} else if r.validation != nil {
 		r.record.Verdict = r.validation.Verdict
 	}
+}
+
+func removeReview(path string) error {
+	err := os.Remove(path)
+	if errors.Is(err, os.ErrNotExist) {
+		return nil
+	}
+	return err
 }

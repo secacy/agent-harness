@@ -81,3 +81,7 @@ Evidence 索引为每个材料保存相对路径、SHA-256，以及规范/基线
 公开报告各结果的 evidence_directory 相对运行根目录；Evidence.path 相对该目录。Runner 嵌入的 validation 使用 Run/evidence 作为根。字段升级不改变历史报告，也不补全旧版测试断言与调用覆盖缺口，T3 仍待后续运行时检查接入。
 
 后续 [analysis](analysis/README.md) 提供独立的类型加载与有限 RPC 边界事实，已通过本地和 Docker 验证，尚未接入本页的旧 Evaluate。它的 covered 是结构形态的结论，不能代替上述六项检查或完整 T3 判定。
+
+## T3 的 Runner 接入
+
+上述 v0.1.0 保留原六项策略；T3 使用独立场景与 v0.2.0 八项策略。Runner 的 `--scenario scenarios/rpcx/t3 --spec-version v0.2.0` 显式选择新输入；省略版本继续按旧规范执行，不猜测或回退。审核入口 `artifacts/review.md` 来自结构化事实，完整绑定和证据保存在 report.json/evidence 中。输入预检、发布语义及离线测试见 [Runner 说明](runner/README.md)。

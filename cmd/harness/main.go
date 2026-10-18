@@ -29,6 +29,7 @@ func run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 	flags := flag.NewFlagSet("harness", flag.ContinueOnError)
 	flags.SetOutput(stderr)
 	scenario := flags.String("scenario", "scenarios/rpcx", "scenario resource directory")
+	specVersion := flags.String("spec-version", "v0.1.0", "frozen specification version: v0.1.0 or v0.2.0 (T3)")
 	runs := flags.String("runs", "runs", "output parent directory")
 	modelName := flags.String("model", os.Getenv("DEEPSEEK_MODEL"), "DeepSeek model name (or DEEPSEEK_MODEL)")
 	endpoint := flags.String("endpoint", "", "full chat completions URL; empty uses the DeepSeek endpoint")
@@ -76,13 +77,14 @@ func run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 		}
 	}
 	record, err := runner.Run(ctx, runner.Config{
-		ScenarioDir: *scenario, RunsDir: *runs, Model: model, ModelName: *modelName,
+		ScenarioDir: *scenario, SpecVersion: *specVersion, RunsDir: *runs, Model: model, ModelName: *modelName,
 		Limits:  agent.Limits{MaxModelCalls: *modelCalls, MaxToolCalls: *toolCalls},
 		Timeout: *timeout, TrustedLocal: *trusted, Backend: backend,
 	})
 	if record.Directory != "" {
 		fmt.Fprintln(stdout, "Run:", record.Directory)
 		fmt.Fprintln(stdout, "Report:", filepath.Join(record.Directory, "artifacts/report.json"))
+		fmt.Fprintln(stdout, "Review:", filepath.Join(record.Directory, "artifacts/review.md"))
 		fmt.Fprintf(stdout, "Status: %s; verdict: %s\n", record.Status, record.Verdict)
 	}
 	if err != nil {

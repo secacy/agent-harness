@@ -13,16 +13,18 @@ import (
 	"testing"
 )
 
-func TestCommandRunsAdapterLoopAndIndependentValidation(t *testing.T) { testCommandRun(t, true) }
+func TestCommandRunsAdapterLoopAndIndependentValidation(t *testing.T) { testCommandRun(t, true, false) }
 
 func TestCommandRunsDockerByDefault(t *testing.T) {
 	if os.Getenv("HARNESS_DOCKER_TEST") != "1" {
 		t.Skip("set HARNESS_DOCKER_TEST=1 for real Docker integration")
 	}
-	testCommandRun(t, false)
+	testCommandRun(t, false, false)
 }
 
-func testCommandRun(t *testing.T, trusted bool) {
+func TestCommandSelectsT3(t *testing.T) { testCommandRun(t, true, true) }
+
+func testCommandRun(t *testing.T, trusted, t3 bool) {
 	const secret = "test-key-must-not-be-persisted"
 	t.Setenv("DEEPSEEK_API_KEY", secret)
 	var requests atomic.Int32
@@ -40,6 +42,9 @@ func testCommandRun(t *testing.T, trusted bool) {
 		if err := json.NewDecoder(r.Body).Decode(&request); err != nil || request.Model != "test-model" || len(request.Messages) != 3 || !strings.Contains(request.Messages[1].Content, "CTX-002") || !strings.Contains(request.Messages[2].Content, "Harness budget") {
 			t.Errorf("unexpected request: %+v %v", request, err)
 		}
+		if t3 && !strings.Contains(request.Messages[1].Content, "TIME-001") {
+			t.Error("T3 specification did not reach adapter")
+		}
 		w.Header().Set("Content-Type", "application/json")
 		w.Write([]byte(`{"choices":[{"message":{"role":"assistant","content":"Candidate submitted unchanged."},"finish_reason":"stop"}],"usage":{"prompt_tokens":20,"completion_tokens":5,"total_tokens":25}}`))
 	}))
@@ -50,7 +55,13 @@ func testCommandRun(t *testing.T, trusted bool) {
 	}
 	runs := filepath.Join(t.TempDir(), "runs")
 	var stdout, stderr bytes.Buffer
+	if t3 {
+		scenario = filepath.Join(scenario, "t3")
+	}
 	args := []string{"--model", "test-model", "--endpoint", server.URL, "--scenario", scenario, "--runs", runs}
+	if t3 {
+		args = append(args, "--spec-version", "v0.2.0")
+	}
 	if trusted {
 		args = append(args, "--trusted-local")
 	}
@@ -63,10 +74,13 @@ func testCommandRun(t *testing.T, trusted bool) {
 		if err != nil {
 			return err
 		}
-		if !entry.IsDir() && strings.HasSuffix(path, ".json") {
+		if !entry.IsDir() && (strings.HasSuffix(path, ".json") || strings.HasSuffix(path, ".md")) {
 			data, err := os.ReadFile(path)
 			if err != nil {
 				return err
+			}
+			if t3 && filepath.Base(path) == "report.json" && filepath.Base(filepath.Dir(path)) == "artifacts" && !bytes.Contains(data, []byte(`"spec_version": "v0.2.0"`)) {
+				t.Error("T3 specification not recorded")
 			}
 			if bytes.Contains(data, []byte(secret)) {
 				t.Errorf("API key leaked into %s", path)

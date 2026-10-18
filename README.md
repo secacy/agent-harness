@@ -4,11 +4,9 @@
 
 当前已实现离线 `rpcx` T1/T2 迁移场景：本地 SDK v1/v2、10 个业务测试的迁移前仓库、版本化规范、五种候选补丁及公开专项验收。单仓库 Runner 已串联有界 Agent 循环、仓库工具、独立验证及补丁/报告导出，并提供 DeepSeek 命令入口。Docker 后端已接入 Agent 检查与最终验证；命令入口默认使用容器执行。实验 03 完成一次真实模型自主迁移、测试反馈修复、独立门禁和产物交付，M1 最小闭环已在受控场景验收；批量 Runtime、重复运行稳定性和独立离线评测尚未验收。
 
-新增的 [T3 默认超时场景](scenarios/rpcx/t3/README.md)已完成 M2.1 冻结验收：四个手工候选均通过原业务测试，独立参考检查发现漏超时与错误期限，真实 30 秒到期得到验证。M2 的质量门禁增强与 Agent T3 接入仍在后续阶段，见[验收记录](docs/experiments/2026-10-18-rpcx-t3-fixture-01.md)。
+[T3 默认超时场景](scenarios/rpcx/t3/README.md)已完成冻结验收，证明候选可以通过原有测试却违反超时契约。运行时[组合质量门禁](scenarios/rpcx/checks/README.md)结合测试结构、有限类型分析与 40 项可信行为检查；[冻结 L1 独立交叉验收](scenarios/rpcx/l1/README.md)的 19 例均符合预期，保留参考检查发现的覆盖差异，M2.3 已在声明范围内验收。
 
-M2 已增加绑定证据的质量聚合，以及在执行后端内加载类型的 [rpcx 有限边界分析](scenarios/rpcx/analysis/README.md)。后者已通过本地与 Docker 对照，能提供 SDK 位置、直接超时关系和覆盖缺口；完整 T3 门禁仍在实现中，进度见[里程碑](docs/MILESTONES.md)。
-
-冻结 T3 场景的[组合质量门禁](scenarios/rpcx/checks/README.md)已接入 Evaluate：将测试结构、有限迁移分析和 40 项可信行为检查组合，绑定同一候选与实际材料，区分 ReadyForReview、Rejected 和 NeedsAttention。[冻结 L1 独立交叉验收](scenarios/rpcx/l1/README.md)的 19 例全部符合预期，包含真实到期及参考覆盖差异；M2.3 已在声明范围内验收。新规范 Runner 和审核交付为下一步，构造任务成绩不代表真实仓库成功率。
+[单仓库 Runner](scenarios/rpcx/runner/README.md)现在可以显式选择 T3 规范，并从实际结构化结果生成 `artifacts/review.md`，将条款、修改、证据和缺口关联，单列 Agent 自述。M2.4 的离线与 Docker 联调结果见[工作记录](docs/worklog/2026-10-18-m2-evidence-gate.md#21-m24新规范-runner-与确定性审核交付)。T3 真实模型实验尚未执行，构造任务成绩不代表真实仓库成功率；整体进度见[里程碑](docs/MILESTONES.md)。
 
 需要本地 Go 1.23 或更新版本、Git 和 POSIX shell；已在 Go 1.26.5 / macOS arm64 验证。
 
@@ -26,7 +24,7 @@ M2 已增加绑定证据的质量聚合，以及在执行后端内加载类型�
 - [预算感知与及时提交的设计及验证](docs/worklog/2026-10-18-budget-awareness.md)
 - [仓库工具实现与边界](docs/worklog/2026-10-17-repository-tools.md)
 - [DeepSeek 适配器与验收](docs/worklog/2026-10-17-deepseek-adapter.md)
-- [单仓库 Runner、状态与交付](docs/worklog/2026-10-17-single-repo-runner.md)
+- [单仓库 Runner、审核材料与交付](scenarios/rpcx/runner/README.md)
 
 容器执行的镜像准备、限制和集成测试见 [Docker 执行记录](docs/worklog/2026-10-17-docker-execution.md) 与 [运行命令](docs/command.md)。
 

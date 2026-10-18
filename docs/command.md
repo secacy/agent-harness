@@ -28,7 +28,7 @@
 
 该命令显式使用可信宿主，跳过慢检查，允许未冻结材料。匹配预期可返回 0，但 `accepted` 始终为 false；`--quick` 必须与 `--development` 一起使用。省略 `--trusted-local` 可在 Docker 中开发联调。正式模式下材料变化会失败，不自动更新 freeze.json。
 
-报告包含输入文件摘要、执行后端与命令日志、原测试事件、参考检查 pass/fail/inconclusive、失败条款、补丁重放及生产代码绑定。预期反例的失败算匹配；未执行、执行错误或观测不充分不能冒充预期反例失败。这是 M2.1 离线场景证据，没有运行时质量判定；现有 `cmd/harness` 尚未接入 T3。检查边界见 [T3 场景说明](../scenarios/rpcx/t3/README.md)。
+报告包含输入文件摘要、执行后端与命令日志、原测试事件、参考检查 pass/fail/inconclusive、失败条款、补丁重放及生产代码绑定。预期反例的失败算匹配；未执行、执行错误或观测不充分不能冒充预期反例失败。这是 M2.1 离线场景证据，没有运行时质量判定；`cmd/harness` 的 T3 接入另见下文单仓库任务入口。检查边界见 [T3 场景说明](../scenarios/rpcx/t3/README.md)。
 
 ## 验证工具自身测试
 
@@ -52,7 +52,7 @@ env GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly G
 
 每个证据绑定规范、基线与候选摘要，并校验实际文件 SHA-256。quality-policy.json 保存宿主策略副本，context-probe.go.txt 保存可信探针；materials_sha256 为紧凑 JSON 编码策略后紧接探针原始字节的 SHA-256，仅标识策略与探针材料，不是整个验证器源码摘要。verifier_version 是宿主维护的版本标识；公开报告的 checks_sha256 只覆盖场景 checks/，不能解释为整个 Harness 的源码摘要，复现仍需对应 Git 版本和工具链。
 
-证据缺口得到 NeedsAttention；充分的明确失败得到 Rejected 并保留缺口；错绑定、材料篡改或记录非法返回执行错误与空判定。新结构不证明原检查未覆盖的语义，不把 v0.1.0 升级为 T3；现阶段仍拒绝将 v0.2.0 交给旧 Evaluate。技术依据见 [ADR-002](adr/002-evidence-bound-quality.md)。
+证据缺口得到 NeedsAttention；充分的明确失败得到 Rejected 并保留缺口；错绑定、材料篡改或记录非法返回执行错误与空判定。新结构不证明原检查未覆盖的语义，不把 v0.1.0 升级为 T3；v0.2.0 由独立的 T3 八项策略处理，不进入旧六项策略。技术依据见 [ADR-002](adr/002-evidence-bound-quality.md)。
 
 ## Agent 循环测试
 
@@ -81,7 +81,7 @@ env GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly G
 ## 单仓库 Runner 离线验收
 
 ```sh
-env GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly GOCACHE="$PWD/runs/go-cache" go test ./scenarios/rpcx/runner ./cmd/harness
+env GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly GOCACHE="$PWD/runs/go-cache" go test -p 1 -count=1 ./scenarios/rpcx/runner ./cmd/harness
 ```
 
 可控模型通过真实工具修改临时夹具，再运行独立验证、导出补丁并验证还原一致性。覆盖正确/被拒绝的候选、失败/预算/取消/超时、输入变化、报告与状态写入失败，以及多次运行的历史保留。命令入口测试使用本机模拟 HTTP 服务，需要临时端口监听权限；不需要真实 API Key，不访问真实 DeepSeek 服务。
@@ -92,7 +92,7 @@ env GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly G
 go run ./cmd/harness --help
 ```
 
-入口接收 `--scenario`（默认 `scenarios/rpcx`）、`--runs`（默认 `runs`）、`--model`、`--timeout`、`--max-model-calls`、`--max-tool-calls`、`--max-tokens` 及测试用完整 `--endpoint`。模型名也可由 `DEEPSEEK_MODEL` 提供；密钥只从 `DEEPSEEK_API_KEY` 读取，不提供密钥参数，也不会自动加载 `.env`。
+入口接收 `--scenario`（默认 `scenarios/rpcx`）、`--spec-version`（默认 `v0.1.0`）、`--runs`（默认 `runs`）、`--model`、`--timeout`、`--max-model-calls`、`--max-tool-calls`、`--max-tokens` 及测试用完整 `--endpoint`。模型名也可由 `DEEPSEEK_MODEL` 提供；密钥只从 `DEEPSEEK_API_KEY` 读取，不提供密钥参数，也不会自动加载 `.env`。
 
 命令默认使用 Docker。先启动本机 Docker 引擎并准备固定工具链镜像；任务执行使用本地镜像 ID，缺失镜像时报错，不自动下载：
 
@@ -107,9 +107,17 @@ docker pull golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e4756
 go run ./cmd/harness --model "$DEEPSEEK_MODEL" --max-model-calls 40 --max-tool-calls 80 --max-tokens 4096 --timeout 10m
 ```
 
+T3 任务须显式选择新场景和规范版本；以下命令会调用真实模型，离线验收请使用上一节测试命令：
+
+```sh
+go run ./cmd/harness --scenario scenarios/rpcx/t3 --spec-version v0.2.0 --model "$DEEPSEEK_MODEL" --max-model-calls 40 --max-tool-calls 80 --max-tokens 4096 --timeout 10m
+```
+
+此处预算仅为运行配置示例，尚无 T3 真实模型效果结论。版本/摘要不符或 T3 可信基线、SDK 混装在模型调用前失败，不自动使用旧规则。任务完成后先读 `artifacts/review.md` 的条款、证据与缺口，完整字段见 `artifacts/report.json`。Agent 自述单独展示，不构成验证证据。
+
 `--image` 可指定预先准备的 Linux Go 镜像，构造后端时记录并固定其镜像 ID；要求包含 `/usr/bin/env` 和 Go，且不能声明额外匿名卷。`--cpus` 默认 2，`--memory-mib` 默认 2048，`--pids` 默认 128。默认禁网、只读根文件系统及只读源码/SDK，只向容器开放 1 GiB 临时空间，每条命令独立销毁。`--trusted-local` 显式切换到原可信宿主后端，用于受控夹具调试；不会在 Docker 失败时自动降级。
 
-命令打印 Run 和报告路径。直接运行编译出的程序时，完整交付返回 0（含 `Rejected`），参数/配置错误返回 2，执行失败/超时返回 1，取消返回 130；`go run` 自身可能将程序非零退出码转换为 1，脚本需要精确退出码时先 `go build -o runs/harness ./cmd/harness` 再运行该二进制。审核材料及状态语义见 [Runner 记录](worklog/2026-10-17-single-repo-runner.md)。
+命令打印 Run、报告及审核材料路径。直接运行编译出的程序时，完整交付返回 0（含 `Rejected`），参数/配置错误返回 2，执行失败/超时返回 1，取消返回 130；`go run` 自身可能将程序非零退出码转换为 1，脚本需要精确退出码时先 `go build -o runs/harness ./cmd/harness` 再运行该二进制。审核材料及状态语义见 [Runner 说明](../scenarios/rpcx/runner/README.md)。
 
 ## Docker 执行后端验收
 

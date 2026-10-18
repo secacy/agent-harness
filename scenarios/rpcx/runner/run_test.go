@@ -322,6 +322,10 @@ func TestRunKeepsPartialCandidateOnGenerationFailure(t *testing.T) {
 				t.Fatalf("missing terminal record: %+v", saved)
 			}
 			report := readJSON[Report](t, filepath.Join(record.Directory, "artifacts/report.json"))
+			review, readErr := os.ReadFile(filepath.Join(record.Directory, "artifacts/review.md"))
+			if readErr != nil || !strings.Contains(string(review), "质量判定：**无最终质量判定**") {
+				t.Fatalf("partial run review: %s %v", review, readErr)
+			}
 			if report.Validation != nil || report.Error == "" || report.AgentRecord == "" {
 				t.Fatalf("failed generation was validated or lost evidence: %+v", report)
 			}
@@ -387,25 +391,37 @@ func TestRunRejectsUnsafeInputsBeforeModelCall(t *testing.T) {
 }
 
 func TestRunDoesNotPublishSuccessWhenEvidenceCannotBeWritten(t *testing.T) {
-	config := configForTest(t, nil)
-	config.Model = modelFunc(func(context.Context, []agent.Message, []agent.ToolSpec) (agent.Reply, error) {
-		entries, err := os.ReadDir(config.RunsDir)
-		if err != nil || len(entries) != 1 {
-			t.Fatalf("run directory: %v %v", entries, err)
-		}
-		// 测试注入落盘故障；模型工具本身没有访问 artifacts 的能力。
-		if err := os.Mkdir(filepath.Join(config.RunsDir, entries[0].Name(), "artifacts/report.json"), 0755); err != nil {
-			t.Fatal(err)
-		}
-		return agent.Reply{Finish: agent.FinishStop, Content: "Submitted."}, nil
-	})
-	record, err := Run(context.Background(), config)
-	if err == nil || !strings.Contains(err.Error(), "publish report") || record.Status != StatusFailed || record.Verdict != "" {
-		t.Fatalf("publishing failure reported success: %+v %v", record, err)
-	}
-	saved := readJSON[Record](t, filepath.Join(record.Directory, "run.json"))
-	if saved.Status != StatusFailed || saved.Verdict != "" || !strings.Contains(saved.Error, "publish report") {
-		t.Fatalf("publishing failure was not persisted: %+v", saved)
+	for _, artifact := range []string{"report.json", "review.md"} {
+		t.Run(artifact, func(t *testing.T) {
+			config := configForTest(t, nil)
+			config.Model = modelFunc(func(context.Context, []agent.Message, []agent.ToolSpec) (agent.Reply, error) {
+				entries, err := os.ReadDir(config.RunsDir)
+				if err != nil || len(entries) != 1 {
+					t.Fatalf("run directory: %v %v", entries, err)
+				}
+				// 测试注入落盘故障；模型工具本身没有访问 artifacts 的能力。
+				if err := os.Mkdir(filepath.Join(config.RunsDir, entries[0].Name(), "artifacts", artifact), 0755); err != nil {
+					t.Fatal(err)
+				}
+				return agent.Reply{Finish: agent.FinishStop, Content: "Submitted."}, nil
+			})
+			record, err := Run(context.Background(), config)
+			want := "publish report"
+			if artifact == "review.md" {
+				want = "publish review"
+			}
+			if err == nil || !strings.Contains(err.Error(), want) || record.Status != StatusFailed || record.Verdict != "" {
+				t.Fatalf("publishing failure reported success: %+v %v", record, err)
+			}
+			saved := readJSON[Record](t, filepath.Join(record.Directory, "run.json"))
+			if saved.Status != StatusFailed || saved.Verdict != "" || !strings.Contains(saved.Error, want) {
+				t.Fatalf("publishing failure was not persisted: %+v", saved)
+			}
+			review, err := os.ReadFile(filepath.Join(record.Directory, "artifacts/review.md"))
+			if err == nil && (!strings.Contains(string(review), "质量判定：**无最终质量判定**") || strings.Contains(string(review), "质量判定：**Rejected**")) {
+				t.Fatal("publication error left a quality verdict in review")
+			}
+		})
 	}
 }
 
@@ -457,6 +473,10 @@ func TestRunReturnsErrorWhenTerminalStateCannotBeWritten(t *testing.T) {
 		t.Fatalf("terminal state failure was hidden: %+v %v", record, err)
 	}
 	report := readJSON[Report](t, filepath.Join(record.Directory, "artifacts/report.json"))
+	review, readErr := os.ReadFile(filepath.Join(record.Directory, "artifacts/review.md"))
+	if readErr != nil || !strings.Contains(string(review), "质量判定：**无最终质量判定**") {
+		t.Fatalf("terminal failure review: %s %v", review, readErr)
+	}
 	if !strings.Contains(report.Error, "persist terminal state") {
 		t.Fatalf("report did not retain terminal state failure: %+v", report)
 	}

@@ -37,11 +37,6 @@ func evaluateT3(ctx context.Context, req EvaluationRequest) (result Evaluation, 
 	if err != nil || digest(spec) != T3SpecSHA256 {
 		return result, errors.New("unsupported T3 specification")
 	}
-	var pinned map[string]json.RawMessage
-	data, _ := t3Materials.ReadFile("t3-policy.json")
-	if err := json.Unmarshal(data, &pinned); err != nil {
-		return result, err
-	}
 	inputs := map[string]map[string]string{}
 	for _, module := range []string{req.BaselineDir, req.CandidateDir} {
 		for _, path := range []string{module, filepath.Join(filepath.Dir(module), "rpcx-v1"), filepath.Join(filepath.Dir(module), "rpcx-v2")} {
@@ -54,18 +49,8 @@ func evaluateT3(ctx context.Context, req EvaluationRequest) (result Evaluation, 
 			}
 		}
 	}
-	for _, name := range []string{"baseline", "rpcx-v1", "rpcx-v2"} {
-		var expected map[string]string
-		if err := json.Unmarshal(pinned[name], &expected); err != nil {
-			return result, err
-		}
-		path := req.BaselineDir
-		if name != "baseline" {
-			path = filepath.Join(filepath.Dir(path), name)
-		}
-		if !reflect.DeepEqual(inputs[path], expected) {
-			return result, fmt.Errorf("unsupported trusted T3 input: %s", name)
-		}
+	if err := validateT3Snapshots(req.BaselineDir, inputs); err != nil {
+		return result, err
 	}
 	result.BaselineSHA256, result.CandidateSHA256 = treeDigest(inputs[req.BaselineDir]), treeDigest(inputs[req.CandidateDir])
 	defer func() {
@@ -438,4 +423,43 @@ func analysisInput(copies map[string]map[string]string, module string) string {
 		}
 	}
 	return treeDigest(files)
+}
+
+// ValidateT3Baseline 在模型调用前核对固定场景材料；不执行代码，也不产生质量判定。
+// Evaluate 仍须重新核对其实际输入，预检不能代替验证阶段的绑定。
+func ValidateT3Baseline(ctx context.Context, baselineDir string) error {
+	inputs := map[string]map[string]string{}
+	for _, path := range []string{baselineDir, filepath.Join(filepath.Dir(baselineDir), "rpcx-v1"), filepath.Join(filepath.Dir(baselineDir), "rpcx-v2")} {
+		if err := limitT3Tree(ctx, path); err != nil {
+			return err
+		}
+		files, err := snapshotContext(ctx, path)
+		if err != nil {
+			return err
+		}
+		inputs[path] = files
+	}
+	return validateT3Snapshots(baselineDir, inputs)
+}
+
+func validateT3Snapshots(baselineDir string, inputs map[string]map[string]string) error {
+	var pinned map[string]json.RawMessage
+	data, _ := t3Materials.ReadFile("t3-policy.json")
+	if err := json.Unmarshal(data, &pinned); err != nil {
+		return err
+	}
+	for _, name := range []string{"baseline", "rpcx-v1", "rpcx-v2"} {
+		var expected map[string]string
+		if err := json.Unmarshal(pinned[name], &expected); err != nil {
+			return err
+		}
+		path := baselineDir
+		if name != "baseline" {
+			path = filepath.Join(filepath.Dir(path), name)
+		}
+		if !reflect.DeepEqual(inputs[path], expected) {
+			return fmt.Errorf("unsupported trusted T3 input: %s", name)
+		}
+	}
+	return nil
 }

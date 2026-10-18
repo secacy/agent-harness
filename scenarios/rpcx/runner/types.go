@@ -18,6 +18,7 @@ var (
 // Config 由宿主配置。Model 只负责模型调用，不参与目录准备和质量判定。
 type Config struct {
 	ScenarioDir string
+	SpecVersion string // 为空时保留 v0.1.0；新场景必须显式选择。
 	RunsDir     string
 	Model       agent.Model
 	ModelName   string
@@ -81,6 +82,8 @@ type Input struct {
 // Report 保存实际证据。发布是否成功以本次运行根目录的 run.json 为准。
 type Report struct {
 	RunID           string             `json:"run_id"`
+	Status          Status             `json:"status"`
+	Review          string             `json:"review,omitempty"`
 	Input           Input              `json:"input"`
 	CandidateSHA256 string             `json:"candidate_sha256,omitempty"`
 	PatchSHA256     string             `json:"patch_sha256,omitempty"`
