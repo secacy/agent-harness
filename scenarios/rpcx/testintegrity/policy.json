@@ -1,0 +1,9 @@
+{
+  "version": "rpcx-test-structure-v1",
+  "spec_sha256": "5f096ec6bae18525fb5113781c096b2393707f95aa62f2ac9f9e4e4f94c8cad7",
+  "baseline_files": {
+    "cmd/server/handler_test.go": "02d46b533f7d5542c1160dc479831484bf18b4df14376a4fb3f04755edf0a5cd",
+    "internal/inventory/client_test.go": "8072213afb07d203acfcd1cc322d29eb4abb4ff9abe9b9eebb07b7e41b16a46d",
+    "internal/orders/service_test.go": "87b2f14b844db8b06322c7b86f6ddb92b5b108a02ee9e069b93c63fd8b58bd2a"
+  }
+}

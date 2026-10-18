@@ -150,3 +150,17 @@ env GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly G
 ```
 
 该子集只消费构造的分析记录，不启动 Go 加载子进程或 Docker；实际源码与容器联调仍用上面两条命令。
+
+## M2.3 测试结构完整性
+
+```sh
+env GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly GOCACHE="$PWD/runs/go-cache" go test -json -count=1 ./scenarios/rpcx/testintegrity
+```
+
+对冻结原测试作宿主最小适配，再比较候选完整结构。覆盖四个冻结候选、合法修改、断言删除、helper 重写、测试执行入口/构建范围变化及输入边界；输出 TEST_INTEGRITY 报告。默认跳过 Docker，对临时副本应用补丁，不执行候选测试，不调用模型，也不修改原夹具。
+
+```sh
+env HARNESS_DOCKER_TEST=1 GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly GOCACHE="$PWD/runs/go-cache" go test -json -count=1 ./scenarios/rpcx/testintegrity -run '^TestDockerShowsTheLimitsOfNameOnlyPreservation$'
+```
+
+需要已准备的固定镜像和本机 Docker。运行正确补丁、宿主适配、删除断言、等价 helper 重写四组对照：每组原十个测试均实际通过且名称相同，结构检查分别 preserved/preserved/violated/unknown。输出 BUSINESS_TEST_EVENTS 与 TEST_STRATEGY，核对容器回收。这是可信开发样例的机制对照，未代表任意测试语义等价或完整 T3 门禁，API 及限制见 [testintegrity](../scenarios/rpcx/testintegrity/README.md)。
