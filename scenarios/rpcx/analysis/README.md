@@ -26,7 +26,7 @@ result, err := analysis.Inspect(ctx, analysis.Request{
 - `unknown`：helper、间接调用、接口分派、未证明的父 context、资源释放或控制流等，并记录对应 Gap。
 - `legacy`：v1 SDK 位置清单，用于之后与迁移候选比较，不表示已经证明 v1 的超时行为。
 
-这里的 covered 不等于规范全部满足：尚未证明 HTTP → service → inventory 的完整传播、错误与业务状态、所有其他构建配置或任意等价实现。吞错的返回分支仍可能匹配超时边界，必须由行为验证补足。当前不输出质量 verdict，也未接入旧 Evaluate。
+这里的 covered 不等于规范全部满足：尚未证明 HTTP → service → inventory 的完整传播、错误与业务状态、所有其他构建配置或任意等价实现。吞错的返回分支仍可能匹配超时边界，必须由行为验证补足。本包不输出质量 verdict；[T3 组合门禁](../checks/README.md)已消费其事实，旧 v0.1.0 检查保持原策略。
 
 ## 基线与候选比较
 
@@ -42,7 +42,7 @@ comparison, err := analysis.Compare(baseline.Report, candidate.Report)
 
 Changes 使用明确原因保留两侧位置：调用新增/删除、同函数多调用歧义、未知所属函数、间接调用、RPC 方法常量未知/变化，以及候选保留 v1。函数改名、移到另一个包或抽取 helper 可能表现为新增加删除；不猜测它们是否语义等价。基线完全没有调用也保留 baseline_calls_empty，需要外层明确适用性。
 
-Gaps 保留双方原有缺口并标记 baseline/candidate。空 Changes 只表示在声明规则下建立了位置对应；接收者或请求参数变化可能仍能配对，不能据此证明业务正确。后续质量门禁必须同时使用结构差异、原有分析状态、测试完整性与行为证据。
+Gaps 保留双方原有缺口并标记 baseline/candidate。空 Changes 只表示在声明规则下建立了位置对应；接收者或请求参数变化可能仍能配对，不能据此证明业务正确。T3 质量门禁同时使用结构差异、原有分析状态、测试完整性与行为证据。
 
 两侧需使用相同工具材料、Go 版本、平台、架构、cgo 和 tag 集合；tag 的顺序/重复不影响可比性。加载未完成、旧 schema、字段非法或配置不一致返回 error 和空 Comparison，不能伪装成候选违规。结果 schema_version=1，保存两侧输入/工具摘要与 record_sha256；后者是 Go encoding/json 紧凑序列化 Report 的摘要，不是 analysis.json 缩进格式的文件摘要。输出顺序稳定，源记录数组顺序变化仍会改变其绑定摘要。
 

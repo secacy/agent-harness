@@ -180,3 +180,23 @@ env HARNESS_DOCKER_TEST=1 GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local G
 在固定镜像运行四个冻结候选、丢失父 context/未释放/吞错/生产入口退出，以及“表面期限正确但不安装计时器”的反例，共 9 组、11 条容器命令。正确候选与最后一组反例会执行真实到期检查，整组约三分钟；不访问网络或模型。输出 TRUSTED_BEHAVIOR、原始事件及执行元数据；最后一组还将完整证据保留在 runs/rpcx-behavior-deadline-only-*，报告该路径。其余组使用测试临时目录。
 
 可用 `HARNESS_BEHAVIOR_TEST=1` 运行 `-run '^TestLocalFrozenBehavior$'`，仅适用于仓库中可信的四个手工夹具。该入口不代表任意候选代码可以安全地在宿主执行；本轮正式联调使用 Docker。
+
+## M2.3 T3 组合质量门禁
+
+```sh
+env GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly GOCACHE="$PWD/runs/go-cache" go test -json -count=1 ./scenarios/rpcx/checks -run '^TestT3(ProductionScope|RejectsUnsupportedInputsBeforeExecution|ExecutionFailureHasNoVerdict|BaselineFailureHasNoQualityVerdict|CandidateEventsDoNotInferSuccessFromExitCode|PinsMatchFrozenScene)$'
+```
+
+只运行 T3 门禁的范围、输入、测试事件与执行失败机制检查；完整检查包的默认测试还包括旧 v0.1.0 回归。单候选 API 与八项必需检查见 [checks](../scenarios/rpcx/checks/README.md)。
+
+```sh
+env HARNESS_T3_TEST=1 GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly GOCACHE="$PWD/runs/go-cache" go test -json -count=1 -timeout=15m ./scenarios/rpcx/checks -run '^TestT3LocalQualityMatrix$'
+```
+
+在可信本地夹具运行 17 组开发对照，覆盖三类质量判定、违规与未知并存、候选测试入口干扰、SDK/保护路径修改及遗漏调用点；行为通过的候选包含真实 30 秒检查。仅供本仓库受控样例使用，复用本地编译缓存，不执行外部候选，不调用模型。全部证据和 evaluation.json 保存在 runs/rpcx-t3-quality-*，日志输出 T3_QUALITY_ARTIFACTS。
+
+```sh
+env HARNESS_DOCKER_TEST=1 GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly GOCACHE="$PWD/runs/go-cache" go test -json -count=1 -timeout=10m ./scenarios/rpcx/checks -run '^TestT3DockerQualityMatrix$'
+```
+
+固定镜像下运行正确候选、删除断言、错误期限加未覆盖构建配置三组组合门禁。正确候选执行真实到期检查；其他组保留违规和阻断依据。完整参考标准交叉验收另行进行，这些开发对照不能替代正式 L1 验收或 L2 留出评测。

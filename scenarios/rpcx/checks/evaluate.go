@@ -47,6 +47,12 @@ type Evaluation struct {
 // Evaluate 在独立副本中运行基线、候选和可信探针，生成证据并聚合判定。
 // 补丁应用、用例预期比较和最终报告持久化由调用方负责。
 func Evaluate(ctx context.Context, req EvaluationRequest) (result Evaluation, err error) {
+	if err := ctx.Err(); err != nil {
+		return result, err
+	}
+	if spec, readErr := os.ReadFile(req.SpecPath); readErr == nil && digest(spec) == T3SpecSHA256 {
+		return evaluateT3(ctx, req)
+	}
 	result.SchemaVersion = 2
 	result.VerifierVersion = verifierVersion
 	result.Checks = make(map[string]Check, len(checkNames))

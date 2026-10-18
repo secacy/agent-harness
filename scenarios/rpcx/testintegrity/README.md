@@ -16,7 +16,7 @@ report, err := testintegrity.Compare(baselineTests, candidateTests)
 
 该计划仅在原文件清单和每个字节的摘要符合策略时执行，核对每个文件的实际适配次数。名称匹配只作用于已认证的冻结基线，候选不会按相同方法名被归一化。这里的 Background 用于原业务测试适配，请求生产链路的 context 约束仍由其他检查承担。
 
-`AdaptBaseline` 单独返回新文件集，供后续可信生产副本安装。它不读取公开补丁、manifest 或 oracle，不修改输入。Docker 对照已确认其输出可与正确候选生产代码一起构建并通过原十个测试；副本装配和运行时门禁接入还待完成。
+`AdaptBaseline` 单独返回新文件集，供可信生产副本安装。它不读取公开补丁、manifest 或 oracle，不修改输入。Docker 对照已确认其输出可与正确候选生产代码一起构建并通过原十个测试；装配及行为执行由 behavior 完成。
 
 比较时忽略格式、普通注释和 token 位置，比较完整原测试及 helper 的 AST；导入、包名、文件位置、构建约束和 Go/line 指令另行检查。支持范围为：
 
@@ -44,8 +44,8 @@ report, err := testintegrity.Compare(baselineTests, candidateTests)
 
 AST 摘要是当前 Go 工具链下去掉位置后的结构打印摘要；跨工具链不承诺相同。删除位置指向 `adapted`，需要同时保存 AdaptBaseline 输出；其他位置指向 baseline 或 candidate，使用物理行号，防止 line 指令重定向位置。调用方负责落盘和关联材料，本包不另建运行记录接口。
 
-**能力边界：**preserved 只证明声明范围内原测试结构保留，不证明测试真的运行、断言必然有效或业务正确。新增 Test 函数依然可能影响执行顺序和共享状态；生产代码也参与运行。必须继续检查原测试通过/跳过事件，并在只含同一候选生产代码的可信副本运行业务与超时检查。范围未知不能被另一项行为通过覆盖。此实现尚未接入旧 Evaluate。
+**能力边界：**preserved 只证明声明范围内原测试结构保留，不证明测试真的运行、断言必然有效或业务正确。新增 Test 函数依然可能影响执行顺序和共享状态；生产代码也参与运行。必须继续检查原测试通过/跳过事件，并在只含同一候选生产代码的可信副本运行业务与超时检查。范围未知不能被另一项行为通过覆盖。此实现已接入 Evaluate 的 T3 策略，旧 v0.1.0 策略不变。
 
-可信生产副本及独立 T3 探针已在 [behavior](../behavior/README.md) 实现，调用本包 AdaptBaseline；它的通过不能覆盖本包的 unknown 或 violated。完整质量组合仍待接入。
+可信生产副本及独立 T3 探针已在 [behavior](../behavior/README.md) 实现，调用本包 AdaptBaseline；它的通过不能覆盖本包的 unknown 或 violated。质量组合见 [checks](../checks/README.md)，完整 L1 独立交叉验收仍待完成。
 
 机制测试及四组 Docker 对照见[命令说明](../../../docs/command.md#m23-测试结构完整性)，方案取舍与实际结果见 [M2 工作记录](../../../docs/worklog/2026-10-18-m2-evidence-gate.md#17-m23测试结构完整性与适配对照)。
