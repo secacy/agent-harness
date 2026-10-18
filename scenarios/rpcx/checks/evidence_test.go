@@ -6,7 +6,7 @@ import (
 	"slices"
 	"testing"
 
-	"example.com/agent-harness/internal/quality"
+	"github.com/secacy/agent-harness/internal/quality"
 )
 
 func TestPublicCasesHaveReproducibleClauseEvidence(t *testing.T) {

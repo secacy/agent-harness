@@ -12,10 +12,10 @@ import (
 	"reflect"
 	"strings"
 
-	"example.com/agent-harness/internal/quality"
-	"example.com/agent-harness/scenarios/rpcx/analysis"
-	"example.com/agent-harness/scenarios/rpcx/behavior"
-	"example.com/agent-harness/scenarios/rpcx/testintegrity"
+	"github.com/secacy/agent-harness/internal/quality"
+	"github.com/secacy/agent-harness/scenarios/rpcx/analysis"
+	"github.com/secacy/agent-harness/scenarios/rpcx/behavior"
+	"github.com/secacy/agent-harness/scenarios/rpcx/testintegrity"
 )
 
 //go:embed t3-policy.json t3_evaluate.go t3_quality.go t3_scope.go evaluate.go verify.go evidence.go

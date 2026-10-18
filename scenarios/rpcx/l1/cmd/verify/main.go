@@ -8,8 +8,8 @@ import (
 	"os/signal"
 	"strings"
 
-	"example.com/agent-harness/internal/execution"
-	"example.com/agent-harness/scenarios/rpcx/l1"
+	"github.com/secacy/agent-harness/internal/execution"
+	"github.com/secacy/agent-harness/scenarios/rpcx/l1"
 )
 
 func main() {

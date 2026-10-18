@@ -10,7 +10,7 @@ import (
 	"testing"
 	"unicode/utf8"
 
-	"example.com/agent-harness/internal/agent"
+	"github.com/secacy/agent-harness/internal/agent"
 )
 
 func writeFile(t *testing.T, path, content string) {

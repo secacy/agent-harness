@@ -10,8 +10,8 @@ import (
 	"sort"
 	"strings"
 
-	"example.com/agent-harness/internal/agent"
-	"example.com/agent-harness/internal/quality"
+	"github.com/secacy/agent-harness/internal/agent"
+	"github.com/secacy/agent-harness/internal/quality"
 )
 
 // renderReview 只呈现已保存的事实，不重算判定，也不把模型自述转换为验证证据。

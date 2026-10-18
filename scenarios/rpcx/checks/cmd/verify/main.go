@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"example.com/agent-harness/scenarios/rpcx/checks"
+	"github.com/secacy/agent-harness/scenarios/rpcx/checks"
 )
 
 func main() {

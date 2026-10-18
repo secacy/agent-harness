@@ -4,8 +4,8 @@ package l1
 import (
 	"time"
 
-	"example.com/agent-harness/internal/execution"
-	"example.com/agent-harness/scenarios/rpcx/checks"
+	"github.com/secacy/agent-harness/internal/execution"
+	"github.com/secacy/agent-harness/scenarios/rpcx/checks"
 )
 
 type Config struct {

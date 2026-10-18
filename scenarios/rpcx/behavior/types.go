@@ -2,7 +2,7 @@
 package behavior
 
 import (
-	"example.com/agent-harness/internal/execution"
+	"github.com/secacy/agent-harness/internal/execution"
 )
 
 const Version = "rpcx-trusted-behavior-v1"

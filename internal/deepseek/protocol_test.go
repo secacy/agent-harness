@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"example.com/agent-harness/internal/agent"
+	"github.com/secacy/agent-harness/internal/agent"
 )
 
 func TestEncodeMessagesJSON(t *testing.T) {

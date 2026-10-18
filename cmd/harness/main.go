@@ -11,10 +11,10 @@ import (
 	"path/filepath"
 	"time"
 
-	"example.com/agent-harness/internal/agent"
-	"example.com/agent-harness/internal/deepseek"
-	"example.com/agent-harness/internal/execution"
-	"example.com/agent-harness/scenarios/rpcx/runner"
+	"github.com/secacy/agent-harness/internal/agent"
+	"github.com/secacy/agent-harness/internal/deepseek"
+	"github.com/secacy/agent-harness/internal/execution"
+	"github.com/secacy/agent-harness/scenarios/rpcx/runner"
 )
 
 func main() {

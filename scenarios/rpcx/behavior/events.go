@@ -9,7 +9,7 @@ import (
 	"sort"
 	"strings"
 
-	"example.com/agent-harness/internal/execution"
+	"github.com/secacy/agent-harness/internal/execution"
 )
 
 const serverPackage = "example.com/demo-orders/cmd/server"

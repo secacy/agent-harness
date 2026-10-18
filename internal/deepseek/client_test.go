@@ -15,8 +15,8 @@ import (
 	"testing"
 	"time"
 
-	"example.com/agent-harness/internal/agent"
-	"example.com/agent-harness/internal/repotools"
+	"github.com/secacy/agent-harness/internal/agent"
+	"github.com/secacy/agent-harness/internal/repotools"
 )
 
 func newTestClient(t *testing.T, endpoint string) *Client {

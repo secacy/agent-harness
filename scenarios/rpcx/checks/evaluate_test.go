@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"example.com/agent-harness/internal/execution"
-	"example.com/agent-harness/internal/quality"
+	"github.com/secacy/agent-harness/internal/execution"
+	"github.com/secacy/agent-harness/internal/quality"
 )
 
 // 在场景树外准备无 manifest/oracle 的输入，补丁仍由调用方应用。

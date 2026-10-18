@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"example.com/agent-harness/internal/execution"
+	"github.com/secacy/agent-harness/internal/execution"
 )
 
 func scenario(t *testing.T, patch string) Request {

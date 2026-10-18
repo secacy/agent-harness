@@ -1,3 +1,3 @@
-module example.com/agent-harness
+module github.com/secacy/agent-harness
 
 go 1.23.0

@@ -17,7 +17,7 @@ import (
 	"testing"
 	"time"
 
-	"example.com/agent-harness/internal/execution"
+	"github.com/secacy/agent-harness/internal/execution"
 )
 
 // 原型只处理本实验生成的可信单包模块，不作为候选代码加载器使用。

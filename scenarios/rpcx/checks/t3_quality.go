@@ -7,10 +7,10 @@ import (
 	"io"
 	"strings"
 
-	"example.com/agent-harness/internal/quality"
-	"example.com/agent-harness/scenarios/rpcx/analysis"
-	"example.com/agent-harness/scenarios/rpcx/behavior"
-	"example.com/agent-harness/scenarios/rpcx/testintegrity"
+	"github.com/secacy/agent-harness/internal/quality"
+	"github.com/secacy/agent-harness/scenarios/rpcx/analysis"
+	"github.com/secacy/agent-harness/scenarios/rpcx/behavior"
+	"github.com/secacy/agent-harness/scenarios/rpcx/testintegrity"
 )
 
 const T3SpecSHA256 = "5f096ec6bae18525fb5113781c096b2393707f95aa62f2ac9f9e4e4f94c8cad7"

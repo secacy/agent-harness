@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"strings"
 
-	"example.com/agent-harness/internal/agent"
+	"github.com/secacy/agent-harness/internal/agent"
 )
 
 const (

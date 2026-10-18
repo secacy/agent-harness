@@ -10,8 +10,8 @@ import (
 	"path/filepath"
 	"sort"
 
-	"example.com/agent-harness/internal/execution"
-	"example.com/agent-harness/scenarios/rpcx/testintegrity"
+	"github.com/secacy/agent-harness/internal/execution"
+	"github.com/secacy/agent-harness/scenarios/rpcx/testintegrity"
 )
 
 //go:embed probe_test.go.txt run.go files.go events.go types.go

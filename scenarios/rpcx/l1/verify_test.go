@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"example.com/agent-harness/internal/execution"
+	"github.com/secacy/agent-harness/internal/execution"
 )
 
 func TestDatasetAndReplay(t *testing.T) {

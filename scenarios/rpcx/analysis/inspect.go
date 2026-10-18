@@ -18,7 +18,7 @@ import (
 	"sort"
 	"strings"
 
-	"example.com/agent-harness/internal/execution"
+	"github.com/secacy/agent-harness/internal/execution"
 )
 
 //go:embed worker/main.go worker/rules.go

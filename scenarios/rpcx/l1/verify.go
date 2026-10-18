@@ -14,8 +14,8 @@ import (
 	"sync"
 	"time"
 
-	"example.com/agent-harness/internal/execution"
-	"example.com/agent-harness/scenarios/rpcx/checks"
+	"github.com/secacy/agent-harness/internal/execution"
+	"github.com/secacy/agent-harness/scenarios/rpcx/checks"
 )
 
 //go:embed types.go files.go events.go reference.go verify.go cmd/verify/main.go

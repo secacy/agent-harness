@@ -1,7 +1,7 @@
 // Package analysis 在执行后端内检查 RPC 边界，保存有限覆盖事实与缺口。
 package analysis
 
-import "example.com/agent-harness/internal/execution"
+import "github.com/secacy/agent-harness/internal/execution"
 
 // Request 要求输入只含常规文件，证据目录位于输入外且为空。
 // 本地后端仅用于可信夹具；调用方负责提供可信 SDK。

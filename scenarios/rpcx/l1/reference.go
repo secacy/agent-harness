@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"example.com/agent-harness/internal/execution"
+	"github.com/secacy/agent-harness/internal/execution"
 )
 
 func runCommand(parent context.Context, backend execution.Executor, cache, root, label, dir string, args ...string) (execution.Result, Command, error) {

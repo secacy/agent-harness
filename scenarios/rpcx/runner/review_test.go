@@ -8,9 +8,9 @@ import (
 	"strings"
 	"testing"
 
-	"example.com/agent-harness/internal/agent"
-	"example.com/agent-harness/internal/quality"
-	"example.com/agent-harness/scenarios/rpcx/checks"
+	"github.com/secacy/agent-harness/internal/agent"
+	"github.com/secacy/agent-harness/internal/quality"
+	"github.com/secacy/agent-harness/scenarios/rpcx/checks"
 )
 
 func TestReviewKeepsEvidenceGapsAndModelClaimsSeparate(t *testing.T) {

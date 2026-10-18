@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"example.com/agent-harness/internal/agent"
+	"github.com/secacy/agent-harness/internal/agent"
 )
 
 func requireLocalChecks(t *testing.T) {

@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"example.com/agent-harness/internal/quality"
+	"github.com/secacy/agent-harness/internal/quality"
 )
 
 const verifierVersion = "rpcx-t1t2-evidence-v1"

@@ -15,8 +15,8 @@ import (
 	"testing"
 	"time"
 
-	"example.com/agent-harness/internal/agent"
-	"example.com/agent-harness/internal/execution"
+	"github.com/secacy/agent-harness/internal/agent"
+	"github.com/secacy/agent-harness/internal/execution"
 )
 
 type modelFunc func(context.Context, []agent.Message, []agent.ToolSpec) (agent.Reply, error)

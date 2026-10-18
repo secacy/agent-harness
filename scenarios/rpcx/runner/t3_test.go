@@ -13,9 +13,9 @@ import (
 	"strings"
 	"testing"
 
-	"example.com/agent-harness/internal/agent"
-	"example.com/agent-harness/internal/execution"
-	"example.com/agent-harness/scenarios/rpcx/checks"
+	"github.com/secacy/agent-harness/internal/agent"
+	"github.com/secacy/agent-harness/internal/execution"
+	"github.com/secacy/agent-harness/scenarios/rpcx/checks"
 )
 
 func TestRunT3DeliversThreeVerdicts(t *testing.T) { testT3Delivery(t, nil) }

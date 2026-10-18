@@ -22,8 +22,8 @@ import (
 	"strings"
 	"time"
 
-	"example.com/agent-harness/internal/execution"
-	"example.com/agent-harness/internal/quality"
+	"github.com/secacy/agent-harness/internal/execution"
+	"github.com/secacy/agent-harness/internal/quality"
 )
 
 //go:embed probes/*.txt

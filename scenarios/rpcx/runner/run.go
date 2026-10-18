@@ -9,10 +9,10 @@ import (
 	"strings"
 	"time"
 
-	"example.com/agent-harness/internal/agent"
-	"example.com/agent-harness/internal/execution"
-	"example.com/agent-harness/internal/repotools"
-	"example.com/agent-harness/scenarios/rpcx/checks"
+	"github.com/secacy/agent-harness/internal/agent"
+	"github.com/secacy/agent-harness/internal/execution"
+	"github.com/secacy/agent-harness/internal/repotools"
+	"github.com/secacy/agent-harness/scenarios/rpcx/checks"
 )
 
 type runState struct {

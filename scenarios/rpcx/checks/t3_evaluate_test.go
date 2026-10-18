@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"example.com/agent-harness/internal/execution"
-	"example.com/agent-harness/internal/quality"
+	"github.com/secacy/agent-harness/internal/execution"
+	"github.com/secacy/agent-harness/internal/quality"
 )
 
 func preparedT3(t *testing.T, patch string) EvaluationRequest {

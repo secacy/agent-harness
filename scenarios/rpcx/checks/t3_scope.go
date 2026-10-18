@@ -9,7 +9,7 @@ import (
 	"slices"
 	"strings"
 
-	"example.com/agent-harness/internal/quality"
+	"github.com/secacy/agent-harness/internal/quality"
 )
 
 // requestScope 只在已认证的基线上生成有限适配，不归一化候选的任意改写。

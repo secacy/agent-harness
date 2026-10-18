@@ -9,8 +9,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"example.com/agent-harness/internal/execution"
-	"example.com/agent-harness/internal/quality"
+	"github.com/secacy/agent-harness/internal/execution"
+	"github.com/secacy/agent-harness/internal/quality"
 )
 
 // SupportedSpecSHA256 将本检查集合绑定到冻结规范；支持新规范须显式修改验证器。

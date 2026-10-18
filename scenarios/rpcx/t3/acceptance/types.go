@@ -4,7 +4,7 @@ package acceptance
 import (
 	"time"
 
-	"example.com/agent-harness/internal/execution"
+	"github.com/secacy/agent-harness/internal/execution"
 )
 
 type Config struct {

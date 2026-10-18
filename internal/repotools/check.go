@@ -7,8 +7,8 @@ import (
 	"os/exec"
 	"time"
 
-	"example.com/agent-harness/internal/agent"
-	"example.com/agent-harness/internal/execution"
+	"github.com/secacy/agent-harness/internal/agent"
+	"github.com/secacy/agent-harness/internal/execution"
 )
 
 // GoCheckConfig 显式启用 Go 检查，后端由宿主选择。
