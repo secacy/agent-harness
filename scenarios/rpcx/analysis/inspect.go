@@ -272,7 +272,7 @@ func validate(r Report, inputs map[string]string, module, inputSHA, toolSHA stri
 	if backend == execution.KindDocker {
 		wantOS = "linux"
 	}
-	if r.SchemaVersion != 1 || r.InputSHA256 != inputSHA || r.ToolSHA256 != toolSHA || r.Config.GOOS != wantOS || r.Config.GOARCH == "" || r.Config.GoVersion == "" || r.Config.CGO != "0" || !reflect.DeepEqual(r.Config.Tags, tags) || r.Packages == nil || r.Calls == nil || r.Gaps == nil {
+	if r.SchemaVersion != 2 || r.InputSHA256 != inputSHA || r.ToolSHA256 != toolSHA || r.Config.GOOS != wantOS || r.Config.GOARCH == "" || r.Config.GoVersion == "" || r.Config.CGO != "0" || !reflect.DeepEqual(r.Config.Tags, tags) || r.Packages == nil || r.Calls == nil || r.Gaps == nil {
 		return errors.New("analysis protocol configuration or binding mismatch")
 	}
 	if r.Status == "load_failed" {
@@ -304,9 +304,37 @@ func validate(r Report, inputs map[string]string, module, inputSHA, toolSHA stri
 			}
 		}
 	}
+	if err := validateFacts(r, active, known); err != nil {
+		return err
+	}
+	accounted := map[string]bool{}
+	for path := range active {
+		accounted[path] = true
+	}
+	for _, gap := range r.Gaps {
+		accounted[gap.File] = true
+	}
+	for path := range inputs {
+		if rel, ok := strings.CutPrefix(path, module+"/"); ok && strings.HasSuffix(rel, ".go") && !strings.HasSuffix(rel, "_test.go") && !accounted[rel] {
+			return errors.New("production source omitted from analysis record")
+		}
+	}
+	return nil
+}
+
+func validateFacts(r Report, active map[string]string, known func(string) bool) error {
 	for _, call := range r.Calls {
 		if !known(call.File) || active[call.File] != call.Package || call.Line < 1 || call.Reason == "" {
 			return errors.New("invalid analysis call location")
+		}
+		if call.Kind != "direct" && call.Kind != "indirect" && call.Kind != "interface" {
+			return errors.New("invalid analysis call kind")
+		}
+		if call.Kind != "interface" && call.SDK != "example.com/rpcx" && call.SDK != "example.com/rpcx/v2" {
+			return errors.New("invalid analysis SDK identity")
+		}
+		if call.Kind == "interface" && call.SDK != "" {
+			return errors.New("interface dispatch cannot claim a concrete SDK")
 		}
 		switch call.Status {
 		case "covered":
@@ -338,18 +366,6 @@ func validate(r Report, inputs map[string]string, module, inputSHA, toolSHA stri
 	for _, gap := range r.Gaps {
 		if !known(gap.File) || gap.Line < 0 || gap.Reason == "" {
 			return errors.New("invalid analysis gap")
-		}
-	}
-	accounted := map[string]bool{}
-	for path := range active {
-		accounted[path] = true
-	}
-	for _, gap := range r.Gaps {
-		accounted[gap.File] = true
-	}
-	for path := range inputs {
-		if rel, ok := strings.CutPrefix(path, module+"/"); ok && strings.HasSuffix(rel, ".go") && !strings.HasSuffix(rel, "_test.go") && !accounted[rel] {
-			return errors.New("production source omitted from analysis record")
 		}
 	}
 	return nil

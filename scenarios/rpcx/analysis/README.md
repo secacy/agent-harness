@@ -26,7 +26,27 @@ result, err := analysis.Inspect(ctx, analysis.Request{
 - `unknown`：helper、间接调用、接口分派、未证明的父 context、资源释放或控制流等，并记录对应 Gap。
 - `legacy`：v1 SDK 位置清单，用于之后与迁移候选比较，不表示已经证明 v1 的超时行为。
 
-这里的 covered 不等于规范全部满足：尚未证明 HTTP → service → inventory 的完整传播、错误与业务状态、所有其他构建配置或任意等价实现。吞错的返回分支仍可能匹配超时边界，必须由行为验证补足。完整基线/候选位置比较与运行时质量聚合将在后续接入；当前不输出质量 verdict，也未接入旧 Evaluate。
+这里的 covered 不等于规范全部满足：尚未证明 HTTP → service → inventory 的完整传播、错误与业务状态、所有其他构建配置或任意等价实现。吞错的返回分支仍可能匹配超时边界，必须由行为验证补足。当前不输出质量 verdict，也未接入旧 Evaluate。
+
+## 基线与候选比较
+
+```go
+comparison, err := analysis.Compare(baseline.Report, candidate.Report)
+```
+
+输入须来自可信 Inspect。Compare 不重新读取源码、SDK 或磁盘材料，不认证任意外部 JSON；它检查记录结构及可比性，并绑定本次消费的两个 Report。调用方负责保存 Comparison，后续离线复核仍须验证原始材料。
+
+分析报告使用 schema_version=2，新增 operation：通过类型信息求得的 RPC 方法字符串常量，如 Inventory.Reserve。方法值、动态表达式或无法确定的操作保留空指针；不会通过变量名猜值。旧 schema 1 报告仍是历史证据，需要当前工具重跑后才能参与比较。
+
+配对先按包路径与 Go 函数完整名分组。两侧各只有一个直接调用、RPC 方法常量相同且候选为 v2，才生成 Match；不依赖相同行号、相同文件或调用总数。ctx 参数适配不改变函数身份，正常增行和同包文件移动可配对。v1→v2 与已有 v2 保留分别记录，候选原有 unknown、violation 及原因不会改写为 pass。
+
+Changes 使用明确原因保留两侧位置：调用新增/删除、同函数多调用歧义、未知所属函数、间接调用、RPC 方法常量未知/变化，以及候选保留 v1。函数改名、移到另一个包或抽取 helper 可能表现为新增加删除；不猜测它们是否语义等价。基线完全没有调用也保留 baseline_calls_empty，需要外层明确适用性。
+
+Gaps 保留双方原有缺口并标记 baseline/candidate。空 Changes 只表示在声明规则下建立了位置对应；接收者或请求参数变化可能仍能配对，不能据此证明业务正确。后续质量门禁必须同时使用结构差异、原有分析状态、测试完整性与行为证据。
+
+两侧需使用相同工具材料、Go 版本、平台、架构、cgo 和 tag 集合；tag 的顺序/重复不影响可比性。加载未完成、旧 schema、字段非法或配置不一致返回 error 和空 Comparison，不能伪装成候选违规。结果 schema_version=1，保存两侧输入/工具摘要与 record_sha256；后者是 Go encoding/json 紧凑序列化 Report 的摘要，不是 analysis.json 缩进格式的文件摘要。输出顺序稳定，源记录数组顺序变化仍会改变其绑定摘要。
+
+## 分析范围与执行证据
 
 生产文件必须被活跃包或 Gap 解释。未激活文件列为 inactive_build_file；完全未进入包清单的目录仍逐文件登记 unlisted_build_file。reflect/unsafe/plugin 导入保留 dynamic_import 缺口。接口同名 Call 可能需要人工消歧；其他已确认非 SDK 的具体方法不会列为 RPC。
 

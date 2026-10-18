@@ -54,15 +54,16 @@ type packageFacts struct {
 }
 
 type callFact struct {
-	Package   string `json:"package"`
-	File      string `json:"file"`
-	Line      int    `json:"line"`
-	Function  string `json:"function"`
-	SDK       string `json:"sdk"`
-	Kind      string `json:"kind"`
-	Status    string `json:"status"`
-	Reason    string `json:"reason"`
-	TimeoutNS *int64 `json:"timeout_ns,omitempty"`
+	Package   string  `json:"package"`
+	File      string  `json:"file"`
+	Line      int     `json:"line"`
+	Function  string  `json:"function"`
+	SDK       string  `json:"sdk"`
+	Kind      string  `json:"kind"`
+	Status    string  `json:"status"`
+	Reason    string  `json:"reason"`
+	Operation *string `json:"operation,omitempty"`
+	TimeoutNS *int64  `json:"timeout_ns,omitempty"`
 }
 
 type gap struct {
@@ -108,7 +109,7 @@ func run() error {
 	if *tagText != "" {
 		tags = strings.Split(*tagText, ",")
 	}
-	r := report{SchemaVersion: 1, Status: "complete", InputSHA256: before, ToolSHA256: *tool,
+	r := report{SchemaVersion: 2, Status: "complete", InputSHA256: before, ToolSHA256: *tool,
 		Config:   configuration{runtime.Version(), runtime.GOOS, runtime.GOARCH, os.Getenv("CGO_ENABLED"), tags},
 		Packages: []packageFacts{}, Calls: []callFact{}, Gaps: []gap{}}
 	if r.Config.CGO != "0" || os.Getenv("GOPROXY") != "off" || os.Getenv("GOWORK") != "off" {

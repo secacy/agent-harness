@@ -80,6 +80,7 @@ func runInspect(t *testing.T, req Request) Result {
 
 func TestInspectFrozenCandidates(t *testing.T) {
 	cache := t.TempDir()
+	var baseline Report
 	for _, sample := range []struct {
 		patch                       string
 		covered, unknown, violation int
@@ -105,9 +106,21 @@ func TestInspectFrozenCandidates(t *testing.T) {
 				if call.File != "internal/inventory/client.go" || call.Function == "" || call.Line < 1 {
 					t.Fatalf("invalid call location: %+v", call)
 				}
+				if call.Operation == nil || !strings.HasPrefix(*call.Operation, "Inventory.") {
+					t.Fatalf("RPC operation not identified: %+v", call)
+				}
 			}
 			if r.Status != "complete" || len(r.Packages) != 4 || len(r.Calls) != 2 || counts["covered"] != sample.covered || counts["unknown"] != sample.unknown || counts["violation"] != sample.violation || counts["legacy"] != sample.legacy || len(r.Gaps) != sample.unknown {
 				t.Fatalf("unexpected result: %+v", r)
+			}
+			if sample.patch == "" {
+				baseline = r
+			} else {
+				comparison, err := Compare(baseline, r)
+				if err != nil || len(comparison.Matches) != 2 || len(comparison.Changes) != 0 || len(comparison.Gaps) != sample.unknown {
+					t.Fatalf("unexpected frozen candidate comparison: %+v %v", comparison, err)
+				}
+				logComparison(t, comparison)
 			}
 		})
 	}
@@ -250,7 +263,7 @@ func TestValidateRejectsCorruptAnalysisFacts(t *testing.T) {
 	for _, corruption := range []string{"binding", "tool", "configuration", "source-hash", "outside-path", "missing-source", "missing-collections", "missing-gap", "invented-covered", "invalid-status"} {
 		t.Run(corruption, func(t *testing.T) {
 			ns := int64(30_000_000_000)
-			r := Report{SchemaVersion: 1, Status: "complete", InputSHA256: "input", ToolSHA256: "tool",
+			r := Report{SchemaVersion: 2, Status: "complete", InputSHA256: "input", ToolSHA256: "tool",
 				Config:   Configuration{GoVersion: runtime.Version(), GOOS: runtime.GOOS, GOARCH: runtime.GOARCH, CGO: "0", Tags: []string{}},
 				Packages: []Package{{Path: "demo", Files: map[string]string{"client.go": "source"}, Ignored: []string{}}},
 				Calls:    []Call{{Package: "demo", File: "client.go", Line: 1, SDK: "example.com/rpcx/v2", Kind: "direct", Status: "covered", Reason: "direct_timeout_boundary", TimeoutNS: &ns}}, Gaps: []Gap{}}
@@ -349,6 +362,9 @@ func TestInspectDockerConfigurationAndCoverage(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	baselineReq := scenario(t, "")
+	baselineReq.Backend = backend
+	baseline := runInspect(t, baselineReq).Report
 	for _, patch := range []string{"correct-timeout", "wrong-duration", "explicit-tags"} {
 		t.Run(patch, func(t *testing.T) {
 			input := patch
@@ -381,6 +397,15 @@ func TestInspectDockerConfigurationAndCoverage(t *testing.T) {
 				if call.Status != want && !(patch == "explicit-tags" && call.Status == "unknown") {
 					t.Fatalf("unexpected container coverage: %+v", call)
 				}
+			}
+			if patch != "explicit-tags" {
+				comparison, err := Compare(baseline, r.Report)
+				if err != nil || len(comparison.Matches) != 2 || len(comparison.Changes) != 0 || len(comparison.Gaps) != wantGaps {
+					t.Fatalf("unexpected Docker comparison: %+v %v", comparison, err)
+				}
+				logComparison(t, comparison)
+			} else if _, err := Compare(baseline, r.Report); err == nil {
+				t.Fatal("different build tags were silently compared")
 			}
 			cmd := exec.Command("docker", "inspect", r.Command.ContainerID)
 			if err := cmd.Run(); err == nil {

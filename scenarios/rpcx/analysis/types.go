@@ -43,15 +43,62 @@ type Package struct {
 }
 
 type Call struct {
-	Package   string `json:"package"`
-	File      string `json:"file"`
-	Line      int    `json:"line"`
-	Function  string `json:"function"`
-	SDK       string `json:"sdk"`
-	Kind      string `json:"kind"`
-	Status    string `json:"status"`
+	Package   string  `json:"package"`
+	File      string  `json:"file"`
+	Line      int     `json:"line"`
+	Function  string  `json:"function"`
+	SDK       string  `json:"sdk"`
+	Kind      string  `json:"kind"`
+	Status    string  `json:"status"`
+	Reason    string  `json:"reason"`
+	Operation *string `json:"operation,omitempty"`
+	TimeoutNS *int64  `json:"timeout_ns,omitempty"`
+}
+
+// Comparison 只说明调用位置的对应和差异，不是最终质量判定。
+type Comparison struct {
+	SchemaVersion int             `json:"schema_version"`
+	Baseline      ReportBinding   `json:"baseline"`
+	Candidate     ReportBinding   `json:"candidate"`
+	Matches       []Match         `json:"matches"`
+	Changes       []Change        `json:"changes"`
+	Gaps          []ComparisonGap `json:"gaps"`
+}
+
+type ReportBinding struct {
+	InputSHA256  string `json:"input_sha256"`
+	ToolSHA256   string `json:"tool_sha256"`
+	RecordSHA256 string `json:"record_sha256"` // Report 紧凑 JSON 的摘要，不是磁盘格式摘要。
+}
+
+type Site struct {
+	Package   string  `json:"package"`
+	File      string  `json:"file"`
+	Line      int     `json:"line"`
+	Function  string  `json:"function"`
+	Operation *string `json:"operation,omitempty"`
+}
+
+type Match struct {
+	Baseline        Site   `json:"baseline"`
+	Candidate       Site   `json:"candidate"`
+	Operation       string `json:"operation"`
+	Kind            string `json:"kind"`
+	CandidateStatus string `json:"candidate_status"`
+	CandidateReason string `json:"candidate_reason"`
+}
+
+type Change struct {
 	Reason    string `json:"reason"`
-	TimeoutNS *int64 `json:"timeout_ns,omitempty"`
+	Baseline  []Site `json:"baseline"`
+	Candidate []Site `json:"candidate"`
+}
+
+type ComparisonGap struct {
+	Tree   string `json:"tree"`
+	File   string `json:"file"`
+	Line   int    `json:"line,omitempty"`
+	Reason string `json:"reason"`
 }
 
 type Gap struct {

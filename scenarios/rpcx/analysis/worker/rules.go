@@ -56,6 +56,19 @@ func inspectCalls(root, pkg string, fset *token.FileSet, file *ast.File, info *t
 			}
 		}
 		call := direct[sel]
+		if !dynamic && call != nil && selection.Kind() != types.MethodExpr {
+			index := 0
+			if sdk == "example.com/rpcx/v2" {
+				index = 1
+			}
+			if len(call.Args) > index {
+				value := info.Types[call.Args[index]].Value
+				if value != nil && value.Kind() == constant.String {
+					operation := constant.StringVal(value)
+					fact.Operation = &operation
+				}
+			}
+		}
 		switch {
 		case dynamic:
 			fact.SDK, fact.Kind, fact.Reason = "", "interface", "interface_dispatch"

@@ -135,10 +135,18 @@ env HARNESS_ANALYSIS_STUDY=1 GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=loca
 env GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly GOCACHE="$PWD/runs/go-cache" go test ./scenarios/rpcx/analysis/...
 ```
 
-运行可信临时副本，验证 v1 基线、四个冻结候选、别名/常量/跨文件、未知形态、配置缺口、协议及输入变化；输出 ANALYSIS 与 ANALYSIS_MATERIAL 记录。本地测试也会编译和执行可信加载程序，不执行候选测试或 init。不启用 Docker 时跳过真实容器对照。
+运行可信临时副本，验证 v1 基线、四个冻结候选、别名/常量/跨文件、未知形态、配置缺口、协议及输入变化；还比较实际调用增删、同数量替换、方法常量变化和文件移动。输出 ANALYSIS、ANALYSIS_MATERIAL 及 COMPARISON 记录。本地测试也会编译和执行可信加载程序，不执行候选测试或 init。不启用 Docker 时跳过真实容器对照。
 
 ```sh
 env HARNESS_DOCKER_TEST=1 GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly GOCACHE="$PWD/runs/go-cache" go test -json -count=1 ./scenarios/rpcx/analysis -run '^TestInspectDockerConfigurationAndCoverage$'
 ```
 
-需要已准备的固定镜像和本机 Docker。三个对照验证正确边界、错误超时和显式 tag 下的额外调用，检查实际配置、材料绑定及容器回收；不访问模型服务。分析结果是有限结构事实，完整质量判定仍待接入。API 与材料说明见 [analysis](../scenarios/rpcx/analysis/README.md)。
+需要已准备的固定镜像和本机 Docker。先分析 v1 基线，再运行三个对照：正确边界、错误超时和显式 tag 下的额外调用。默认配置下的两份候选可与基线配对，显式 tag 与默认基线不兼容而拒绝比较；同时检查实际配置、材料绑定及容器回收，不访问模型服务。分析和比较结果是有限结构事实，完整质量判定仍待接入。API 与材料说明见 [analysis](../scenarios/rpcx/analysis/README.md)。
+
+只运行位置比较机制测试：
+
+```sh
+env GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly GOCACHE="$PWD/runs/go-cache" go test ./scenarios/rpcx/analysis -run '^TestCompare(CorrespondenceAndChanges|RejectsIncompatibleOrMalformedReports|OrderingDoesNotGuessCorrespondence)$'
+```
+
+该子集只消费构造的分析记录，不启动 Go 加载子进程或 Docker；实际源码与容器联调仍用上面两条命令。
