@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "spec": "specs/v0.2.0.md",
+  "cases": [
+    {
+      "id": "correct-timeout",
+      "patch": "patches/correct-timeout.patch",
+      "expected": {
+        "build": "pass",
+        "business_tests": "pass",
+        "reference_checks": "pass",
+        "failure_rules": [],
+        "required_failures": []
+      }
+    },
+    {
+      "id": "missing-timeout",
+      "patch": "patches/missing-timeout.patch",
+      "expected": {
+        "build": "pass",
+        "business_tests": "pass",
+        "reference_checks": "fail",
+        "failure_rules": [
+          "TIME-001",
+          "TIME-003"
+        ],
+        "required_failures": [
+          "example.com/demo-orders/cmd/server/TestReferenceBoundary/Reserve/default",
+          "example.com/demo-orders/cmd/server/TestReferenceBoundary/Release/default"
+        ]
+      }
+    },
+    {
+      "id": "release-missing-timeout",
+      "patch": "patches/release-missing-timeout.patch",
+      "expected": {
+        "build": "pass",
+        "business_tests": "pass",
+        "reference_checks": "fail",
+        "failure_rules": [
+          "TIME-001",
+          "TIME-003"
+        ],
+        "required_failures": [
+          "example.com/demo-orders/cmd/server/TestReferenceBoundary/Release/default"
+        ]
+      }
+    },
+    {
+      "id": "wrong-duration",
+      "patch": "patches/wrong-duration.patch",
+      "expected": {
+        "build": "pass",
+        "business_tests": "pass",
+        "reference_checks": "fail",
+        "failure_rules": [
+          "TIME-001",
+          "TIME-002"
+        ],
+        "required_failures": [
+          "example.com/demo-orders/cmd/server/TestReferenceBoundary/Reserve/default",
+          "example.com/demo-orders/cmd/server/TestReferenceBoundary/Release/default"
+        ]
+      }
+    }
+  ]
+}

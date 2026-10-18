@@ -10,6 +10,26 @@
 
 离线运行两个 SDK、v1 业务基线和五种候选补丁。输出本次 `report.json` 路径；预期反例被拒绝且其余预期均满足时返回 0。每次运行使用新目录，历史产物保留在 Git 忽略的 `runs/`。
 
+## T3 超时场景验收
+
+先按下文准备固定 Docker 工具链镜像，再运行：
+
+```sh
+./scripts/verify-rpcx-t3.sh
+```
+
+默认禁网 Docker 执行，核对 freeze.json 的冻结材料，再检查两个 SDK、业务基线、四个候选和真实 30 秒到期。四个候选均需通过原有 10 个业务测试；参考检查只有正确补丁通过，其余候选按条款失败。原 SDK 与正确候选的实际到期必须通过，报告才可出现 `accepted: true`。每次创建 `runs/rpcx-t3-*/`；冷编译及两组实际到期使完整验收需要数分钟，不访问模型 API。
+
+开发期间可以执行快速联调：
+
+```sh
+./scripts/verify-rpcx-t3.sh --development --quick --trusted-local
+```
+
+该命令显式使用可信宿主，跳过慢检查，允许未冻结材料。匹配预期可返回 0，但 `accepted` 始终为 false；`--quick` 必须与 `--development` 一起使用。省略 `--trusted-local` 可在 Docker 中开发联调。正式模式下材料变化会失败，不自动更新 freeze.json。
+
+报告包含输入文件摘要、执行后端与命令日志、原测试事件、参考检查 pass/fail/inconclusive、失败条款、补丁重放及生产代码绑定。预期反例的失败算匹配；未执行、执行错误或观测不充分不能冒充预期反例失败。这是 M2.1 离线场景证据，没有运行时质量判定；现有 `cmd/harness` 尚未接入 T3。检查边界见 [T3 场景说明](../scenarios/rpcx/t3/README.md)。
+
 ## 验证工具自身测试
 
 ```sh

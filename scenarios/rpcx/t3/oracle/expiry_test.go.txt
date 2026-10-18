@@ -1,0 +1,97 @@
+package main
+
+import (
+	"context"
+	"errors"
+	"testing"
+	"time"
+
+	"example.com/rpcx/v2"
+)
+
+func TestReferenceExpiry(t *testing.T) {
+	for _, operation := range []string{"Place", "Cancel"} {
+		t.Run(operation, func(t *testing.T) {
+			t.Parallel()
+			stop, abort := context.WithCancel(context.Background())
+			defer abort()
+			entered := make(chan context.Context, 1)
+			active := false
+			service := referenceService(t, func(ctx context.Context, _ string, _ rpcx.Request) error {
+				if !active {
+					return nil
+				}
+				entered <- ctx
+				select {
+				case <-ctx.Done():
+					return ctx.Err()
+				case <-stop.Done():
+					return errors.New("reference observation aborted")
+				}
+			})
+			if operation == "Cancel" {
+				if err := service.Place(context.Background(), "expiry-order", "slow-sku", 9); err != nil {
+					t.Fatal(err)
+				}
+			}
+			active = true
+			before := time.Now()
+			result := make(chan error, 1)
+			go func() {
+				if operation == "Place" {
+					result <- service.Place(context.Background(), "expiry-order", "slow-sku", 9)
+				} else {
+					result <- service.Cancel(context.Background(), "expiry-order")
+				}
+			}()
+			timer := time.NewTimer(40 * time.Second)
+			defer timer.Stop()
+			// 每条路径都等待调用退出；无法回收时让进程超时成为执行错误。
+			defer func() {
+				abort()
+				if result != nil {
+					select {
+					case <-result:
+					case <-time.After(2 * time.Second):
+						panic("reference call did not stop")
+					}
+				}
+			}()
+			var observed context.Context
+			select {
+			case observed = <-entered:
+			case err := <-result:
+				result = nil
+				referenceFailure(t, "TIME-004", "RPC returned before reaching expiry backend: "+errorText(err))
+				return
+			case <-timer.C:
+				t.Skip("REFERENCE_INCONCLUSIVE backend was not reached within 40s")
+			}
+			if !referenceDeadline(t, observed, before, time.Now(), context.Background()) {
+				return
+			}
+			deadline, _ := observed.Deadline()
+			select {
+			case err := <-result:
+				result = nil
+				if time.Now().Before(deadline) || !errors.Is(err, context.DeadlineExceeded) || !errors.Is(observed.Err(), context.DeadlineExceeded) {
+					referenceFailure(t, "TIME-004", "actual expiry or error propagation is incorrect")
+				}
+				_, exists := service.Get("expiry-order")
+				if exists != (operation == "Cancel") {
+					referenceFailure(t, "TIME-004", "expiry changed order state")
+				}
+				t.Logf("REFERENCE_OBSERVATION elapsed_ns=%d", time.Since(before).Nanoseconds())
+			case <-timer.C:
+				t.Skip("REFERENCE_INCONCLUSIVE expiry was not observed within 40s")
+			}
+		})
+	}
+}
+
+func errorText(err error) string {
+	if err == nil {
+		return "nil"
+	}
+	return err.Error()
+}
