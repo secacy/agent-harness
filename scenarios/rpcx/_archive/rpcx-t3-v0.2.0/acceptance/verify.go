@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/secacy/agent-harness/internal/execution"
+	"example.com/agent-harness/internal/execution"
 )
 
 type verifier struct {

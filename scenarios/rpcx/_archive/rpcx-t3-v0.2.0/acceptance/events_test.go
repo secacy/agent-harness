@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/secacy/agent-harness/internal/execution"
+	"example.com/agent-harness/internal/execution"
 )
 
 func eventStream(t *testing.T, events ...map[string]string) []byte {

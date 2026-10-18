@@ -16,6 +16,7 @@ import (
 
 	"github.com/secacy/agent-harness/internal/execution"
 	"github.com/secacy/agent-harness/scenarios/rpcx/checks"
+	"github.com/secacy/agent-harness/scenarios/rpcx/t3data"
 )
 
 //go:embed types.go files.go events.go reference.go verify.go cmd/verify/main.go
@@ -50,17 +51,15 @@ func Verify(ctx context.Context, config Config) (report *Report, err error) {
 	if err := validateManifest(manifest, data); err != nil {
 		return nil, err
 	}
-	t3, err := readTree(ctx, config.T3Directory)
+	t3, err := t3data.Read(ctx, config.T3Directory)
 	if err != nil {
 		return nil, err
 	}
-	var frozenT3 map[string]string
-	if err := decode(t3["freeze.json"], &frozenT3); err != nil {
+	t3Frozen, err := t3data.Frozen(t3)
+	if err != nil {
 		return nil, err
 	}
-	actual := hashes(t3)
-	delete(actual, "freeze.json")
-	if !reflect.DeepEqual(actual, frozenT3) || digest(t3["specs/v0.2.0.md"]) != manifest.SpecSHA256 {
+	if !t3Frozen || digest(t3["specs/v0.2.0.md"]) != manifest.SpecSHA256 {
 		return nil, errors.New("T3 inputs differ from frozen scene or specification")
 	}
 	freeze, err := os.ReadFile(filepath.Join(config.Directory, "freeze.json"))
@@ -102,17 +101,17 @@ func Verify(ctx context.Context, config Config) (report *Report, err error) {
 	if config.Development {
 		mode = "development"
 	}
-	toolFiles := map[string][]byte{}
+	toolFiles := map[string][]byte{"t3data/data.go.txt": []byte(t3data.Source())}
 	for _, name := range []string{"types.go", "files.go", "events.go", "reference.go", "verify.go", "cmd/verify/main.go"} {
 		source, _ := tool.ReadFile(name)
 		toolFiles[name+".txt"] = source
 	}
-	report = &Report{SchemaVersion: 1, Directory: dir, Mode: mode, Backend: config.Backend.Info(), StartedAt: time.Now().UTC(),
+	report = &Report{SchemaVersion: 2, T3DataVersion: t3data.Version, Directory: dir, Mode: mode, Backend: config.Backend.Info(), StartedAt: time.Now().UTC(),
 		DataSHA256: treeHash(data), ToolSHA256: treeHash(toolFiles), T3SHA256: treeHash(t3), FreezeMatched: frozen, FullSelection: len(selection) == 0,
 		SlowEnabled: !config.Quick, Counts: map[string]int{}, Results: []Result{}}
 	defer func() {
 		after, e1 := dataset(context.WithoutCancel(ctx), config.Directory)
-		t3After, e2 := readTree(context.WithoutCancel(ctx), config.T3Directory)
+		t3After, e2 := t3data.Read(context.WithoutCancel(ctx), config.T3Directory)
 		freezeAfter, e3 := os.ReadFile(filepath.Join(config.Directory, "freeze.json"))
 		report.InputsUnchanged = e1 == nil && e2 == nil && e3 == nil && treeHash(after) == report.DataSHA256 && treeHash(t3After) == report.T3SHA256 && string(freezeAfter) == string(freeze)
 		if !report.InputsUnchanged {

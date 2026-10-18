@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/secacy/agent-harness/internal/execution"
-	"github.com/secacy/agent-harness/scenarios/rpcx/t3/acceptance"
+	"github.com/secacy/agent-harness/scenarios/rpcx/acceptance"
 )
 
 func main() {

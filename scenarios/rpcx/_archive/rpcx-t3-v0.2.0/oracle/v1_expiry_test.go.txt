@@ -1,0 +1,66 @@
+package rpcx
+
+import (
+	"context"
+	"errors"
+	"testing"
+	"time"
+)
+
+func TestReferenceV1Expiry(t *testing.T) {
+	stop, abort := context.WithCancel(context.Background())
+	defer abort()
+	entered := make(chan context.Context, 1)
+	t.Cleanup(Register(t.Name(), func(ctx context.Context, _ string, _ Request) error {
+		entered <- ctx
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-stop.Done():
+			return errors.New("reference observation aborted")
+		}
+	}))
+	c, err := NewClient(t.Name())
+	if err != nil {
+		t.Fatal(err)
+	}
+	before := time.Now()
+	result := make(chan error, 1)
+	go func() { result <- c.Call("reference-expiry", Request{}) }()
+	defer func() {
+		abort()
+		if result != nil {
+			select {
+			case <-result:
+			case <-time.After(2 * time.Second):
+				panic("reference v1 call did not stop")
+			}
+		}
+	}()
+	timer := time.NewTimer(40 * time.Second)
+	defer timer.Stop()
+	var observed context.Context
+	select {
+	case observed = <-entered:
+	case <-timer.C:
+		t.Skip("REFERENCE_INCONCLUSIVE v1 backend not reached within 40s")
+	}
+	arrived := time.Now()
+	deadline, ok := observed.Deadline()
+	if !ok || deadline.Before(before.Add(30*time.Second)) || deadline.After(arrived.Add(30*time.Second)) {
+		t.Fatal(`REFERENCE_FINDING {"rule":"TIME-001","detail":"v1 default deadline is incorrect"}`)
+	}
+	if arrived.Sub(before) > 250*time.Millisecond {
+		t.Skip("REFERENCE_INCONCLUSIVE v1 observation window exceeds 250ms")
+	}
+	select {
+	case err := <-result:
+		result = nil
+		if !errors.Is(err, context.DeadlineExceeded) || time.Now().Before(deadline) {
+			t.Fatal(`REFERENCE_FINDING {"rule":"TIME-004","detail":"v1 did not expire correctly"}`)
+		}
+		t.Logf("REFERENCE_OBSERVATION elapsed_ns=%d", time.Since(before).Nanoseconds())
+	case <-timer.C:
+		t.Skip("REFERENCE_INCONCLUSIVE v1 did not expire within 40s")
+	}
+}

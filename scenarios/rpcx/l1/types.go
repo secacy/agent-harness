@@ -96,6 +96,7 @@ type Report struct {
 	DataSHA256      string            `json:"data_sha256"`
 	ToolSHA256      string            `json:"tool_sha256"`
 	T3SHA256        string            `json:"t3_sha256"`
+	T3DataVersion   string            `json:"t3_data_version"`
 	FreezeMatched   bool              `json:"freeze_matched"`
 	InputsUnchanged bool              `json:"inputs_unchanged"`
 	FullSelection   bool              `json:"full_selection"`

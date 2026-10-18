@@ -1,0 +1,296 @@
+package main
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+	"time"
+
+	"example.com/demo-orders/internal/inventory"
+	"example.com/demo-orders/internal/orders"
+	"example.com/rpcx/v2"
+)
+
+// referenceFailure 的记录仅供离线场景验收解析，不参与运行时门禁。
+func referenceFailure(t *testing.T, rule, detail string) {
+	t.Helper()
+	data, _ := json.Marshal(struct {
+		Rule   string `json:"rule"`
+		Detail string `json:"detail"`
+	}{rule, detail})
+	t.Errorf("REFERENCE_FINDING %s", data)
+}
+
+func referenceDeadline(t *testing.T, ctx context.Context, before, arrived time.Time, parent context.Context) bool {
+	t.Helper()
+	if arrived.Sub(before) > 250*time.Millisecond {
+		t.Skipf("REFERENCE_INCONCLUSIVE observation window %s exceeds 250ms", arrived.Sub(before))
+	}
+	deadline, ok := ctx.Deadline()
+	if !ok {
+		referenceFailure(t, "TIME-001", "RPC has no deadline")
+		return false
+	}
+	low, high := before.Add(30*time.Second), arrived.Add(30*time.Second)
+	rule := "TIME-001"
+	if d, ok := parent.Deadline(); ok && d.Before(low) {
+		low, high, rule = d, d, "TIME-002"
+	}
+	if deadline.Before(low) || deadline.After(high) {
+		referenceFailure(t, rule, "RPC deadline is outside the permitted interval")
+		return false
+	}
+	t.Logf("REFERENCE_OBSERVATION window_ns=%d deadline_in_ns=%d", arrived.Sub(before).Nanoseconds(), deadline.Sub(arrived).Nanoseconds())
+	return true
+}
+
+func referenceService(t *testing.T, backend rpcx.Handler) *orders.Service {
+	t.Helper()
+	t.Cleanup(rpcx.Register(t.Name(), backend))
+	inv, err := inventory.New(t.Name())
+	if err != nil {
+		t.Fatal(err)
+	}
+	return orders.New(inv)
+}
+
+func TestReferenceBoundary(t *testing.T) {
+	for _, operation := range []string{"Reserve", "Release"} {
+		for _, mode := range []string{"default", "short-parent", "long-parent", "metadata", "already-cancelled", "cancel-in-backend", "release-success", "release-error", "repeat"} {
+			t.Run(operation+"/"+mode, func(t *testing.T) {
+				type key struct{}
+				parent, cancel := context.WithCancel(context.WithValue(context.Background(), key{}, "reference-value"))
+				defer cancel()
+				if mode == "short-parent" || mode == "long-parent" {
+					duration := 5 * time.Second
+					if mode == "long-parent" {
+						duration = 60 * time.Second
+					}
+					var end context.CancelFunc
+					parent, end = context.WithTimeout(parent, duration)
+					defer end()
+				}
+				if mode == "already-cancelled" {
+					cancel()
+				}
+				var observed context.Context
+				var first context.Context
+				calls := 0
+				before := time.Now()
+				ordinary := errors.New("reference backend error")
+				t.Cleanup(rpcx.Register(t.Name(), func(ctx context.Context, method string, req rpcx.Request) error {
+					calls++
+					observed = ctx
+					if method != "Inventory."+operation || req.SKU != "reference-sku" || req.Quantity != 7 {
+						referenceFailure(t, "BEHAVIOR-001", "RPC arguments changed")
+					}
+					switch mode {
+					case "default", "short-parent", "long-parent":
+						referenceDeadline(t, ctx, before, time.Now(), parent)
+					case "metadata":
+						if ctx.Value(key{}) != "reference-value" {
+							referenceFailure(t, "TIME-002", "request value lost")
+						}
+					case "cancel-in-backend":
+						cancel()
+						select {
+						case <-ctx.Done():
+						default:
+							referenceFailure(t, "TIME-002", "parent cancellation did not propagate")
+						}
+						return ctx.Err()
+					case "release-error":
+						return ordinary
+					case "repeat":
+						if ctx.Err() != nil || (first != nil && first == ctx) {
+							referenceFailure(t, "TIME-003", "call reused invalid context")
+						}
+					}
+					return nil
+				}))
+				c, err := inventory.New(t.Name())
+				if err != nil {
+					t.Fatal(err)
+				}
+				invoke := func() error {
+					if operation == "Reserve" {
+						return c.Reserve(parent, "reference-sku", 7)
+					}
+					return c.Release(parent, "reference-sku", 7)
+				}
+				err = invoke()
+				wantCalls := 1
+				if mode == "already-cancelled" {
+					wantCalls = 0
+				}
+				if calls != wantCalls {
+					referenceFailure(t, "TIME-002", "unexpected backend call count")
+				}
+				switch mode {
+				case "already-cancelled", "cancel-in-backend":
+					if !errors.Is(err, context.Canceled) {
+						referenceFailure(t, "TIME-004", "cancellation error lost")
+					}
+				case "release-error":
+					if !errors.Is(err, ordinary) {
+						referenceFailure(t, "TIME-004", "ordinary error lost")
+					}
+				default:
+					if err != nil {
+						referenceFailure(t, "TIME-004", "unexpected RPC failure")
+					}
+				}
+				if mode == "release-success" || mode == "release-error" || mode == "repeat" {
+					if observed == nil || !errors.Is(observed.Err(), context.Canceled) {
+						referenceFailure(t, "TIME-003", "derived context not released after return")
+					}
+					if parent.Err() != nil {
+						referenceFailure(t, "TIME-003", "parent was cancelled by the call")
+					}
+				}
+				if mode == "repeat" {
+					first = observed
+					if err := invoke(); err != nil {
+						referenceFailure(t, "TIME-003", "second call failed")
+					}
+					if calls != 2 {
+						referenceFailure(t, "TIME-003", "second call did not reach backend")
+					}
+					if observed == nil || !errors.Is(observed.Err(), context.Canceled) {
+						referenceFailure(t, "TIME-003", "second context was not released")
+					}
+				}
+			})
+		}
+	}
+}
+
+func TestReferenceRequest(t *testing.T) {
+	for _, operation := range []string{"Place", "Cancel"} {
+		for _, mode := range []string{"metadata", "already-cancelled", "expired-parent", "cancel-in-backend"} {
+			t.Run(operation+"/"+mode, func(t *testing.T) {
+				type key struct{}
+				parent, cancel := context.WithCancel(context.WithValue(context.Background(), key{}, "http-reference"))
+				defer cancel()
+				if mode == "expired-parent" {
+					var end context.CancelFunc
+					parent, end = context.WithDeadline(parent, time.Now().Add(-time.Second))
+					defer end()
+				}
+				active, calls := false, 0
+				service := referenceService(t, func(ctx context.Context, method string, req rpcx.Request) error {
+					if !active {
+						return nil
+					}
+					calls++
+					methodWant := "Inventory.Reserve"
+					if operation == "Cancel" {
+						methodWant = "Inventory.Release"
+					}
+					if method != methodWant || req.SKU != "http-sku" || req.Quantity != 4 {
+						referenceFailure(t, "BEHAVIOR-001", "request RPC changed")
+					}
+					if ctx.Value(key{}) != "http-reference" {
+						referenceFailure(t, "TIME-002", "request context value lost")
+					}
+					if mode == "cancel-in-backend" {
+						cancel()
+						return ctx.Err()
+					}
+					return nil
+				})
+				if operation == "Cancel" {
+					if err := service.Place(context.Background(), "ref-order", "http-sku", 4); err != nil {
+						t.Fatal(err)
+					}
+				}
+				active = true
+				if mode == "already-cancelled" {
+					cancel()
+				}
+				h := &Handler{service: service}
+				w := httptest.NewRecorder()
+				if operation == "Place" {
+					h.Place(w, httptest.NewRequest(http.MethodPost, "/orders", strings.NewReader(`{"ID":"ref-order","SKU":"http-sku","Quantity":4}`)).WithContext(parent))
+				} else {
+					h.Cancel(w, httptest.NewRequest(http.MethodDelete, "/orders?id=ref-order", nil).WithContext(parent))
+				}
+				wantCalls, wantStatus := 1, http.StatusBadGateway
+				if mode == "already-cancelled" || mode == "expired-parent" {
+					wantCalls = 0
+				}
+				if mode == "metadata" {
+					wantStatus = http.StatusCreated
+					if operation == "Cancel" {
+						wantStatus = http.StatusNoContent
+					}
+				}
+				if calls != wantCalls {
+					referenceFailure(t, "TIME-002", "unexpected request backend count")
+				}
+				if w.Code != wantStatus {
+					referenceFailure(t, "TIME-004", "request error status lost")
+				}
+				_, exists := service.Get("ref-order")
+				wantExists := operation == "Place" && mode == "metadata" || operation == "Cancel" && mode != "metadata"
+				if exists != wantExists {
+					referenceFailure(t, "TIME-004", "order state changed on RPC failure")
+				}
+			})
+		}
+	}
+}
+
+func TestReferenceServiceError(t *testing.T) {
+	for _, operation := range []string{"Place", "Cancel"} {
+		for _, mode := range []string{"cancelled", "expired", "ordinary"} {
+			t.Run(operation+"/"+mode, func(t *testing.T) {
+				active, calls := false, 0
+				ordinary := errors.New("service reference failure")
+				service := referenceService(t, func(context.Context, string, rpcx.Request) error {
+					if !active {
+						return nil
+					}
+					calls++
+					return ordinary
+				})
+				if operation == "Cancel" {
+					if err := service.Place(context.Background(), "service-ref", "service-sku", 6); err != nil {
+						t.Fatal(err)
+					}
+				}
+				active = true
+				ctx, end := context.WithCancel(context.Background())
+				defer end()
+				want, wantCalls := ordinary, 1
+				if mode == "cancelled" {
+					end()
+					want, wantCalls = context.Canceled, 0
+				}
+				if mode == "expired" {
+					var stop context.CancelFunc
+					ctx, stop = context.WithDeadline(ctx, time.Now().Add(-time.Second))
+					defer stop()
+					want, wantCalls = context.DeadlineExceeded, 0
+				}
+				var err error
+				if operation == "Place" {
+					err = service.Place(ctx, "service-ref", "service-sku", 6)
+				} else {
+					err = service.Cancel(ctx, "service-ref")
+				}
+				if !errors.Is(err, want) || calls != wantCalls {
+					referenceFailure(t, "TIME-004", "service lost error identity or called cancelled backend")
+				}
+				_, exists := service.Get("service-ref")
+				if exists != (operation == "Cancel") {
+					referenceFailure(t, "TIME-004", "service committed failed RPC")
+				}
+			})
+		}
+	}
+}

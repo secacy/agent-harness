@@ -3,3 +3,4 @@
 scenarios/rpcx/cases/patches/*.patch -whitespace
 scenarios/rpcx/t3/cases/patches/*.patch -whitespace
 scenarios/rpcx/l1/patches/*.patch -whitespace
+scenarios/rpcx/_archive/rpcx-t3-v0.2.0/cases/patches/*.patch -whitespace

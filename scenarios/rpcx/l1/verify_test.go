@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/secacy/agent-harness/internal/execution"
+	"github.com/secacy/agent-harness/scenarios/rpcx/t3data"
 )
 
 func TestDatasetAndReplay(t *testing.T) {
@@ -217,6 +218,28 @@ func TestFrozenInputGuardsStopBeforeExecution(t *testing.T) {
 			}
 			if r, err := Verify(context.Background(), cfg); err == nil || r != nil || backend.calls != 0 {
 				t.Fatal("tampered inputs reached execution", r, err, backend.calls)
+			}
+		})
+	}
+}
+
+func TestT3DataGuardsStopBeforeExecution(t *testing.T) {
+	for _, path := range []string{"specs/v0.2.0.md", "fixtures/demo-orders/go.mod", "oracle/expiry_test.go.txt", "fixtures/extra.go", "freeze.json"} {
+		t.Run(path, func(t *testing.T) {
+			files, err := t3data.Read(context.Background(), "../t3")
+			if err != nil {
+				t.Fatal(err)
+			}
+			root := t.TempDir()
+			if err := writeTree(root, files); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(filepath.Join(root, path), []byte("changed"), 0644); err != nil {
+				t.Fatal(err)
+			}
+			backend := &forbiddenExecution{}
+			if r, err := Verify(context.Background(), Config{Directory: ".", T3Directory: root, RunsDir: t.TempDir(), Backend: backend}); err == nil || r != nil || backend.calls != 0 {
+				t.Fatal("changed T3 data reached execution", r, err, backend.calls)
 			}
 		})
 	}

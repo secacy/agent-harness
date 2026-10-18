@@ -28,7 +28,7 @@
 
 该命令显式使用可信宿主，跳过慢检查，允许未冻结材料。匹配预期可返回 0，但 `accepted` 始终为 false；`--quick` 必须与 `--development` 一起使用。省略 `--trusted-local` 可在 Docker 中开发联调。正式模式下材料变化会失败，不自动更新 freeze.json。
 
-当前检出存在一项已知限制：提交 dc5227b 调整模块路径时修改了四份被纳入 T3 冻结清单的验收源码，默认正式 T3/L1 验收会拒绝这个目录。本轮 L1 回归使用从 1afa117 提取并逐文件核对 freeze.json 的独立快照；没有修改冻结清单。具体路径及复核条件见 [M2 工作记录第 23 节](worklog/2026-10-18-m2-evidence-gate.md#23-真实实验后的支持边界评审与测试导入扩展)，后续需处理验收驱动与冻结材料的边界。
+当前入口使用独立数据发布 rpcx-t3-data-v1，验收驱动位于 scenarios/rpcx/acceptance；数据清单与工具源码分别绑定。旧 T3 完整快照及原清单保存在 scenarios/rpcx/_archive/rpcx-t3-v0.2.0，活动 27 份数据与旧项字节一致。模块路径调整造成的旧混合清单问题及处理依据见 [工作记录第 24 节](worklog/2026-10-18-m2-evidence-gate.md#24-冻结数据与验收工具的版本边界) 和 [ADR-005](adr/005-versioned-evaluation-data.md)。
 
 报告包含输入文件摘要、执行后端与命令日志、原测试事件、参考检查 pass/fail/inconclusive、失败条款、补丁重放及生产代码绑定。预期反例的失败算匹配；未执行、执行错误或观测不充分不能冒充预期反例失败。这是 M2.1 离线场景证据，没有运行时质量判定；`cmd/harness` 的 T3 接入另见下文单仓库任务入口。检查边界见 [T3 场景说明](../scenarios/rpcx/t3/README.md)。
 

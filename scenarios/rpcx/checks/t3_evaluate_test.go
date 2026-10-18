@@ -13,6 +13,7 @@ import (
 
 	"github.com/secacy/agent-harness/internal/execution"
 	"github.com/secacy/agent-harness/internal/quality"
+	"github.com/secacy/agent-harness/scenarios/rpcx/t3data"
 )
 
 func preparedT3(t *testing.T, patch string) EvaluationRequest {
@@ -274,10 +275,11 @@ func TestT3PinsMatchFrozenScene(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var frozen map[string]string
-	if err := json.Unmarshal(data, &frozen); err != nil {
+	var manifest t3data.Manifest
+	if err := json.Unmarshal(data, &manifest); err != nil {
 		t.Fatal(err)
 	}
+	frozen := manifest.Files
 	data, err = t3Materials.ReadFile("t3-policy.json")
 	if err != nil {
 		t.Fatal(err)
