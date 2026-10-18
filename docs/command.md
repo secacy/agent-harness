@@ -164,3 +164,19 @@ env HARNESS_DOCKER_TEST=1 GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local G
 ```
 
 需要已准备的固定镜像和本机 Docker。运行正确补丁、宿主适配、删除断言、等价 helper 重写四组对照：每组原十个测试均实际通过且名称相同，结构检查分别 preserved/preserved/violated/unknown。输出 BUSINESS_TEST_EVENTS 与 TEST_STRATEGY，核对容器回收。这是可信开发样例的机制对照，未代表任意测试语义等价或完整 T3 门禁，API 及限制见 [testintegrity](../scenarios/rpcx/testintegrity/README.md)。
+
+## M2.3 可信运行时行为
+
+```sh
+env GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly GOCACHE="$PWD/runs/go-cache" go test -json -count=1 ./scenarios/rpcx/behavior
+```
+
+默认只运行装配、摘要、事件完整性和执行故障机制测试，不启动 Docker 或等待 30 秒。接口及产物说明见 [behavior](../scenarios/rpcx/behavior/README.md)。
+
+```sh
+env HARNESS_DOCKER_TEST=1 GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly GOCACHE="$PWD/runs/go-cache" go test -json -count=1 ./scenarios/rpcx/behavior -run '^TestDocker(FrozenBehavior|BehaviorCounterexamples|DeadlineWithoutTimer)$'
+```
+
+在固定镜像运行四个冻结候选、丢失父 context/未释放/吞错/生产入口退出，以及“表面期限正确但不安装计时器”的反例，共 9 组、11 条容器命令。正确候选与最后一组反例会执行真实到期检查，整组约三分钟；不访问网络或模型。输出 TRUSTED_BEHAVIOR、原始事件及执行元数据；最后一组还将完整证据保留在 runs/rpcx-behavior-deadline-only-*，报告该路径。其余组使用测试临时目录。
+
+可用 `HARNESS_BEHAVIOR_TEST=1` 运行 `-run '^TestLocalFrozenBehavior$'`，仅适用于仓库中可信的四个手工夹具。该入口不代表任意候选代码可以安全地在宿主执行；本轮正式联调使用 Docker。

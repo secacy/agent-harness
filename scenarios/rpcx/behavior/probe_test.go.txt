@@ -1,0 +1,320 @@
+package main
+
+import (
+	"context"
+	"errors"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+	"time"
+
+	"example.com/demo-orders/internal/inventory"
+	"example.com/demo-orders/internal/orders"
+	"example.com/rpcx/v2"
+)
+
+type harnessKey struct{}
+
+func harnessClient(t *testing.T, handler rpcx.Handler) *inventory.Client {
+	t.Helper()
+	t.Cleanup(rpcx.Register(t.Name(), handler))
+	client, err := inventory.New(t.Name())
+	if err != nil {
+		t.Fatal(err)
+	}
+	return client
+}
+
+func harnessArguments(t *testing.T, method, expected string, request rpcx.Request) {
+	t.Helper()
+	if method != "Inventory."+expected || request.SKU != "probe-cedar" || request.Quantity != 7 {
+		t.Errorf("RPC mismatch: method=%s request=%+v", method, request)
+	}
+}
+
+func TestHarnessBoundary(t *testing.T) {
+	for _, op := range []string{"Reserve", "Release"} {
+		t.Run(op, func(t *testing.T) {
+			for _, scenario := range []string{"default", "short-parent", "long-parent", "canceled", "expired", "cancel-in-flight", "backend-error", "repeat"} {
+				t.Run(scenario, func(t *testing.T) {
+					base := context.WithValue(context.Background(), harnessKey{}, t.Name())
+					parent, cancel := context.WithCancel(base)
+					defer cancel()
+					if scenario == "short-parent" || scenario == "long-parent" || scenario == "expired" {
+						duration := 4 * time.Second
+						if scenario == "long-parent" {
+							duration = 75 * time.Second
+						} else if scenario == "expired" {
+							duration = -time.Second
+						}
+						var stop context.CancelFunc
+						parent, stop = context.WithTimeout(parent, duration)
+						defer stop()
+					}
+					if scenario == "canceled" {
+						cancel()
+					}
+					calls := 0
+					var captured context.Context
+					var start time.Time
+					backendError := errors.New("probe stock unavailable")
+					client := harnessClient(t, func(ctx context.Context, method string, request rpcx.Request) error {
+						calls++
+						captured = ctx
+						observed := time.Now()
+						harnessArguments(t, method, op, request)
+						if ctx.Err() != nil || ctx.Value(harnessKey{}) != t.Name() {
+							t.Error("active parent metadata or cancellation state was lost")
+						}
+						deadline, ok := ctx.Deadline()
+						if !ok {
+							t.Error("RPC has no deadline")
+						} else if scenario == "short-parent" {
+							want, _ := parent.Deadline()
+							if !deadline.Equal(want) {
+								t.Error("earlier parent deadline was changed")
+							}
+						} else if observed.Sub(start) > 250*time.Millisecond {
+							t.Skip("deadline observation window exceeded 250ms")
+						} else if deadline.Before(start.Add(30*time.Second)) || deadline.After(observed.Add(30*time.Second)) {
+							t.Errorf("deadline outside per-call 30s window: %s", deadline.Sub(start))
+						}
+						if scenario == "cancel-in-flight" {
+							cancel()
+							select {
+							case <-ctx.Done():
+								return ctx.Err()
+							case <-time.After(500 * time.Millisecond):
+								t.Error("parent cancellation did not reach active RPC")
+								return backendError
+							}
+						}
+						if scenario == "backend-error" {
+							return backendError
+						}
+						return nil
+					})
+					// 构造与调用分开，避免把构造时的共享期限误当作每次 RPC 期限。
+					time.Sleep(10 * time.Millisecond)
+					invoke := client.Reserve
+					if op == "Release" {
+						invoke = client.Release
+					}
+					repetitions := 1
+					if scenario == "repeat" {
+						repetitions = 2
+					}
+					for i := 0; i < repetitions; i++ {
+						previous := captured
+						start = time.Now()
+						err := invoke(parent, "probe-cedar", 7)
+						var want error
+						switch scenario {
+						case "canceled", "cancel-in-flight":
+							want = context.Canceled
+						case "expired":
+							want = context.DeadlineExceeded
+						case "backend-error":
+							want = backendError
+						}
+						if (want == nil && err != nil) || (want != nil && !errors.Is(err, want)) {
+							t.Errorf("inventory error mismatch: got %v want %v", err, want)
+						}
+						if scenario == "canceled" || scenario == "expired" {
+							if calls != 0 {
+								t.Error("pre-canceled RPC entered backend")
+							}
+							continue
+						}
+						if calls != i+1 || captured == nil {
+							t.Fatalf("expected one real RPC per invocation, got %d", calls)
+						}
+						if !errors.Is(captured.Err(), context.Canceled) {
+							t.Error("derived context not released on return")
+						}
+						if previous != nil && captured == previous {
+							t.Error("derived context reused between calls")
+						}
+						if scenario != "cancel-in-flight" && parent.Err() != nil {
+							t.Error("RPC canceled its parent")
+						}
+					}
+				})
+			}
+		})
+	}
+}
+
+func harnessInvoke(service *orders.Service, op string, ctx context.Context) error {
+	if op == "Place" {
+		return service.Place(ctx, "harness-order", "probe-cedar", 7)
+	}
+	return service.Cancel(ctx, "harness-order")
+}
+
+func harnessPrepare(t *testing.T, service *orders.Service, op string) {
+	t.Helper()
+	if op == "Cancel" {
+		if err := service.Place(context.Background(), "harness-order", "probe-cedar", 7); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+func harnessState(t *testing.T, service *orders.Service, op string) {
+	t.Helper()
+	order, exists := service.Get("harness-order")
+	if exists != (op == "Cancel") || (exists && (order.SKU != "probe-cedar" || order.Quantity != 7)) {
+		t.Errorf("failed RPC changed order state: exists=%t order=%+v", exists, order)
+	}
+}
+
+func TestHarnessService(t *testing.T) {
+	for _, op := range []string{"Place", "Cancel"} {
+		t.Run(op, func(t *testing.T) {
+			for _, scenario := range []string{"canceled", "expired", "backend-error"} {
+				t.Run(scenario, func(t *testing.T) {
+					ready, calls := false, 0
+					failure := errors.New("probe capacity exhausted")
+					service := orders.New(harnessClient(t, func(ctx context.Context, method string, request rpcx.Request) error {
+						if !ready {
+							return nil
+						}
+						calls++
+						expected := "Reserve"
+						if op == "Cancel" {
+							expected = "Release"
+						}
+						harnessArguments(t, method, expected, request)
+						return failure
+					}))
+					harnessPrepare(t, service, op)
+					ready = true
+					ctx := context.Background()
+					want, wantCalls := failure, 1
+					if scenario == "canceled" {
+						var cancel context.CancelFunc
+						ctx, cancel = context.WithCancel(ctx)
+						cancel()
+						want, wantCalls = context.Canceled, 0
+					} else if scenario == "expired" {
+						var cancel context.CancelFunc
+						ctx, cancel = context.WithDeadline(ctx, time.Now().Add(-time.Second))
+						defer cancel()
+						want, wantCalls = context.DeadlineExceeded, 0
+					}
+					if err := harnessInvoke(service, op, ctx); !errors.Is(err, want) {
+						t.Errorf("service error mismatch: got %v want %v", err, want)
+					}
+					if calls != wantCalls {
+						t.Errorf("unexpected RPC count: %d", calls)
+					}
+					harnessState(t, service, op)
+				})
+			}
+		})
+	}
+}
+
+func TestHarnessHTTP(t *testing.T) {
+	for _, op := range []string{"Place", "Cancel"} {
+		t.Run(op, func(t *testing.T) {
+			for _, scenario := range []string{"metadata", "canceled", "cancel-in-flight"} {
+				t.Run(scenario, func(t *testing.T) {
+					parent, cancel := context.WithCancel(context.WithValue(context.Background(), harnessKey{}, t.Name()))
+					defer cancel()
+					ready, calls := false, 0
+					service := orders.New(harnessClient(t, func(ctx context.Context, method string, request rpcx.Request) error {
+						if !ready {
+							return nil
+						}
+						calls++
+						expected := "Reserve"
+						if op == "Cancel" {
+							expected = "Release"
+						}
+						harnessArguments(t, method, expected, request)
+						if ctx.Value(harnessKey{}) != t.Name() {
+							t.Error("HTTP request metadata was lost")
+						}
+						if scenario == "cancel-in-flight" {
+							cancel()
+							select {
+							case <-ctx.Done():
+								return ctx.Err()
+							case <-time.After(500 * time.Millisecond):
+								t.Error("HTTP cancellation did not reach RPC")
+							}
+						}
+						return nil
+					}))
+					harnessPrepare(t, service, op)
+					ready = true
+					if scenario == "canceled" {
+						cancel()
+					}
+					request := httptest.NewRequest(http.MethodPost, "/orders?id=harness-order", strings.NewReader(`{"ID":"harness-order","SKU":"probe-cedar","Quantity":7}`)).WithContext(parent)
+					response := httptest.NewRecorder()
+					handler := &Handler{service: service}
+					wantStatus, wantCalls := http.StatusCreated, 1
+					if op == "Cancel" {
+						handler.Cancel(response, request)
+						wantStatus = http.StatusNoContent
+					} else {
+						handler.Place(response, request)
+					}
+					if scenario != "metadata" {
+						wantStatus = http.StatusBadGateway
+						harnessState(t, service, op)
+					}
+					if scenario == "canceled" {
+						wantCalls = 0
+					}
+					if response.Code != wantStatus || calls != wantCalls {
+						t.Errorf("HTTP result mismatch: status=%d calls=%d", response.Code, calls)
+					}
+				})
+			}
+		})
+	}
+}
+
+func TestHarnessExpiry(t *testing.T) {
+	for _, op := range []string{"Place", "Cancel"} {
+		t.Run(op, func(t *testing.T) {
+			t.Parallel()
+			ready, calls := false, 0
+			service := orders.New(harnessClient(t, func(ctx context.Context, method string, request rpcx.Request) error {
+				if !ready {
+					return nil
+				}
+				calls++
+				expected := "Reserve"
+				if op == "Cancel" {
+					expected = "Release"
+				}
+				harnessArguments(t, method, expected, request)
+				select {
+				case <-ctx.Done():
+					return ctx.Err()
+				case <-time.After(34 * time.Second):
+					t.Error("RPC failed to expire within observation limit")
+					return errors.New("probe observation expired")
+				}
+			}))
+			harnessPrepare(t, service, op)
+			ready = true
+			start := time.Now()
+			err := harnessInvoke(service, op, context.Background())
+			elapsed := time.Since(start)
+			if elapsed < 30*time.Second {
+				t.Errorf("RPC expired before 30s: %s", elapsed)
+			}
+			if !errors.Is(err, context.DeadlineExceeded) || calls != 1 {
+				t.Errorf("expiry error or count mismatch: error=%v calls=%d", err, calls)
+			}
+			harnessState(t, service, op)
+		})
+	}
+}

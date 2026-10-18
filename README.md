@@ -8,7 +8,7 @@
 
 M2 已增加绑定证据的质量聚合，以及在执行后端内加载类型的 [rpcx 有限边界分析](scenarios/rpcx/analysis/README.md)。后者已通过本地与 Docker 对照，能提供 SDK 位置、直接超时关系和覆盖缺口；完整 T3 门禁仍在实现中，进度见[里程碑](docs/MILESTONES.md)。
 
-冻结 T3 场景的[测试结构检查](scenarios/rpcx/testintegrity/README.md)已实现：允许可信基线的最小 ctx/API 适配，区分明确的断言删除与尚未证明的重写。真实 Docker 对照证明“原测试名相同且全部通过”仍会漏掉断言删除；运行时可信行为与完整门禁接入仍待完成。
+冻结 T3 场景的[测试结构检查](scenarios/rpcx/testintegrity/README.md)已实现：允许可信基线的最小 ctx/API 适配，区分明确的断言删除与尚未证明的重写。[可信行为检查](scenarios/rpcx/behavior/README.md)在同一候选生产副本运行 40 项业务及 T3 检查，包括两个真实 30 秒到期检查。真实 Docker 正反例已通过；这些证据的完整门禁组合与新规范 Runner 接入仍待完成。
 
 需要本地 Go 1.23 或更新版本、Git 和 POSIX shell；已在 Go 1.26.5 / macOS arm64 验证。
 

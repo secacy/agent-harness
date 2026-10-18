@@ -48,7 +48,7 @@ M3 是最低项目交付点，但不代表全部项目目标完成：进程中�
 
 ## M2：证据驱动的判定
 
-状态：实现中。M2.1、M2.2 已验收（2026-10-18），M2.3 已完成有限位置比较及冻结夹具的测试结构检查；可信运行时行为组合及整体验收待完成，M2.4 待实现。[具体设计与实施顺序](worklog/2026-10-18-m2-evidence-gate.md)保留 T3 契约、方案取舍、证据结构、L1 用例和各工作单元。
+状态：实现中。M2.1、M2.2 已验收（2026-10-18），M2.3 已完成有限位置比较、冻结夹具的测试结构检查和可信运行时行为检查；证据组合及整体验收待完成，M2.4 待实现。[具体设计与实施顺序](worklog/2026-10-18-m2-evidence-gate.md)保留 T3 契约、方案取舍、证据结构、L1 用例和各工作单元。
 
 决策边界：场景版本隔离与证据不足不放行的原则已确定；选型对照支持 AST + go/types、结构与行为组合以及可信生产副本。隔离加载、直接边界、位置比较与固定基线的受限测试变换已通过验证，运行时可信行为及组合门禁仍待完成。依据与改选条件见 worklog 第 2、14—17 节、[ADR-003](adr/003-typed-migration-analysis.md)及 [ADR-004](adr/004-analysis-execution-boundary.md)。
 
@@ -58,7 +58,9 @@ M2.2 已完成绑定证据的质量聚合：宿主必需检查集、条款/原�
 
 M2.3 的[选型实验](experiments/2026-10-18-m2-analysis-study-01.md)已通过 23 个开发叶子测试。后续 [analysis 模块](../scenarios/rpcx/analysis/README.md)提供隔离类型加载、边界事实与 Compare：配对直接调用，记录增删、歧义及双方缺口。该工作单元的根回归、analysis 的 71 个子测试及真实 Docker 联调通过，详见 [位置比较记录](worklog/2026-10-18-m2-evidence-gate.md#16-m23基线与候选的有限位置比较)。这些结果仍不是完整 T3 判定或全链路证明。
 
-随后 [testintegrity](../scenarios/rpcx/testintegrity/README.md) 实现冻结测试的最小适配与完整结构比较。36 个机制子测试及四组 Docker 对照通过：合法适配 preserved；断言删除即使原十个测试通过仍 violated；等价 helper 重写 unknown。根模块回归通过，见[结构检查记录](worklog/2026-10-18-m2-evidence-gate.md#17-m23测试结构完整性与适配对照)。运行时可信副本、T3 探针、证据聚合及完整 L1 验收仍待完成，旧 Evaluate 不接受新规范。
+随后 [testintegrity](../scenarios/rpcx/testintegrity/README.md) 实现冻结测试的最小适配与完整结构比较。36 个机制子测试及四组 Docker 对照通过：合法适配 preserved；断言删除即使原十个测试通过仍 violated；等价 helper 重写 unknown。根模块回归通过，见[结构检查记录](worklog/2026-10-18-m2-evidence-gate.md#17-m23测试结构完整性与适配对照)。
+
+[behavior](../scenarios/rpcx/behavior/README.md) 已装配同字节的可信生产副本并运行 40 项必需检查。9 组真实 Docker 对照中，正确候选通过，三个冻结错误候选及丢失父取消、未释放、吞错反例失败；生产入口提前退出保留 unknown。仅伪装 Deadline 的候选通过 38 项快速检查，却在两个真实到期检查失败，见[行为检查记录](worklog/2026-10-18-m2-evidence-gate.md#18-m23可信生产副本与独立运行时行为检查)。证据聚合及完整 L1 验收仍待完成，旧 Evaluate 不接受新规范。
 
 **目标与范围：**在现有独立验证器上，明确支持范围、证据充分性和判定依据。使用 demo-orders 的 T3 默认超时场景检验“编译和原有测试通过，仍可能违反迁移约束”；新增规范与场景版本，保留 M0/M1 输入和历史证据的可复现性。
 
