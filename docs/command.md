@@ -128,3 +128,17 @@ env HARNESS_ANALYSIS_STUDY=1 GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=loca
 ```
 
 在临时目录运行本仓库定义的可信样例，比较有限 AST 与类型查询、行为检查的互补性、混合测试与独立生产副本。输出 `STUDY` 结构化记录及预期反例的 `PROBE_FAILURE` 日志；可重定向至 runs 下的新文件留档。不调用模型、不使用 Docker、不修改冻结夹具。默认根模块测试跳过此实验；该包不接受外部候选，不输出运行时质量判定。范围和结果见[实验记录](experiments/2026-10-18-m2-analysis-study-01.md)。
+
+## M2.3 隔离类型加载与边界分析
+
+```sh
+env GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly GOCACHE="$PWD/runs/go-cache" go test ./scenarios/rpcx/analysis/...
+```
+
+运行可信临时副本，验证 v1 基线、四个冻结候选、别名/常量/跨文件、未知形态、配置缺口、协议及输入变化；输出 ANALYSIS 与 ANALYSIS_MATERIAL 记录。本地测试也会编译和执行可信加载程序，不执行候选测试或 init。不启用 Docker 时跳过真实容器对照。
+
+```sh
+env HARNESS_DOCKER_TEST=1 GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly GOCACHE="$PWD/runs/go-cache" go test -json -count=1 ./scenarios/rpcx/analysis -run '^TestInspectDockerConfigurationAndCoverage$'
+```
+
+需要已准备的固定镜像和本机 Docker。三个对照验证正确边界、错误超时和显式 tag 下的额外调用，检查实际配置、材料绑定及容器回收；不访问模型服务。分析结果是有限结构事实，完整质量判定仍待接入。API 与材料说明见 [analysis](../scenarios/rpcx/analysis/README.md)。

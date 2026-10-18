@@ -6,6 +6,8 @@
 
 新增的 [T3 默认超时场景](scenarios/rpcx/t3/README.md)已完成 M2.1 冻结验收：四个手工候选均通过原业务测试，独立参考检查发现漏超时与错误期限，真实 30 秒到期得到验证。M2 的质量门禁增强与 Agent T3 接入仍在后续阶段，见[验收记录](docs/experiments/2026-10-18-rpcx-t3-fixture-01.md)。
 
+M2 已增加绑定证据的质量聚合，以及在执行后端内加载类型的 [rpcx 有限边界分析](scenarios/rpcx/analysis/README.md)。后者已通过本地与 Docker 对照，能提供 SDK 位置、直接超时关系和覆盖缺口；完整 T3 门禁与测试完整性检查仍在实现中，进度见[里程碑](docs/MILESTONES.md)。
+
 需要本地 Go 1.23 或更新版本、Git 和 POSIX shell；已在 Go 1.26.5 / macOS arm64 验证。
 
 ```sh

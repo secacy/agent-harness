@@ -79,3 +79,5 @@ Evidence 索引为每个材料保存相对路径、SHA-256，以及规范/基线
 聚合由 internal/quality 的普通函数执行，所需集合由宿主确定。缺项或解释/引用不足不会放行；完整的已知失败优先拒绝并保留其他缺口。材料摘要或绑定不符、重复 ID、路径越界或记录非法是执行错误，最终判定为空。独立接口不读取 manifest 的 expected。
 
 公开报告各结果的 evidence_directory 相对运行根目录；Evidence.path 相对该目录。Runner 嵌入的 validation 使用 Run/evidence 作为根。字段升级不改变历史报告，也不补全旧版测试断言与调用覆盖缺口，T3 仍待后续运行时检查接入。
+
+后续 [analysis](analysis/README.md) 提供独立的类型加载与有限 RPC 边界事实，已通过本地和 Docker 验证，尚未接入本页的旧 Evaluate。它的 covered 是结构形态的结论，不能代替上述六项检查或完整 T3 判定。
