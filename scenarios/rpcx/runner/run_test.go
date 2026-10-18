@@ -199,6 +199,20 @@ func testRunDelivery(t *testing.T, backend execution.Executor) {
 	if report.Validation == nil || report.Validation.Verdict != first.Verdict || report.CandidateSHA256 != migrated.hash() || report.Validation.CandidateSHA256 != first.CandidateSHA256 {
 		t.Fatalf("report does not bind the candidate: %+v", report)
 	}
+	if report.Validation.SchemaVersion != 2 || report.Validation.VerifierVersion == "" || len(report.Validation.Evidence) == 0 {
+		t.Fatal("published report lost structured quality evidence")
+	}
+	knownEvidence := map[string]bool{}
+	for _, evidence := range report.Validation.Evidence {
+		if evidence.Binding.CandidateSHA256 != first.CandidateSHA256 || evidence.Binding.SpecSHA256 != report.Input.SpecSHA256 || evidence.Binding.BaselineSHA256 != baseline.hash() {
+			t.Fatalf("published evidence has the wrong input binding: %+v", evidence)
+		}
+		data, err := os.ReadFile(filepath.Join(first.Directory, "evidence", evidence.Path))
+		if err != nil || digest(data) != evidence.SHA256 {
+			t.Fatalf("published evidence is not reproducible: %+v %v", evidence, err)
+		}
+		knownEvidence[evidence.ID] = true
+	}
 	if report.Input.BaselineSHA256 != baseline.hash() || report.Input.ExecutionMode != expectedMode || report.Input.SpecSHA256 == "" {
 		t.Fatalf("missing input provenance: %+v", report.Input)
 	}
@@ -210,8 +224,13 @@ func testRunDelivery(t *testing.T, backend execution.Executor) {
 		}
 	}
 	for name, check := range report.Validation.Checks {
-		if check.Status != "pass" {
+		if check.Status != "pass" || len(check.RuleIDs) == 0 || len(check.Findings) == 0 || len(check.EvidenceIDs) == 0 {
 			t.Fatalf("%s: %+v", name, check)
+		}
+		for _, id := range check.EvidenceIDs {
+			if !knownEvidence[id] {
+				t.Fatalf("published check references absent evidence: %s/%s", name, id)
+			}
 		}
 	}
 	trace := readJSON[agent.Result](t, filepath.Join(first.Directory, "artifacts/agent.json"))

@@ -40,6 +40,20 @@ env GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly G
 
 该命令仅测试根模块；接口集成测试会运行其临时副本中的业务测试，但不替代两个 SDK 和五种公开补丁的完整场景验收。完整验证使用上面的场景入口。
 
+## 证据绑定与质量聚合测试
+
+```sh
+env GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly GOCACHE="$PWD/runs/go-cache" go test ./internal/quality ./scenarios/rpcx/checks
+```
+
+覆盖宿主必需集合、缺项、未知/跳过、不适用的许可与理由、fail 优先，以及证据缺失、篡改、错误候选绑定和路径约束。集成测试从真实 Evaluate 材料重算判定，再删除必需项或篡改日志；同时核对旧五用例的原状态、判定、失败条款与证据。
+
+新 Evaluation 与公开场景报告使用 schema_version=2，新增 rule_ids、findings、evidence 和 gaps。单候选证据路径相对 EvidenceDir；公开场景每个结果的 evidence_directory 相对本次运行目录。Runner 报告内的 validation 保存该新结构，证据路径相对该 Run 的 evidence/。
+
+每个证据绑定规范、基线与候选摘要，并校验实际文件 SHA-256。quality-policy.json 保存宿主策略副本，context-probe.go.txt 保存可信探针；materials_sha256 为紧凑 JSON 编码策略后紧接探针原始字节的 SHA-256，仅标识策略与探针材料，不是整个验证器源码摘要。verifier_version 是宿主维护的版本标识；公开报告的 checks_sha256 只覆盖场景 checks/，不能解释为整个 Harness 的源码摘要，复现仍需对应 Git 版本和工具链。
+
+证据缺口得到 NeedsAttention；充分的明确失败得到 Rejected 并保留缺口；错绑定、材料篡改或记录非法返回执行错误与空判定。新结构不证明原检查未覆盖的语义，不把 v0.1.0 升级为 T3；现阶段仍拒绝将 v0.2.0 交给旧 Evaluate。技术依据见 [ADR-002](adr/002-evidence-bound-quality.md)。
+
 ## Agent 循环测试
 
 ```sh

@@ -1,4 +1,4 @@
-// Package checks implements the public T1/T2 development-case verifier.
+// Package checks 验证公开 T1/T2 候选并保存证据。
 package checks
 
 import (
@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"example.com/agent-harness/internal/execution"
+	"example.com/agent-harness/internal/quality"
 )
 
 //go:embed probes/*.txt
@@ -42,10 +43,7 @@ type Manifest struct {
 	Spec          string `json:"spec"`
 	Cases         []Case `json:"cases"`
 }
-type Check struct {
-	Status string `json:"status"`
-	Detail string `json:"detail"`
-}
+type Check = quality.Check
 type Command struct {
 	Args        []string       `json:"args"`
 	Directory   string         `json:"directory"`
@@ -60,15 +58,22 @@ type Command struct {
 	OutputLimit bool           `json:"output_limit,omitempty"`
 }
 type Result struct {
-	ID                 string           `json:"id"`
-	PatchSHA256        string           `json:"patch_sha256"`
-	CandidateSHA256    string           `json:"candidate_sha256"`
-	Checks             map[string]Check `json:"checks"`
-	Verdict            string           `json:"verdict"`
-	Commands           []Command        `json:"commands"`
-	ExpectationMatched bool             `json:"expectation_matched"`
+	EvidenceDirectory  string             `json:"evidence_directory"`
+	Evidence           []quality.Evidence `json:"evidence"`
+	Gaps               []quality.Gap      `json:"gaps"`
+	BaselineSHA256     string             `json:"baseline_sha256"`
+	VerifierVersion    string             `json:"verifier_version"`
+	MaterialsSHA256    string             `json:"materials_sha256"`
+	ID                 string             `json:"id"`
+	PatchSHA256        string             `json:"patch_sha256"`
+	CandidateSHA256    string             `json:"candidate_sha256"`
+	Checks             map[string]Check   `json:"checks"`
+	Verdict            string             `json:"verdict"`
+	Commands           []Command          `json:"commands"`
+	ExpectationMatched bool               `json:"expectation_matched"`
 }
 type Report struct {
+	SchemaVersion     int       `json:"schema_version"`
 	StartedAt         string    `json:"started_at"`
 	GoVersion         string    `json:"go_version"`
 	Spec              string    `json:"spec"`
@@ -139,8 +144,7 @@ func safeRelative(path string) bool {
 	return path != "" && filepath.IsLocal(path)
 }
 
-// snapshot hashes every regular file, including its relative path. Symlinks are
-// rejected so fixture copies cannot silently reach outside their source tree.
+// snapshot 对相对路径与常规文件内容计算摘要，拒绝符号链接越出输入树。
 func snapshot(root string) (map[string]string, error) {
 	return snapshotContext(context.Background(), root)
 }
@@ -179,7 +183,7 @@ func snapshotContext(ctx context.Context, root string) (map[string]string, error
 }
 
 func treeDigest(files map[string]string) string {
-	data, _ := json.Marshal(files) // encoding/json sorts map keys.
+	data, _ := json.Marshal(files) // JSON 编码按键排序，确保树摘要稳定。
 	return digest(data)
 }
 
@@ -273,32 +277,32 @@ func preservationCheck(baselineNames map[string]bool, baselineEvents map[string]
 	}
 	sort.Strings(missing)
 	if len(missing) != 0 {
-		return Check{"fail", "TEST-001: missing, skipped or failed: " + strings.Join(missing, ", ")}
+		return Check{Status: "fail", Detail: "TEST-001: missing, skipped or failed: " + strings.Join(missing, ", ")}
 	}
-	return Check{"pass", fmt.Sprintf("all %d original tests executed and passed", len(baselineNames))}
+	return Check{Status: "pass", Detail: fmt.Sprintf("all %d original tests executed and passed", len(baselineNames))}
 }
 
 func probeCheck(data []byte, meta Command) Check {
 	if meta.TimedOut {
-		return Check{"blocked", "context behavior probe timed out"}
+		return Check{Status: "blocked", Detail: "context behavior probe timed out"}
 	}
 	if meta.ExitCode != 0 {
-		return Check{"fail", "context behavior probe failed; see context-probes.log"}
+		return Check{Status: "fail", Detail: "context behavior probe failed; see context-probes.log"}
 	}
 	states, err := testEvents(data)
 	if err != nil {
-		return Check{"blocked", "context probe output could not be decoded"}
+		return Check{Status: "blocked", Detail: "context probe output could not be decoded"}
 	}
 	prefix := "example.com/demo-orders/cmd/server/TestHarnessRequestContext"
 	for _, operation := range []string{"Place", "Cancel"} {
 		for _, mode := range []string{"metadata", "already-cancelled", "cancel-in-backend"} {
 			name := prefix + "/" + operation + "/" + mode
 			if states[name] != "pass" {
-				return Check{"fail", "required probe did not execute and pass: " + name}
+				return Check{Status: "fail", Detail: "required probe did not execute and pass: " + name}
 			}
 		}
 	}
-	return Check{"pass", "CTX-001/002/003: both request chains preserve metadata, deadline and cancellation"}
+	return Check{Status: "pass", Detail: "CTX-001/002/003: both request chains preserve metadata, deadline and cancellation"}
 }
 
 func testNames(root string) (map[string]bool, error) {
@@ -335,11 +339,11 @@ func testNames(root string) (map[string]bool, error) {
 func protectedCheck(baseline, candidate string) Check {
 	before, err := snapshot(filepath.Join(baseline, "internal/pb"))
 	if err != nil {
-		return Check{"fail", err.Error()}
+		return Check{Status: "fail", Detail: err.Error()}
 	}
 	after, err := snapshot(candidate)
 	if err != nil {
-		return Check{"fail", err.Error()}
+		return Check{Status: "fail", Detail: err.Error()}
 	}
 	filtered := map[string]string{}
 	for path, hash := range after {
@@ -348,9 +352,33 @@ func protectedCheck(baseline, candidate string) Check {
 		}
 	}
 	if treeDigest(before) != treeDigest(filtered) {
-		return Check{"fail", "PATH-001: protected file list or contents changed"}
+		changed := map[string]bool{}
+		for path, hash := range before {
+			if filtered[path] != hash {
+				changed[path] = true
+			}
+		}
+		for path, hash := range filtered {
+			if before[path] != hash {
+				changed[path] = true
+			}
+		}
+		paths := make([]string, 0, len(changed))
+		for path := range changed {
+			paths = append(paths, path)
+		}
+		sort.Strings(paths)
+		finding := quality.Finding{Code: "protected_paths_fail", Detail: "protected file list or contents changed", RuleIDs: []string{"PATH-001"}}
+		for _, path := range paths {
+			tree := "candidate"
+			if _, exists := filtered[path]; !exists {
+				tree = "baseline"
+			}
+			finding.Locations = append(finding.Locations, quality.Location{Tree: tree, Path: "internal/pb/" + path})
+		}
+		return Check{Status: "fail", Detail: "PATH-001: protected file list or contents changed", Findings: []quality.Finding{finding}}
 	}
-	return Check{"pass", "PATH-001: protected file list and SHA-256 match baseline"}
+	return Check{Status: "pass", Detail: "PATH-001: protected file list and SHA-256 match baseline"}
 }
 
 func dependencyCheck(candidate string, run func(string, string, ...string) ([]byte, Command, error)) (Check, Command, error) {
@@ -359,10 +387,10 @@ func dependencyCheck(candidate string, run func(string, string, ...string) ([]by
 		return Check{}, meta, err
 	}
 	if meta.TimedOut {
-		return Check{"blocked", "dependency inspection timed out"}, meta, nil
+		return Check{Status: "blocked", Detail: "dependency inspection timed out"}, meta, nil
 	}
 	if meta.ExitCode != 0 {
-		return Check{"fail", "DEP-001: invalid go.mod"}, meta, nil
+		return Check{Status: "fail", Detail: "DEP-001: invalid go.mod"}, meta, nil
 	}
 	var mod struct {
 		Module  struct{ Path string }
@@ -375,7 +403,7 @@ func dependencyCheck(candidate string, run func(string, string, ...string) ([]by
 		return Check{}, meta, err
 	}
 	if mod.Module.Path != "example.com/demo-orders" || len(mod.Require) != 1 || mod.Require[0].Path != "example.com/rpcx/v2" || mod.Require[0].Version != "v2.0.0" || len(mod.Replace) != 1 || mod.Replace[0].Old.Path != "example.com/rpcx/v2" || mod.Replace[0].Old.Version != "" || mod.Replace[0].New.Path != "../rpcx-v2" || mod.Replace[0].New.Version != "" {
-		return Check{"fail", "DEP-001: expected only rpcx/v2 v2.0.0 with local ../rpcx-v2 replacement"}, meta, nil
+		return Check{Status: "fail", Detail: "DEP-001: expected only rpcx/v2 v2.0.0 with local ../rpcx-v2 replacement"}, meta, nil
 	}
 	err = filepath.WalkDir(candidate, func(path string, entry fs.DirEntry, err error) error {
 		if err != nil {
@@ -397,13 +425,12 @@ func dependencyCheck(candidate string, run func(string, string, ...string) ([]by
 		return nil
 	})
 	if err != nil {
-		return Check{"fail", err.Error()}, meta, nil
+		return Check{Status: "fail", Detail: err.Error()}, meta, nil
 	}
-	return Check{"pass", "DEP-001: module, local replacement and imports migrated"}, meta, nil
+	return Check{Status: "pass", Detail: "DEP-001: module, local replacement and imports migrated"}, meta, nil
 }
 
-// contextPolicy supplements behavioral probes with a narrow syntax check.
-// It is not a general Go data-flow analysis or sandbox.
+// contextPolicy 用有限语法检查补充行为探针，不提供通用数据流分析或沙箱。
 func contextPolicy(candidate string) error {
 	return filepath.WalkDir(candidate, func(path string, entry fs.DirEntry, err error) error {
 		if err != nil {
@@ -445,25 +472,7 @@ func contextPolicy(candidate string) error {
 	})
 }
 
-func verdict(checks map[string]Check) string {
-	unknown := false
-	for _, name := range checkNames {
-		c := checks[name]
-		if c.Status == "fail" {
-			return "Rejected"
-		}
-		if c.Status != "pass" {
-			unknown = true
-		}
-	}
-	if unknown {
-		return "NeedsAttention"
-	}
-	return "ReadyForReview"
-}
-
-// Verify runs every public case. Expected results are consulted only after all
-// actual checks and the actual verdict have been computed.
+// Verify 执行所有公开用例；实际检查和判定完成后才比较预期。
 func Verify(root, runDir string) (*Report, error) {
 	scenario := filepath.Join(root, "scenarios/rpcx")
 	manifest, rawManifest, err := readManifest(filepath.Join(scenario, "cases/manifest.yaml"))
@@ -485,7 +494,7 @@ func Verify(root, runDir string) (*Report, error) {
 	if err := os.MkdirAll(filepath.Join(root, "runs/go-cache"), 0755); err != nil {
 		return nil, err
 	}
-	report := &Report{StartedAt: time.Now().UTC().Format(time.RFC3339), Spec: manifest.Spec, SpecSHA256: digest(spec), ManifestSHA256: digest(rawManifest), FixturesSHA256: treeDigest(before)}
+	report := &Report{SchemaVersion: 2, StartedAt: time.Now().UTC().Format(time.RFC3339), Spec: manifest.Spec, SpecSHA256: digest(spec), ManifestSHA256: digest(rawManifest), FixturesSHA256: treeDigest(before)}
 	checkFiles, err := snapshot(filepath.Join(scenario, "checks"))
 	if err != nil {
 		return report, err
@@ -496,7 +505,7 @@ func Verify(root, runDir string) (*Report, error) {
 			return report, err
 		}
 	}
-	// SDK and baseline tests are preconditions, not candidate verdicts.
+	// SDK 与业务基线测试是运行前提，其失败不生成候选质量判定。
 	preflight := filepath.Join(runDir, "preflight")
 	if err := copyTree(fixtures, preflight); err != nil {
 		return report, err
@@ -536,7 +545,7 @@ func Verify(root, runDir string) (*Report, error) {
 func verifyCase(root, scenario, fixtures, baseline, runDir, spec string, c Case) (Result, error) {
 	result := Result{ID: c.ID, Checks: map[string]Check{}}
 	for _, name := range checkNames {
-		result.Checks[name] = Check{"not_run", "not executed"}
+		result.Checks[name] = Check{Status: "not_run", Detail: "not executed"}
 	}
 	dir := filepath.Join(runDir, c.ID)
 	workspace := filepath.Join(dir, "workspace")
@@ -575,6 +584,12 @@ func verifyCase(root, scenario, fixtures, baseline, runDir, spec string, c Case)
 		CacheDir:     filepath.Join(root, "runs/go-cache"),
 	})
 	result.CandidateSHA256 = evaluation.CandidateSHA256
+	result.BaselineSHA256 = evaluation.BaselineSHA256
+	result.VerifierVersion = evaluation.VerifierVersion
+	result.MaterialsSHA256 = evaluation.MaterialsSHA256
+	result.EvidenceDirectory = filepath.Join(c.ID, "evaluation")
+	result.Evidence = evaluation.Evidence
+	result.Gaps = evaluation.Gaps
 	result.Checks = evaluation.Checks
 	result.Verdict = evaluation.Verdict
 	result.Commands = append(result.Commands, evaluation.Commands...)

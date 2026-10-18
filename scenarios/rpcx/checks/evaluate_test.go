@@ -10,10 +10,10 @@ import (
 	"time"
 
 	"example.com/agent-harness/internal/execution"
+	"example.com/agent-harness/internal/quality"
 )
 
-// Prepare inputs outside the scenario tree, with no cases/manifest or oracle.
-// Patch application is deliberately a caller responsibility in this test too.
+// 在场景树外准备无 manifest/oracle 的输入，补丁仍由调用方应用。
 func preparedRequest(t *testing.T) EvaluationRequest {
 	t.Helper()
 	scenario, err := filepath.Abs("..")
@@ -124,7 +124,44 @@ func TestEvaluatePreparedCandidateWithoutManifest(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	// A real compiler failure is a candidate verdict, not an execution error.
+	// 用真实材料重新聚合，证明报告引用可校验，且篡改不会保留原放行结论。
+	if result.SchemaVersion != 2 || result.VerifierVersion == "" || result.MaterialsSHA256 == "" || len(result.Evidence) == 0 {
+		t.Fatalf("missing structured evidence: %+v", result)
+	}
+	for name, check := range result.Checks {
+		if len(check.RuleIDs) == 0 || len(check.Findings) == 0 || len(check.EvidenceIDs) == 0 {
+			t.Fatalf("untraceable check %s: %+v", name, check)
+		}
+	}
+	decision, err := quality.Decide(req.EvidenceDir, t1t2Policy(), result.binding(), result.Checks, result.Evidence)
+	if err != nil || decision.Verdict != result.Verdict {
+		t.Fatalf("cannot reproduce decision: %+v %v", decision, err)
+	}
+	copyOfChecks := make(map[string]Check, len(result.Checks))
+	for name, check := range result.Checks {
+		copyOfChecks[name] = check
+	}
+	delete(copyOfChecks, "build")
+	decision, err = quality.Decide(req.EvidenceDir, t1t2Policy(), result.binding(), copyOfChecks, result.Evidence)
+	if err != nil || decision.Verdict != quality.NeedsAttention {
+		t.Fatalf("missing check was released: %+v %v", decision, err)
+	}
+	changedLog := filepath.Join(req.EvidenceDir, "build.log")
+	originalLog, err := os.ReadFile(changedLog)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(changedLog, []byte("tampered log"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	decision, err = quality.Decide(req.EvidenceDir, t1t2Policy(), result.binding(), result.Checks, result.Evidence)
+	if err == nil || decision.Verdict != "" {
+		t.Fatalf("tampered evidence was released: %+v %v", decision, err)
+	}
+	if err := os.WriteFile(changedLog, originalLog, 0644); err != nil {
+		t.Fatal(err)
+	}
+	// 普通候选编译失败应得到质量判定。
 	writeTestFile(t, req.CandidateDir, "internal/inventory/broken.go", "package inventory\nvar _ = missingIdentifier\n")
 	req.EvidenceDir += "-broken"
 	result, err = Evaluate(context.Background(), req)
@@ -134,8 +171,7 @@ func TestEvaluatePreparedCandidateWithoutManifest(t *testing.T) {
 	if result.Verdict != "Rejected" || result.Checks["build"].Status != "fail" || result.Checks["context_propagation"].Status != "blocked" {
 		t.Fatalf("unexpected broken-candidate result: %+v", result)
 	}
-	// Test-only compiler diagnostics go to stderr. They must stay in the log
-	// without corrupting the JSON event stream or becoming infrastructure errors.
+	// 测试编译诊断保留到日志，不破坏 JSON 事件流或伪装成基础设施错误。
 	if err := os.Remove(filepath.Join(req.CandidateDir, "internal/inventory/broken.go")); err != nil {
 		t.Fatal(err)
 	}

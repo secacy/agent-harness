@@ -148,15 +148,3 @@ func TestManifestRejectsIncompleteAndTrailingDocuments(t *testing.T) {
 		}
 	}
 }
-
-func TestVerdictKeepsUnverifiedResultsOutOfReadyForReview(t *testing.T) {
-	if got := verdict(map[string]Check{}); got != "NeedsAttention" {
-		t.Fatal(got)
-	}
-	if got := verdict(map[string]Check{"build": {Status: "pass"}, "behavior": {Status: "blocked"}}); got != "NeedsAttention" {
-		t.Fatal(got)
-	}
-	if got := verdict(map[string]Check{"build": {Status: "fail"}, "behavior": {Status: "blocked"}}); got != "Rejected" {
-		t.Fatal(got)
-	}
-}

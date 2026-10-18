@@ -2,6 +2,7 @@ package checks
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -9,17 +10,15 @@ import (
 	"strings"
 
 	"example.com/agent-harness/internal/execution"
+	"example.com/agent-harness/internal/quality"
 )
 
-// SupportedSpecSHA256 binds these checks to the frozen v0.1.0 specification.
-// Supporting a different specification requires an explicit verifier change.
+// SupportedSpecSHA256 将本检查集合绑定到冻结规范；支持新规范须显式修改验证器。
 const SupportedSpecSHA256 = "330e439ab69a9c84dbb88343ef5ccc430eeec357bb3f54e01dcad83ce860e251"
 
-// EvaluationRequest describes an already prepared rpcx T1/T2 candidate.
-// BaselineDir and CandidateDir are demo-orders modules with adjacent rpcx-v1
-// and rpcx-v2 directories. EvidenceDir must be new or empty and outside inputs.
-// CacheDir is optional; its default is EvidenceDir/go-cache. No Run is created.
-// Relative paths are resolved against the caller's current working directory.
+// EvaluationRequest 接受已有 T1/T2 候选，两侧模块均需相邻的可信 SDK 布局。
+// EvidenceDir 须在输入外且为空；缓存可选，默认位于 EvidenceDir/go-cache。
+// 相对路径按当前目录解析，本接口不创建 Run。
 type EvaluationRequest struct {
 	BaselineDir  string
 	CandidateDir string
@@ -29,26 +28,30 @@ type EvaluationRequest struct {
 	Backend      execution.Executor // 为空时仅用于原有可信本地夹具检查。
 }
 
-// Evaluation contains actual evidence, never expected case outcomes.
-// A non-nil error leaves Verdict empty; completed checks remain available.
+// Evaluation 保存实际检查与证据；执行错误时 Verdict 为空，保留部分结果。
 type Evaluation struct {
-	SpecVersion     string           `json:"spec_version"`
-	SpecSHA256      string           `json:"spec_sha256"`
-	BaselineSHA256  string           `json:"baseline_sha256"`
-	CandidateSHA256 string           `json:"candidate_sha256"`
-	Checks          map[string]Check `json:"checks"`
-	Commands        []Command        `json:"commands"`
-	Verdict         string           `json:"verdict"`
+	SchemaVersion   int                `json:"schema_version"`
+	VerifierVersion string             `json:"verifier_version"`
+	MaterialsSHA256 string             `json:"materials_sha256"`
+	Evidence        []quality.Evidence `json:"evidence"`
+	Gaps            []quality.Gap      `json:"gaps"`
+	SpecVersion     string             `json:"spec_version"`
+	SpecSHA256      string             `json:"spec_sha256"`
+	BaselineSHA256  string             `json:"baseline_sha256"`
+	CandidateSHA256 string             `json:"candidate_sha256"`
+	Checks          map[string]Check   `json:"checks"`
+	Commands        []Command          `json:"commands"`
+	Verdict         string             `json:"verdict"`
 }
 
-// Evaluate validates one prepared candidate without reading a manifest, applying
-// patches or comparing expectations. It runs trusted baseline tests itself and
-// executes all commands and probes in verification copies under EvidenceDir.
-// It does not persist a final report: that belongs to its caller.
+// Evaluate 在独立副本中运行基线、候选和可信探针，生成证据并聚合判定。
+// 补丁应用、用例预期比较和最终报告持久化由调用方负责。
 func Evaluate(ctx context.Context, req EvaluationRequest) (result Evaluation, err error) {
+	result.SchemaVersion = 2
+	result.VerifierVersion = verifierVersion
 	result.Checks = make(map[string]Check, len(checkNames))
 	for _, name := range checkNames {
-		result.Checks[name] = Check{"not_run", "not executed"}
+		result.Checks[name] = Check{Status: "not_run", Detail: "not executed"}
 	}
 	if err := ctx.Err(); err != nil {
 		return result, err
@@ -66,7 +69,7 @@ func Evaluate(ctx context.Context, req EvaluationRequest) (result Evaluation, er
 	}
 	result.SpecVersion = "v0.1.0"
 
-	// These are input snapshots, not executable expectations supplied by a case.
+	// 输入快照独立采集，不使用用例提供的预期结果。
 	inputs := map[string]map[string]string{}
 	for _, module := range []string{req.BaselineDir, req.CandidateDir} {
 		for _, path := range []string{module, filepath.Join(filepath.Dir(module), "rpcx-v1"), filepath.Join(filepath.Dir(module), "rpcx-v2")} {
@@ -80,7 +83,7 @@ func Evaluate(ctx context.Context, req EvaluationRequest) (result Evaluation, er
 	result.BaselineSHA256 = treeDigest(inputs[req.BaselineDir])
 	result.CandidateSHA256 = treeDigest(inputs[req.CandidateDir])
 	defer func() {
-		// Even on cancellation, do not publish evidence for mutated input code.
+		// 即使被取消，也不能为验证过程中变化的输入发布质量判定。
 		afterSpec, specErr := os.ReadFile(req.SpecPath)
 		if specErr != nil || digest(afterSpec) != result.SpecSHA256 {
 			err = errors.Join(err, fmt.Errorf("specification changed during verification"))
@@ -93,6 +96,7 @@ func Evaluate(ctx context.Context, req EvaluationRequest) (result Evaluation, er
 		}
 		if err != nil {
 			result.Verdict = ""
+			result.annotateChecks()
 		}
 	}()
 	if err := prepareEvidence(req); err != nil {
@@ -101,10 +105,30 @@ func Evaluate(ctx context.Context, req EvaluationRequest) (result Evaluation, er
 	if err := os.WriteFile(filepath.Join(req.EvidenceDir, "spec.md"), spec, 0644); err != nil {
 		return result, err
 	}
+	policyJSON, err := json.Marshal(t1t2Policy())
+	if err != nil {
+		return result, err
+	}
+	probe, err := probes.ReadFile("probes/context_test.go.txt")
+	if err != nil {
+		return result, err
+	}
+	result.MaterialsSHA256 = digest(append(policyJSON, probe...))
+	if err := result.saveEvidence(req.EvidenceDir, "quality-policy", "host_policy", "quality-policy.json", t1t2Policy()); err != nil {
+		return result, err
+	}
+	if err := os.WriteFile(filepath.Join(req.EvidenceDir, "context-probe.go.txt"), probe, 0644); err != nil {
+		return result, err
+	}
+	if err := result.addEvidence(req.EvidenceDir, "probe-material", "trusted_probe", "context-probe.go.txt"); err != nil {
+		return result, err
+	}
+	if err := result.saveEvidence(req.EvidenceDir, "input-snapshots", "input_snapshots", "input-snapshots.json", inputs); err != nil {
+		return result, err
+	}
 	baseline := filepath.Join(req.EvidenceDir, "baseline", "demo-orders")
 	candidate := filepath.Join(req.EvidenceDir, "candidate", "demo-orders")
-	// A faulty SDK copy is rejected, but commands use trusted SDKs so the
-	// candidate cannot change its own acceptance behavior through the backend.
+	// 候选 SDK 被修改时拒绝它；实际命令始终使用基线侧可信 SDK。
 	sdkChanged := false
 	for _, sdk := range []string{"rpcx-v1", "rpcx-v2"} {
 		trusted := filepath.Join(filepath.Dir(req.BaselineDir), sdk)
@@ -121,6 +145,9 @@ func Evaluate(ctx context.Context, req EvaluationRequest) (result Evaluation, er
 	run := func(dir, label string, args ...string) ([]byte, Command, error) {
 		meta, data, err := commandOn(ctx, req.Backend, req.CacheDir, dir, filepath.Join(req.EvidenceDir, label+".log"), args...)
 		result.Commands = append(result.Commands, meta)
+		if err == nil {
+			err = result.addEvidence(req.EvidenceDir, label, "command_log", label+".log")
+		}
 		return data, meta, err
 	}
 	data, baselineRun, err := run(baseline, "baseline-tests", "go", "test", "-json", "-count=1", "-timeout=30s", "./...")
@@ -153,7 +180,7 @@ func Evaluate(ctx context.Context, req EvaluationRequest) (result Evaluation, er
 	}
 	result.Checks["dependencies"] = dep
 	if sdkChanged {
-		result.Checks["dependencies"] = Check{"fail", "DEP-001: SDK fixture changed"}
+		result.Checks["dependencies"] = Check{Status: "fail", Detail: "DEP-001: SDK fixture changed"}
 	}
 	buildDir := filepath.Join(req.EvidenceDir, "build")
 	if err := os.MkdirAll(buildDir, 0755); err != nil {
@@ -167,13 +194,13 @@ func Evaluate(ctx context.Context, req EvaluationRequest) (result Evaluation, er
 	if err != nil {
 		return result, err
 	}
-	result.Checks["build"] = Check{"pass", "all candidate packages build"}
+	result.Checks["build"] = Check{Status: "pass", Detail: "all candidate packages build"}
 	if build.ExitCode != 0 {
-		result.Checks["build"] = Check{"fail", "candidate build did not complete successfully"}
+		result.Checks["build"] = Check{Status: "fail", Detail: "candidate build did not complete successfully"}
 		for _, name := range []string{"baseline_tests", "test_preservation", "context_propagation"} {
-			result.Checks[name] = Check{"blocked", "candidate build prerequisite failed"}
+			result.Checks[name] = Check{Status: "blocked", Detail: "candidate build prerequisite failed"}
 		}
-	} else if err := evaluateTests(ctx, &result, baselineNames, baselineEvents, candidate, run); err != nil {
+	} else if err := evaluateTests(ctx, &result, baselineNames, baselineEvents, candidate, req.EvidenceDir, run); err != nil {
 		return result, err
 	}
 	for _, module := range []string{baseline, candidate} {
@@ -201,11 +228,13 @@ func Evaluate(ctx context.Context, req EvaluationRequest) (result Evaluation, er
 	if err := ctx.Err(); err != nil {
 		return result, err
 	}
-	result.Verdict = verdict(result.Checks)
+	if err := result.decide(req.EvidenceDir); err != nil {
+		return result, err
+	}
 	return result, nil
 }
 
-func evaluateTests(ctx context.Context, result *Evaluation, baselineNames map[string]bool, baselineEvents map[string]string, candidate string, run func(string, string, ...string) ([]byte, Command, error)) error {
+func evaluateTests(ctx context.Context, result *Evaluation, baselineNames map[string]bool, baselineEvents map[string]string, candidate, evidenceDir string, run func(string, string, ...string) ([]byte, Command, error)) error {
 	data, tests, err := run(candidate, "business-tests", "go", "test", "-json", "-count=1", "-timeout=30s", "./...")
 	if err != nil {
 		return err
@@ -218,12 +247,20 @@ func evaluateTests(ctx context.Context, result *Evaluation, baselineNames map[st
 	if tests.ExitCode != 0 {
 		status = "fail"
 	}
-	result.Checks["baseline_tests"] = Check{status, "candidate business test command; see business-tests.log"}
+	result.Checks["baseline_tests"] = Check{Status: status, Detail: "candidate business test command; see business-tests.log"}
 	names, err := testNames(candidate)
 	if err != nil {
 		return err
 	}
 	result.Checks["test_preservation"] = preservationCheck(baselineNames, baselineEvents, names, states)
+	if err := result.saveEvidence(evidenceDir, "test-inventory", "test_inventory", "test-inventory.json", struct {
+		BaselineNames   map[string]bool   `json:"baseline_names"`
+		CandidateNames  map[string]bool   `json:"candidate_names"`
+		BaselineEvents  map[string]string `json:"baseline_events"`
+		CandidateEvents map[string]string `json:"candidate_events"`
+	}{baselineNames, names, baselineEvents, states}); err != nil {
+		return err
+	}
 	probe, err := probes.ReadFile("probes/context_test.go.txt")
 	if err != nil {
 		return err
@@ -241,8 +278,16 @@ func evaluateTests(ctx context.Context, result *Evaluation, baselineNames map[st
 		return err
 	}
 	result.Checks["context_propagation"] = probeCheck(data, probeRun)
+	policyError := ""
 	if err := contextPolicy(candidate); err != nil {
-		result.Checks["context_propagation"] = Check{"fail", err.Error()}
+		policyError = err.Error()
+		result.Checks["context_propagation"] = Check{Status: "fail", Detail: policyError}
+	}
+	if err := result.saveEvidence(evidenceDir, "context-policy", "structural_check", "context-policy.json", struct {
+		Scope string `json:"scope"`
+		Error string `json:"error,omitempty"`
+	}{"limited context syntax check, not general data-flow analysis", policyError}); err != nil {
+		return err
 	}
 	return ctx.Err()
 }
@@ -306,8 +351,7 @@ func within(path, parent string) bool {
 	return err == nil && rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator))
 }
 
-// Resolve existing symlink ancestors too, so an output alias cannot write into
-// an input. This is a local API guard, not an adversarial filesystem sandbox.
+// 解析已有祖先的符号链接，避免输出别名写入输入；此检查不是文件系统沙箱。
 func canonicalPath(path string) (string, error) {
 	abs, err := filepath.Abs(path)
 	if err != nil {
