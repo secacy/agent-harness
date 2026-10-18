@@ -120,3 +120,11 @@ env HARNESS_DOCKER_TEST=1 GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local G
 需要可访问的本机 Linux 容器引擎、上述已拉取镜像和本地临时端口权限。不需要模型密钥，不访问真实模型服务。覆盖源码/根文件系统只读、未挂载宿主文件和密钥不可见、网络受限、资源限制、OOM、输出超限、取消/超时回收，以及容器内候选迁移、独立验证和补丁还原。全新命令容器不复用 Go 缓存，因此明显慢于本地测试。
 
 不设置 `HARNESS_DOCKER_TEST=1` 的常规 `go test ./...` 会明确跳过真实 Docker 集成，仍执行本地后端、容器参数校验、回收失败替身、Runner 和模拟 API 测试；不能把该结果记作容器验收。
+
+## M2.3 分析选型实验
+
+```sh
+env HARNESS_ANALYSIS_STUDY=1 GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly GOCACHE="$PWD/runs/go-cache" go test -json -count=1 ./scenarios/rpcx/analysisstudy
+```
+
+在临时目录运行本仓库定义的可信样例，比较有限 AST 与类型查询、行为检查的互补性、混合测试与独立生产副本。输出 `STUDY` 结构化记录及预期反例的 `PROBE_FAILURE` 日志；可重定向至 runs 下的新文件留档。不调用模型、不使用 Docker、不修改冻结夹具。默认根模块测试跳过此实验；该包不接受外部候选，不输出运行时质量判定。范围和结果见[实验记录](experiments/2026-10-18-m2-analysis-study-01.md)。
