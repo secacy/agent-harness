@@ -16,13 +16,14 @@ import (
 	"strings"
 )
 
-//go:embed policy.json adapt.go syntax.go compare.go types.go
+//go:embed policy.json adapt.go syntax.go compare.go imports.go types.go
 var materials embed.FS
 
 type policy struct {
-	Version       string            `json:"version"`
-	SpecSHA256    string            `json:"spec_sha256"`
-	BaselineFiles map[string]string `json:"baseline_files"`
+	Version               string            `json:"version"`
+	SpecSHA256            string            `json:"spec_sha256"`
+	BaselineFiles         map[string]string `json:"baseline_files"`
+	AdditionalTestImports []string          `json:"additional_test_imports"`
 }
 
 func loadPolicy() (policy, string, error) {
@@ -35,7 +36,7 @@ func loadPolicy() (policy, string, error) {
 		return p, "", err
 	}
 	hashes := map[string]string{}
-	for _, name := range []string{"policy.json", "adapt.go", "syntax.go", "compare.go", "types.go"} {
+	for _, name := range []string{"policy.json", "adapt.go", "syntax.go", "compare.go", "imports.go", "types.go"} {
 		data, err := materials.ReadFile(name)
 		if err != nil {
 			return p, "", err

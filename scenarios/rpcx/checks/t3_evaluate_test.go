@@ -61,6 +61,29 @@ func mutateT3(t *testing.T, req EvaluationRequest, sample string) {
 	t.Helper()
 	client := filepath.Join(req.CandidateDir, "internal/inventory/client.go")
 	switch sample {
+	case "added-test-imports", "added-imports-deleted-assertion", "added-imports-helper":
+		path := filepath.Join(req.CandidateDir, "cmd/server/handler_test.go")
+		changeT3(t, path, "import (", "import (\n\"time\"\n\"errors\"")
+		data, err := os.ReadFile(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		data = append(data, []byte(`
+func TestAddedDeadline(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	cancel()
+	if !errors.Is(ctx.Err(), context.Canceled) { t.Fatal("cancellation was lost") }
+}
+`)...)
+		if err := os.WriteFile(path, data, 0644); err != nil {
+			t.Fatal(err)
+		}
+		if sample == "added-imports-deleted-assertion" {
+			mutateT3(t, req, "deleted-assertion")
+		}
+		if sample == "added-imports-helper" {
+			mutateT3(t, req, "opaque-helper")
+		}
 	case "opaque-helper":
 		changeT3(t, client, "context.WithTimeout(ctx, 30*time.Second)", "rpcDeadline(ctx)")
 		file, err := os.OpenFile(client, os.O_APPEND|os.O_WRONLY, 0)
@@ -300,6 +323,9 @@ func (b sharedLocalCache) Run(ctx context.Context, req execution.Request) (execu
 }
 
 var t3Samples = []struct{ name, patch, verdict, key string }{
+	{"added-test-imports", "correct-timeout", "ReadyForReview", ""},
+	{"added-imports-deleted-assertion", "correct-timeout", "Rejected", "test_structure"},
+	{"added-imports-helper", "correct-timeout", "NeedsAttention", "migration_analysis"},
 	{"correct-timeout", "correct-timeout", "ReadyForReview", ""},
 	{"missing-timeout", "missing-timeout", "Rejected", "trusted_behavior"},
 	{"release-missing-timeout", "release-missing-timeout", "Rejected", "trusted_behavior"},

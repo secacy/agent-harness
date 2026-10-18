@@ -28,17 +28,21 @@
 
 该命令显式使用可信宿主，跳过慢检查，允许未冻结材料。匹配预期可返回 0，但 `accepted` 始终为 false；`--quick` 必须与 `--development` 一起使用。省略 `--trusted-local` 可在 Docker 中开发联调。正式模式下材料变化会失败，不自动更新 freeze.json。
 
+当前检出存在一项已知限制：提交 dc5227b 调整模块路径时修改了四份被纳入 T3 冻结清单的验收源码，默认正式 T3/L1 验收会拒绝这个目录。本轮 L1 回归使用从 1afa117 提取并逐文件核对 freeze.json 的独立快照；没有修改冻结清单。具体路径及复核条件见 [M2 工作记录第 23 节](worklog/2026-10-18-m2-evidence-gate.md#23-真实实验后的支持边界评审与测试导入扩展)，后续需处理验收驱动与冻结材料的边界。
+
 报告包含输入文件摘要、执行后端与命令日志、原测试事件、参考检查 pass/fail/inconclusive、失败条款、补丁重放及生产代码绑定。预期反例的失败算匹配；未执行、执行错误或观测不充分不能冒充预期反例失败。这是 M2.1 离线场景证据，没有运行时质量判定；`cmd/harness` 的 T3 接入另见下文单仓库任务入口。检查边界见 [T3 场景说明](../scenarios/rpcx/t3/README.md)。
 
 ## 验证工具自身测试
 
 ```sh
-env GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly GOCACHE="$PWD/runs/go-cache" go test ./...
+env GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly GOCACHE="$PWD/runs/go-cache" go test -p 1 ./cmd/... ./internal/... ./scenarios/...
 ```
 
 覆盖受保护路径新增/删除/改名/修改、测试缺失/跳过/未执行、专项探针未执行、context 别名、符号链接拒绝及判定边界。另在无 manifest 的临时目录中直接调用 `Evaluate`，验证输入不被修改、普通编译与测试编译失败的判定、规范绑定、证据目录约束、基线失败、命令启动失败，以及父 context 取消和 deadline 传播。
 
 该命令仅测试根模块；接口集成测试会运行其临时副本中的业务测试，但不替代两个 SDK 和五种公开补丁的完整场景验收。完整验证使用上面的场景入口。
+
+显式列出代码目录是为了排除 `runs/` 留存的实验源码；Git 忽略规则不会阻止 `go test ./...` 扫描这些文件。`-p 1` 限制包级并发，避免进程超时测试受编译争抢影响。
 
 ## 证据绑定与质量聚合测试
 
@@ -166,6 +170,14 @@ env GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly G
 ```
 
 对冻结原测试作宿主最小适配，再比较候选完整结构。覆盖四个冻结候选、合法修改、断言删除、helper 重写、测试执行入口/构建范围变化及输入边界；输出 TEST_INTEGRITY 报告。默认跳过 Docker，对临时副本应用补丁，不执行候选测试，不调用模型，也不修改原夹具。
+
+新增导入边界的完整本地对照（仅限可信开发夹具）：
+
+```sh
+env HARNESS_T3_TEST=1 GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly GOCACHE="$PWD/runs/go-cache" go test -json -count=1 ./scenarios/rpcx/checks -run 'TestT3LocalQualityMatrix/added-'
+```
+
+三组分别验证：合法 errors/time 导入为 ReadyForReview；同时删除断言为 Rejected；同时提取未知生产 helper 为 NeedsAttention。通过与需关注组仍执行真实超时检查，不以结构比较代替行为证据。
 
 ```sh
 env HARNESS_DOCKER_TEST=1 GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly GOCACHE="$PWD/runs/go-cache" go test -json -count=1 ./scenarios/rpcx/testintegrity -run '^TestDockerShowsTheLimitsOfNameOnlyPreservation$'

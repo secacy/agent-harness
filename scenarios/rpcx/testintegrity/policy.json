@@ -1,5 +1,6 @@
 {
-  "version": "rpcx-test-structure-v1",
+  "version": "rpcx-test-structure-v2",
+  "additional_test_imports": ["errors", "time"],
   "spec_sha256": "5f096ec6bae18525fb5113781c096b2393707f95aa62f2ac9f9e4e4f94c8cad7",
   "baseline_files": {
     "cmd/server/handler_test.go": "02d46b533f7d5542c1160dc479831484bf18b4df14376a4fb3f04755edf0a5cd",

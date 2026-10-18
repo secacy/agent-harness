@@ -24,21 +24,24 @@ report, err := testintegrity.Compare(baselineTests, candidateTests)
 | --- | --- |
 | 宿主允许的适配，或只改格式/普通注释 | preserved |
 | 在现有文件中新增普通 Test 函数，原结构不变 | preserved，并列出新增测试 |
+| 新增测试使用策略允许的 errors/time 默认名称导入，原绑定不受影响 | preserved；不代表新增测试的断言或调度已被证明正确 |
 | 原测试名消失 | violated：original_test_removed |
 | 原测试首语句直接调用 t.Skip/Skipf/SkipNow | violated：original_test_skipped |
 | 仅删除已识别的纯断言，其余结构不变 | violated：original_assertion_deleted |
 | 等价 helper 重写、条件重写、条件跳过 | unknown |
-| helper、TestMain/init、全局声明、导入或语义指令变化 | unknown |
+| helper、TestMain/init、全局声明、不支持的导入或语义指令变化 | unknown |
 | 新增文件、跨文件移动、声明重名、候选语法错误 | unknown |
 
 纯断言包括冻结基线中无 Init/Else、单独调用 testing 错误方法的 if，以及直接错误方法语句。比较器要求其他节点逐字段相同；新增测试不能用断言数量补偿原测试的删除。带 Init 的 guard 可能包含执行行为，删除时保留 unknown。若同时出现 helper、文件范围或其他重写，则不会把断言节点消失直接判为删除，使用 assertion_replacement_unproven 保留缺口。
+
+策略 `rpcx-test-structure-v2` 允许有限新增导入：原路径和别名必须全部保留，不能重复；新增项只能是 `policy.json` 列出的 `errors`、`time`，且不能有显式别名、点导入或空白导入。新增包名不得出现在该文件适配后的任一原声明中，避免改变原绑定；扫描保守包含局部变量和字段名。其他包即便属于标准库也不自动接受。合法引用和未使用导入由构建检查判断，原声明比较与事件检查继续执行。该规则不认可任意新增函数或全局声明，也不扩展生产 helper 的支持范围。
 
 有明确违规时报告仍为 violated，同时保留其余 unknown。不受支持的基线、越界/非测试路径或输入超限返回 error 和空报告。每文件最多 1 MiB，最多 10000 个文件、合计 16 MiB。
 
 报告 schema_version=1：
 
 - `baseline_tests`、`adapted_tests`、`candidate_tests` 保存完整文件摘要集合及集合摘要。
-- `material_sha256` 绑定策略及四份实现文件，`verifier_version` 标识策略版本，`go_version` 记录宿主 AST/格式化工具链。
+- `material_sha256` 绑定策略及实现文件（包括导入边界检查），`verifier_version` 标识策略版本，`go_version` 记录宿主 AST/格式化工具链。
 - `declarations` 记录每个原测试/helper 的预期与实际 AST 摘要及结构状态。
 - `findings` 关联 TEST-001、原因与物理位置，`added_tests` 保存新增测试清单。
 

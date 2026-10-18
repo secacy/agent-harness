@@ -46,10 +46,10 @@ func Compare(baseline, candidate map[string][]byte) (Report, error) {
 			unknownFiles[path] = true
 			complexChange = true
 			add("unknown", "test_file_added", "new test file build and binding scope needs confirmation", Location{Tree: "candidate", File: path, Line: 1})
-		} else if file.file.Name.Name != original.file.Name.Name || !reflect.DeepEqual(file.imports, original.imports) || !reflect.DeepEqual(file.directives, original.directives) {
+		} else if file.file.Name.Name != original.file.Name.Name || !importsPreserved(original, file, p.AdditionalTestImports) || !reflect.DeepEqual(file.directives, original.directives) {
 			unknownFiles[path] = true
 			complexChange = true
-			add("unknown", "test_file_scope_changed", "package, imports or semantic directives changed", Location{Tree: "candidate", File: path, Line: 1})
+			add("unknown", "test_file_scope_changed", "package, imports or semantic directives changed beyond the supported scope", Location{Tree: "candidate", File: path, Line: 1})
 		}
 		if len(file.other) > 0 {
 			unknownFiles[path] = true
@@ -111,7 +111,7 @@ func Compare(baseline, candidate map[string][]byte) (Report, error) {
 		}
 		if record.ExpectedSHA256 != record.ActualSHA256 {
 			record.Status = "unknown"
-			if kind == "test" && canonical(e.node.Type) == canonical(a.node.Type) && reflect.DeepEqual(e.source.imports, a.source.imports) && a.node.Body != nil && len(a.node.Body.List) > 0 && testingCall(a.node.Body.List[0], "Skip", "Skipf", "SkipNow") {
+			if kind == "test" && canonical(e.node.Type) == canonical(a.node.Type) && importsPreserved(e.source, a.source, p.AdditionalTestImports) && a.node.Body != nil && len(a.node.Body.List) > 0 && testingCall(a.node.Body.List[0], "Skip", "Skipf", "SkipNow") {
 				record.Status = "violated"
 				add("violated", "original_test_skipped", "required original test starts with an unconditional skip", a.location("candidate"))
 			} else if ok, removed := deletionOnly(reflect.ValueOf(e.node), reflect.ValueOf(a.node)); ok && len(removed) > 0 {
