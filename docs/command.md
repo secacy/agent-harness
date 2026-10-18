@@ -199,4 +199,24 @@ env HARNESS_T3_TEST=1 GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLA
 env HARNESS_DOCKER_TEST=1 GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly GOCACHE="$PWD/runs/go-cache" go test -json -count=1 -timeout=10m ./scenarios/rpcx/checks -run '^TestT3DockerQualityMatrix$'
 ```
 
-固定镜像下运行正确候选、删除断言、错误期限加未覆盖构建配置三组组合门禁。正确候选执行真实到期检查；其他组保留违规和阻断依据。完整参考标准交叉验收另行进行，这些开发对照不能替代正式 L1 验收或 L2 留出评测。
+固定镜像下运行正确候选、删除断言、错误期限加未覆盖构建配置三组组合门禁。正确候选执行真实到期检查；其他组保留违规和阻断依据。独立参考交叉验收使用下方 L1 入口；这些开发对照不能替代正式 L1 验收或 L2 留出评测。
+
+## M2.3 L1 独立交叉验收
+
+```sh
+env GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly GOCACHE="$PWD/runs/go-cache" go test -json -count=1 ./scenarios/rpcx/l1/...
+```
+
+重放 19 个完整补丁，检查清单、冻结输入保护及参考事件协议；不启动完整门禁或等待真实到期。
+
+```sh
+env GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly GOCACHE="$PWD/runs/go-cache" go run ./scenarios/rpcx/l1/cmd/verify -trusted-local
+```
+
+显式执行本仓库受控夹具的全量冻结验收，包含门禁和独立参考的真实到期检查，耗时数分钟。不加 `-trusted-local` 则使用已准备的固定 Docker 镜像，冷编译成本更高；不隐式拉取镜像或回退到本地。两种后端都不访问模型服务。
+
+```sh
+env GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly GOCACHE="$PWD/runs/go-cache" go run ./scenarios/rpcx/l1/cmd/verify -trusted-local -development -quick -cases=wrong-duration,shared-expired-context,deleted-test
+```
+
+开发子集仅核对选中样例，`-quick` 只省略参考慢检查，不改变运行时门禁。完整数据、冻结规则及原始产物见 [L1 说明](../scenarios/rpcx/l1/README.md)。命令输出新建的 runs/rpcx-l1-* 路径及 matched/accepted；开发、子集或省略慢检查永不 accepted。每项有 gate.json、参考日志及补丁重放，最终 report.json 记录条款/原因差异、参考适用范围和产物摘要。

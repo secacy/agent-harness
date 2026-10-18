@@ -8,7 +8,7 @@
 
 M2 已增加绑定证据的质量聚合，以及在执行后端内加载类型的 [rpcx 有限边界分析](scenarios/rpcx/analysis/README.md)。后者已通过本地与 Docker 对照，能提供 SDK 位置、直接超时关系和覆盖缺口；完整 T3 门禁仍在实现中，进度见[里程碑](docs/MILESTONES.md)。
 
-冻结 T3 场景的[组合质量门禁](scenarios/rpcx/checks/README.md)已接入 Evaluate：将测试结构、有限迁移分析和 40 项可信行为检查组合，绑定同一候选与实际材料，区分 ReadyForReview、Rejected 和 NeedsAttention。行为检查包括两个真实 30 秒到期检查；未证明的测试重写或调用链变化不会因行为通过而放行。开发矩阵及真实 Docker 对照已通过，完整 L1 独立参考交叉验收与新规范 Runner 接入仍待完成。
+冻结 T3 场景的[组合质量门禁](scenarios/rpcx/checks/README.md)已接入 Evaluate：将测试结构、有限迁移分析和 40 项可信行为检查组合，绑定同一候选与实际材料，区分 ReadyForReview、Rejected 和 NeedsAttention。[冻结 L1 独立交叉验收](scenarios/rpcx/l1/README.md)的 19 例全部符合预期，包含真实到期及参考覆盖差异；M2.3 已在声明范围内验收。新规范 Runner 和审核交付为下一步，构造任务成绩不代表真实仓库成功率。
 
 需要本地 Go 1.23 或更新版本、Git 和 POSIX shell；已在 Go 1.26.5 / macOS arm64 验证。
 

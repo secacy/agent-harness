@@ -1,0 +1,30 @@
+package main
+
+import (
+	"context"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+
+	"example.com/rpcx/v2"
+)
+
+// 此请求变体仅用于离线 L1 参考检查，不进入运行时探针。
+func TestReferenceAlternateRequest(t *testing.T) {
+	calls := 0
+	service := referenceService(t, func(_ context.Context, method string, request rpcx.Request) error {
+		calls++
+		if method != "Inventory.Reserve" || request.SKU != "audit-lens" || request.Quantity != 13 {
+			referenceFailure(t, "BEHAVIOR-001", "alternate request changed RPC arguments")
+		}
+		return nil
+	})
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodPost, "/orders?mode=alternate", strings.NewReader(`{"ID":"audit-order","SKU":"audit-lens","Quantity":13}`))
+	(&Handler{service: service}).Place(response, request)
+	order, exists := service.Get("audit-order")
+	if response.Code != http.StatusCreated || calls != 1 || !exists || order.SKU != "audit-lens" || order.Quantity != 13 {
+		referenceFailure(t, "BEHAVIOR-001", "alternate request did not preserve order placement")
+	}
+}

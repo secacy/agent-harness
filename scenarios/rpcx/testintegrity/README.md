@@ -46,6 +46,6 @@ AST 摘要是当前 Go 工具链下去掉位置后的结构打印摘要；跨工
 
 **能力边界：**preserved 只证明声明范围内原测试结构保留，不证明测试真的运行、断言必然有效或业务正确。新增 Test 函数依然可能影响执行顺序和共享状态；生产代码也参与运行。必须继续检查原测试通过/跳过事件，并在只含同一候选生产代码的可信副本运行业务与超时检查。范围未知不能被另一项行为通过覆盖。此实现已接入 Evaluate 的 T3 策略，旧 v0.1.0 策略不变。
 
-可信生产副本及独立 T3 探针已在 [behavior](../behavior/README.md) 实现，调用本包 AdaptBaseline；它的通过不能覆盖本包的 unknown 或 violated。质量组合见 [checks](../checks/README.md)，完整 L1 独立交叉验收仍待完成。
+可信生产副本及独立 T3 探针已在 [behavior](../behavior/README.md) 实现，调用本包 AdaptBaseline；它的通过不能覆盖本包的 unknown 或 violated。质量组合见 [checks](../checks/README.md)，完整冻结独立交叉验收见 [L1](../l1/README.md)。
 
 机制测试及四组 Docker 对照见[命令说明](../../../docs/command.md#m23-测试结构完整性)，方案取舍与实际结果见 [M2 工作记录](../../../docs/worklog/2026-10-18-m2-evidence-gate.md#17-m23测试结构完整性与适配对照)。

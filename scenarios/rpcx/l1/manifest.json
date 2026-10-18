@@ -1,0 +1,571 @@
+{
+  "schema_version": 1,
+  "version": "v0.1.0",
+  "spec_sha256": "5f096ec6bae18525fb5113781c096b2393707f95aa62f2ac9f9e4e4f94c8cad7",
+  "cases": [
+    {
+      "id": "correct-timeout",
+      "patch": "patches/correct-timeout.patch",
+      "patch_sha256": "bb2a988766740c68506cd10490a6442f3b0daf7783d10f1b3096427b0188f002",
+      "review": "reviews.md#correct-timeout",
+      "expected": {
+        "verdict": "ReadyForReview",
+        "checks": {
+          "dependencies": "pass",
+          "protected_paths": "pass",
+          "build": "pass",
+          "candidate_tests": "pass",
+          "test_structure": "pass",
+          "request_scope": "pass",
+          "migration_analysis": "pass",
+          "trusted_behavior": "pass"
+        },
+        "reasons": [],
+        "reference_build": "pass",
+        "reference_fast": "pass",
+        "reference_rules": []
+      }
+    },
+    {
+      "id": "missing-timeout",
+      "patch": "patches/missing-timeout.patch",
+      "patch_sha256": "1a848f18907a7045a2d40a1e9d35725091dc87175254348e48c6e990ab63fc69",
+      "review": "reviews.md#missing-timeout",
+      "expected": {
+        "verdict": "Rejected",
+        "checks": {
+          "dependencies": "pass",
+          "protected_paths": "pass",
+          "build": "pass",
+          "candidate_tests": "pass",
+          "test_structure": "pass",
+          "request_scope": "unknown",
+          "migration_analysis": "unknown",
+          "trusted_behavior": "fail"
+        },
+        "reasons": [
+          {
+            "check": "trusted_behavior",
+            "code": "behavior_fail",
+            "rule": "TIME-001"
+          }
+        ],
+        "reference_build": "pass",
+        "reference_fast": "fail",
+        "reference_rules": [
+          "TIME-001",
+          "TIME-003"
+        ]
+      }
+    },
+    {
+      "id": "release-missing-timeout",
+      "patch": "patches/release-missing-timeout.patch",
+      "patch_sha256": "cce96378abd43b628dce2e5f6725d5ac868690cc7b7513f44f42177999983bcb",
+      "review": "reviews.md#release-missing-timeout",
+      "expected": {
+        "verdict": "Rejected",
+        "checks": {
+          "dependencies": "pass",
+          "protected_paths": "pass",
+          "build": "pass",
+          "candidate_tests": "pass",
+          "test_structure": "pass",
+          "request_scope": "pass",
+          "migration_analysis": "unknown",
+          "trusted_behavior": "fail"
+        },
+        "reasons": [
+          {
+            "check": "trusted_behavior",
+            "code": "behavior_fail",
+            "rule": "TIME-001"
+          }
+        ],
+        "reference_build": "pass",
+        "reference_fast": "fail",
+        "reference_rules": [
+          "TIME-001",
+          "TIME-003"
+        ]
+      }
+    },
+    {
+      "id": "wrong-duration",
+      "patch": "patches/wrong-duration.patch",
+      "patch_sha256": "07df8299316b7bd4a03988c0cfa9ba7563963cd0d5ec8b3535f4af7c86f851ae",
+      "review": "reviews.md#wrong-duration",
+      "expected": {
+        "verdict": "Rejected",
+        "checks": {
+          "dependencies": "pass",
+          "protected_paths": "pass",
+          "build": "pass",
+          "candidate_tests": "pass",
+          "test_structure": "pass",
+          "request_scope": "pass",
+          "migration_analysis": "fail",
+          "trusted_behavior": "blocked"
+        },
+        "reasons": [
+          {
+            "check": "migration_analysis",
+            "code": "timeout_duration_mismatch",
+            "rule": "TIME-001"
+          }
+        ],
+        "reference_build": "pass",
+        "reference_fast": "fail",
+        "reference_rules": [
+          "TIME-001",
+          "TIME-002"
+        ]
+      }
+    },
+    {
+      "id": "reset-parent",
+      "patch": "patches/reset-parent.patch",
+      "patch_sha256": "35e84e2870f966148ff968efa4eb6e651ec73f8476f47c73949471a29ab1c270",
+      "review": "reviews.md#reset-parent",
+      "expected": {
+        "verdict": "Rejected",
+        "checks": {
+          "dependencies": "pass",
+          "protected_paths": "pass",
+          "build": "pass",
+          "candidate_tests": "pass",
+          "test_structure": "pass",
+          "request_scope": "pass",
+          "migration_analysis": "unknown",
+          "trusted_behavior": "fail"
+        },
+        "reasons": [
+          {
+            "check": "trusted_behavior",
+            "code": "behavior_fail",
+            "rule": "CTX-003"
+          }
+        ],
+        "reference_build": "pass",
+        "reference_fast": "fail",
+        "reference_rules": [
+          "TIME-002"
+        ]
+      }
+    },
+    {
+      "id": "shared-expired-context",
+      "patch": "patches/shared-expired-context.patch",
+      "patch_sha256": "6db781a62be4df4d5232cc1485bd0380f25b61ab4f0b4a8ea705af3684fbf702",
+      "review": "reviews.md#shared-expired-context",
+      "expected": {
+        "verdict": "Rejected",
+        "checks": {
+          "dependencies": "pass",
+          "protected_paths": "pass",
+          "build": "pass",
+          "candidate_tests": "fail",
+          "test_structure": "pass",
+          "request_scope": "unknown",
+          "migration_analysis": "unknown",
+          "trusted_behavior": "blocked"
+        },
+        "reasons": [
+          {
+            "check": "candidate_tests",
+            "code": "candidate_test_failed",
+            "rule": "TEST-001"
+          }
+        ],
+        "reference_build": "pass",
+        "reference_fast": "fail",
+        "reference_rules": [
+          "TIME-003"
+        ]
+      }
+    },
+    {
+      "id": "swallowed-error",
+      "patch": "patches/swallowed-error.patch",
+      "patch_sha256": "0f5e3be8d1f7165093bfb8fce1ed41acbd3daa3052d7f4afae5717ec5c0a7b38",
+      "review": "reviews.md#swallowed-error",
+      "expected": {
+        "verdict": "Rejected",
+        "checks": {
+          "dependencies": "pass",
+          "protected_paths": "pass",
+          "build": "pass",
+          "candidate_tests": "fail",
+          "test_structure": "pass",
+          "request_scope": "pass",
+          "migration_analysis": "pass",
+          "trusted_behavior": "blocked"
+        },
+        "reasons": [
+          {
+            "check": "candidate_tests",
+            "code": "candidate_test_failed",
+            "rule": "TEST-001"
+          }
+        ],
+        "reference_build": "pass",
+        "reference_fast": "fail",
+        "reference_rules": [
+          "TIME-004"
+        ]
+      }
+    },
+    {
+      "id": "deleted-assertion",
+      "patch": "patches/deleted-assertion.patch",
+      "patch_sha256": "3e3edc2fa9bfa770758c9e019b9f75429a281e36b757f152e0ecbd705e99557a",
+      "review": "reviews.md#deleted-assertion",
+      "expected": {
+        "verdict": "Rejected",
+        "checks": {
+          "dependencies": "pass",
+          "protected_paths": "pass",
+          "build": "pass",
+          "candidate_tests": "pass",
+          "test_structure": "fail",
+          "request_scope": "pass",
+          "migration_analysis": "pass",
+          "trusted_behavior": "blocked"
+        },
+        "reasons": [
+          {
+            "check": "test_structure",
+            "code": "original_assertion_deleted",
+            "rule": "TEST-001"
+          }
+        ],
+        "reference_build": "pass",
+        "reference_fast": "pass",
+        "reference_rules": []
+      }
+    },
+    {
+      "id": "deleted-test",
+      "patch": "patches/deleted-test.patch",
+      "patch_sha256": "e47adbae1c1e7db06c249dba630d2c1a47e33ce46772c48aa7dfbf05f61d5956",
+      "review": "reviews.md#deleted-test",
+      "expected": {
+        "verdict": "Rejected",
+        "checks": {
+          "dependencies": "pass",
+          "protected_paths": "pass",
+          "build": "pass",
+          "candidate_tests": "unknown",
+          "test_structure": "fail",
+          "request_scope": "pass",
+          "migration_analysis": "pass",
+          "trusted_behavior": "blocked"
+        },
+        "reasons": [
+          {
+            "check": "test_structure",
+            "code": "original_test_removed",
+            "rule": "TEST-001"
+          }
+        ],
+        "reference_build": "pass",
+        "reference_fast": "pass",
+        "reference_rules": []
+      }
+    },
+    {
+      "id": "skipped-test",
+      "patch": "patches/skipped-test.patch",
+      "patch_sha256": "b66ff3501ed50cd9262d29caff4148c918cdd16e23ce0d573630eccbfe1e2d5b",
+      "review": "reviews.md#skipped-test",
+      "expected": {
+        "verdict": "Rejected",
+        "checks": {
+          "dependencies": "pass",
+          "protected_paths": "pass",
+          "build": "pass",
+          "candidate_tests": "fail",
+          "test_structure": "fail",
+          "request_scope": "pass",
+          "migration_analysis": "pass",
+          "trusted_behavior": "blocked"
+        },
+        "reasons": [
+          {
+            "check": "test_structure",
+            "code": "original_test_skipped",
+            "rule": "TEST-001"
+          }
+        ],
+        "reference_build": "pass",
+        "reference_fast": "pass",
+        "reference_rules": []
+      }
+    },
+    {
+      "id": "opaque-helper",
+      "patch": "patches/opaque-helper.patch",
+      "patch_sha256": "930b55398bf557dc765699a988d05c30fd4700438ea16b3c44b6812b72085a37",
+      "review": "reviews.md#opaque-helper",
+      "expected": {
+        "verdict": "NeedsAttention",
+        "checks": {
+          "dependencies": "pass",
+          "protected_paths": "pass",
+          "build": "pass",
+          "candidate_tests": "pass",
+          "test_structure": "pass",
+          "request_scope": "unknown",
+          "migration_analysis": "unknown",
+          "trusted_behavior": "pass"
+        },
+        "reasons": [
+          {
+            "check": "migration_analysis",
+            "code": "unsupported_context_derivation",
+            "rule": "SCOPE-001"
+          }
+        ],
+        "reference_build": "pass",
+        "reference_fast": "pass",
+        "reference_rules": []
+      }
+    },
+    {
+      "id": "rewritten-assertion",
+      "patch": "patches/rewritten-assertion.patch",
+      "patch_sha256": "18910c2c186b0d18b0567bfec084a417f36e337f86b41c2543356ccfcef4edc8",
+      "review": "reviews.md#rewritten-assertion",
+      "expected": {
+        "verdict": "NeedsAttention",
+        "checks": {
+          "dependencies": "pass",
+          "protected_paths": "pass",
+          "build": "pass",
+          "candidate_tests": "pass",
+          "test_structure": "unknown",
+          "request_scope": "pass",
+          "migration_analysis": "pass",
+          "trusted_behavior": "pass"
+        },
+        "reasons": [
+          {
+            "check": "test_structure",
+            "code": "original_declaration_changed",
+            "rule": "TEST-001"
+          }
+        ],
+        "reference_build": "pass",
+        "reference_fast": "pass",
+        "reference_rules": []
+      }
+    },
+    {
+      "id": "unverified-build-tag",
+      "patch": "patches/unverified-build-tag.patch",
+      "patch_sha256": "f819c3b8d18279318551115463640ab3e52d302ebdba4f1d87db59961cb31e25",
+      "review": "reviews.md#unverified-build-tag",
+      "expected": {
+        "verdict": "NeedsAttention",
+        "checks": {
+          "dependencies": "pass",
+          "protected_paths": "pass",
+          "build": "pass",
+          "candidate_tests": "pass",
+          "test_structure": "pass",
+          "request_scope": "unknown",
+          "migration_analysis": "unknown",
+          "trusted_behavior": "pass"
+        },
+        "reasons": [
+          {
+            "check": "migration_analysis",
+            "code": "inactive_build_file",
+            "rule": "SCOPE-001"
+          }
+        ],
+        "reference_build": "pass",
+        "reference_fast": "pass",
+        "reference_rules": []
+      }
+    },
+    {
+      "id": "fail-and-unknown",
+      "patch": "patches/fail-and-unknown.patch",
+      "patch_sha256": "99eb1f3f9051b5a1126ecc4b18f3b8a739c7522f3d812e3c08270977247062d7",
+      "review": "reviews.md#fail-and-unknown",
+      "expected": {
+        "verdict": "Rejected",
+        "checks": {
+          "dependencies": "pass",
+          "protected_paths": "pass",
+          "build": "pass",
+          "candidate_tests": "pass",
+          "test_structure": "pass",
+          "request_scope": "unknown",
+          "migration_analysis": "fail",
+          "trusted_behavior": "blocked"
+        },
+        "reasons": [
+          {
+            "check": "migration_analysis",
+            "code": "timeout_duration_mismatch",
+            "rule": "TIME-001"
+          }
+        ],
+        "reference_build": "pass",
+        "reference_fast": "fail",
+        "reference_rules": [
+          "TIME-001"
+        ]
+      }
+    },
+    {
+      "id": "protected-path",
+      "patch": "patches/protected-path.patch",
+      "patch_sha256": "8f881722e726009d3830af81c70e7cfa9fe8a55753fec8f03f71b1e562648e9b",
+      "review": "reviews.md#protected-path",
+      "expected": {
+        "verdict": "Rejected",
+        "checks": {
+          "dependencies": "pass",
+          "protected_paths": "fail",
+          "build": "pass",
+          "candidate_tests": "pass",
+          "test_structure": "pass",
+          "request_scope": "pass",
+          "migration_analysis": "pass",
+          "trusted_behavior": "blocked"
+        },
+        "reasons": [
+          {
+            "check": "protected_paths",
+            "code": "protected_paths_fail",
+            "rule": "PATH-001"
+          }
+        ],
+        "reference_build": "pass",
+        "reference_fast": "pass",
+        "reference_rules": []
+      }
+    },
+    {
+      "id": "missed-callsite",
+      "patch": "patches/missed-callsite.patch",
+      "patch_sha256": "733cf759ac0ab6c33e51f5cbe3ed520031e9671582d170eb9cd7f37c8b2abab1",
+      "review": "reviews.md#missed-callsite",
+      "expected": {
+        "verdict": "Rejected",
+        "checks": {
+          "dependencies": "pass",
+          "protected_paths": "pass",
+          "build": "fail",
+          "candidate_tests": "blocked",
+          "test_structure": "pass",
+          "request_scope": "unknown",
+          "migration_analysis": "blocked",
+          "trusted_behavior": "blocked"
+        },
+        "reasons": [
+          {
+            "check": "build",
+            "code": "build_fail",
+            "rule": "CTX-001"
+          }
+        ],
+        "reference_build": "fail",
+        "reference_fast": "blocked",
+        "reference_rules": []
+      }
+    },
+    {
+      "id": "sdk-change",
+      "patch": "patches/sdk-change.patch",
+      "patch_sha256": "80d3153a15be3d8ff584179910e934e23d5b5f6b340a4a3d34c333c8c03101de",
+      "review": "reviews.md#sdk-change",
+      "expected": {
+        "verdict": "Rejected",
+        "checks": {
+          "dependencies": "fail",
+          "protected_paths": "pass",
+          "build": "blocked",
+          "candidate_tests": "blocked",
+          "test_structure": "pass",
+          "request_scope": "pass",
+          "migration_analysis": "blocked",
+          "trusted_behavior": "blocked"
+        },
+        "reasons": [
+          {
+            "check": "dependencies",
+            "code": "dependencies_fail",
+            "rule": "DEP-001"
+          }
+        ],
+        "reference_build": "pass",
+        "reference_fast": "pass",
+        "reference_rules": []
+      }
+    },
+    {
+      "id": "test-init-exit",
+      "patch": "patches/test-init-exit.patch",
+      "patch_sha256": "041616898f58541c84efa75c0ce14c40f899a2661a318b2fb32e8abd8c4ff172",
+      "review": "reviews.md#test-init-exit",
+      "expected": {
+        "verdict": "NeedsAttention",
+        "checks": {
+          "dependencies": "pass",
+          "protected_paths": "pass",
+          "build": "pass",
+          "candidate_tests": "unknown",
+          "test_structure": "unknown",
+          "request_scope": "pass",
+          "migration_analysis": "pass",
+          "trusted_behavior": "pass"
+        },
+        "reasons": [
+          {
+            "check": "candidate_tests",
+            "code": "original_test_unknown",
+            "rule": "TEST-001"
+          }
+        ],
+        "reference_build": "pass",
+        "reference_fast": "pass",
+        "reference_rules": []
+      }
+    },
+    {
+      "id": "unprobed-branch",
+      "patch": "patches/unprobed-branch.patch",
+      "patch_sha256": "550a6eb13069fc7e7af3fce24323a8a4126c5e193430d095062c3db1a2ba9494",
+      "review": "reviews.md#unprobed-branch",
+      "expected": {
+        "verdict": "NeedsAttention",
+        "checks": {
+          "dependencies": "pass",
+          "protected_paths": "pass",
+          "build": "pass",
+          "candidate_tests": "pass",
+          "test_structure": "pass",
+          "request_scope": "unknown",
+          "migration_analysis": "pass",
+          "trusted_behavior": "pass"
+        },
+        "reasons": [
+          {
+            "check": "request_scope",
+            "code": "request_chain_or_file_structure_unproven",
+            "rule": "SCOPE-001"
+          }
+        ],
+        "reference_build": "pass",
+        "reference_fast": "fail",
+        "reference_rules": [
+          "BEHAVIOR-001"
+        ]
+      }
+    }
+  ]
+}

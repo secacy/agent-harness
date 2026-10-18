@@ -2,3 +2,4 @@
 # and empty lines. Preserve patch syntax instead of treating it as source indent.
 scenarios/rpcx/cases/patches/*.patch -whitespace
 scenarios/rpcx/t3/cases/patches/*.patch -whitespace
+scenarios/rpcx/l1/patches/*.patch -whitespace

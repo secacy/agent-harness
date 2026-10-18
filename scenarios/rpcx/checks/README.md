@@ -27,6 +27,6 @@ T3 输入仍为两套同级布局，各自包含 demo-orders、rpcx-v1、rpcx-v2
 
 证据包括规范、宿主策略、输入集合摘要、验证器源码材料、两套实际执行副本、适配测试、命令日志和三个生产者的原始材料。生产者内部命令见各自 execution.json，顶层 Commands 保存门禁直接执行的命令。MaterialsSHA256 绑定本门禁及复用实现；分析、结构和行为材料另有自己的摘要。摘要用于一致性审查，可信宿主仍是前提。
 
-本接口不创建 Run，不持久化最终 evaluation.json，也不调用模型；调用方保存 Evaluation。证据目录附带独立 go.mod，以免生成的工具源码参与项目根模块扫描。旧 CLI/Runner 仍选择旧场景；新规范的 Runner 接入、完整 L1 manifest 与独立 oracle 交叉验收尚待完成。
+本接口不创建 Run，不持久化最终 evaluation.json，也不调用模型；调用方保存 Evaluation。证据目录附带独立 go.mod，以免生成的工具源码参与项目根模块扫描。[冻结 L1 的完整独立交叉验收](../l1/README.md)已通过；旧 CLI/Runner 仍选择旧场景，新规范 Runner 与审核交付尚待实现。
 
 测试命令见[命令说明](../../../docs/command.md#m23-t3-组合质量门禁)，方案与实际验证见 [M2 工作记录](../../../docs/worklog/2026-10-18-m2-evidence-gate.md)。
