@@ -300,3 +300,17 @@ env HARNESS_TRANSLATION_ACCEPTANCE=1 HARNESS_TRANSLATION_BACKEND=docker HARNESS_
 ```
 
 使用确定性模型重放编辑，验证双配置基线先于模型、go_check 反馈、独立质量判定、补丁重放和审核链接。Translation 需本地/容器 Go 1.26.0 或更新；离线依赖已随固定数据发布，仍需提前准备固定工具链镜像。规范与校准边界见 [Translation 说明](../scenarios/rpcx/translation/README.md)。
+
+## M3.4 Workouts 多模块离线基线
+
+```sh
+env GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly GOCACHE="$PWD/runs/go-cache" go run ./scenarios/rpcx/l2/cmd/verify-baseline -dataset rpcx-l2-workouts-v1
+```
+
+默认使用已准备的固定 Docker 镜像，依次复验 rpcx-v1、rpcx-v2、common、trainings，均只读挂载，使用认证离线依赖和各命令空构建缓存。可信本地夹具可追加 `-trusted-local`。需 Go 1.25.0 或更新版本；不会自动下载工具链或运行云端组件。12 条命令、55 项测试/子测试，两个本地业务模块仍只计一个样本。报告的 accepted 只表示冻结基线通过，不是迁移效果。
+
+```sh
+env GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly GOCACHE="$PWD/runs/go-cache" go test -race -json -count=1 ./scenarios/rpcx/l2/...
+```
+
+包含发布身份/来源和准备补丁重放、common 构建失败/缺测试事件/取消/输入漂移、旧默认入口与 Translation 配置矩阵机制。真实业务及隔离复验使用上面的基线入口，不使用替身结果冒充业务运行。范围及裁剪损失见 [Workouts 说明](../scenarios/rpcx/l2/data/rpcx-l2-workouts-v1/README.md)和[工作记录](worklog/2026-10-19-workouts-baseline.md)。

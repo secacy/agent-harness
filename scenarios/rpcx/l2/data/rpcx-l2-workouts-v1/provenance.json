@@ -1,0 +1,454 @@
+{
+  "schema_version": 1,
+  "dataset_version": "rpcx-l2-workouts-v1",
+  "selection_version": "rpcx-l2-selection-v0.1.0",
+  "sample_id": "l2-workouts-cancel",
+  "split": "development",
+  "upstream": {
+    "repository": "https://github.com/ThreeDotsLabs/wild-workouts-go-ddd-example",
+    "commit": "8ecfcdf05b1462c4757bd2dcac9086c78e9f7791",
+    "git_tree": "8ecfcdf05b1462c4757bd2dcac9086c78e9f7791",
+    "license": "MIT",
+    "license_paths": [
+      "fixtures/trainings/LICENSE",
+      "fixtures/common/LICENSE"
+    ]
+  },
+  "sdk_version": "rpcx-l2-sdk-v1",
+  "files": [
+    {
+      "source": "LICENSE",
+      "source_git_blob": "6489165922b36829b48b982d0576aa42f6d6cb99",
+      "source_sha256": "f259f498d51c1715f81ae2ec9a3111be1afa954bc45a15ca67d9775c28a567ec",
+      "source_url": "https://raw.githubusercontent.com/ThreeDotsLabs/wild-workouts-go-ddd-example/8ecfcdf05b1462c4757bd2dcac9086c78e9f7791/LICENSE",
+      "action": "kept",
+      "target": "fixtures/trainings/LICENSE",
+      "target_sha256": "f259f498d51c1715f81ae2ec9a3111be1afa954bc45a15ca67d9775c28a567ec",
+      "reason": "原业务源码/原测试/领域/泛型装饰器/许可字节保留；仅调整模块根布局"
+    },
+    {
+      "source": "LICENSE",
+      "source_git_blob": "6489165922b36829b48b982d0576aa42f6d6cb99",
+      "source_sha256": "f259f498d51c1715f81ae2ec9a3111be1afa954bc45a15ca67d9775c28a567ec",
+      "source_url": "https://raw.githubusercontent.com/ThreeDotsLabs/wild-workouts-go-ddd-example/8ecfcdf05b1462c4757bd2dcac9086c78e9f7791/LICENSE",
+      "action": "kept",
+      "target": "fixtures/common/LICENSE",
+      "target_sha256": "f259f498d51c1715f81ae2ec9a3111be1afa954bc45a15ca67d9775c28a567ec",
+      "reason": "原业务源码/原测试/领域/泛型装饰器/许可字节保留；仅调整模块根布局"
+    },
+    {
+      "source": "internal/common/decorator/command.go",
+      "source_git_blob": "28b6d7a93e12f081add26b2623ec83ff68639c52",
+      "source_sha256": "1d37505d2110246ddc6632c5f9b81e42c7db869d40b1b41838bee04e15c68df3",
+      "source_url": "https://raw.githubusercontent.com/ThreeDotsLabs/wild-workouts-go-ddd-example/8ecfcdf05b1462c4757bd2dcac9086c78e9f7791/internal/common/decorator/command.go",
+      "action": "kept",
+      "target": "fixtures/common/decorator/command.go",
+      "target_sha256": "1d37505d2110246ddc6632c5f9b81e42c7db869d40b1b41838bee04e15c68df3",
+      "reason": "原业务源码/原测试/领域/泛型装饰器/许可字节保留；仅调整模块根布局"
+    },
+    {
+      "source": "internal/common/decorator/logging.go",
+      "source_git_blob": "3c531fe4e8cbda0df2566ee54482451ce3fa0b65",
+      "source_sha256": "8bfe57ea17a7b3f88ed778d0adc914305c0efd34f0bfc06fb32ac63d44d8191c",
+      "source_url": "https://raw.githubusercontent.com/ThreeDotsLabs/wild-workouts-go-ddd-example/8ecfcdf05b1462c4757bd2dcac9086c78e9f7791/internal/common/decorator/logging.go",
+      "action": "kept",
+      "target": "fixtures/common/decorator/logging.go",
+      "target_sha256": "8bfe57ea17a7b3f88ed778d0adc914305c0efd34f0bfc06fb32ac63d44d8191c",
+      "reason": "原业务源码/原测试/领域/泛型装饰器/许可字节保留；仅调整模块根布局"
+    },
+    {
+      "source": "internal/common/decorator/metrics.go",
+      "source_git_blob": "4200e2d9884d46f698e31298e2034d9963eb6116",
+      "source_sha256": "8a20fd87d02742ee93a00592eda3a9df10007a7de2d2fcaf9408538bc75dce7c",
+      "source_url": "https://raw.githubusercontent.com/ThreeDotsLabs/wild-workouts-go-ddd-example/8ecfcdf05b1462c4757bd2dcac9086c78e9f7791/internal/common/decorator/metrics.go",
+      "action": "kept",
+      "target": "fixtures/common/decorator/metrics.go",
+      "target_sha256": "8a20fd87d02742ee93a00592eda3a9df10007a7de2d2fcaf9408538bc75dce7c",
+      "reason": "原业务源码/原测试/领域/泛型装饰器/许可字节保留；仅调整模块根布局"
+    },
+    {
+      "source": "internal/common/decorator/query.go",
+      "source_git_blob": "e184d8d652d46367e9cab1a574f330c31122f951",
+      "source_sha256": "b50924f072ae71148b898eb2c5085ab7e93e5a9ef92c6700926d38da934ca1ca",
+      "source_url": "https://raw.githubusercontent.com/ThreeDotsLabs/wild-workouts-go-ddd-example/8ecfcdf05b1462c4757bd2dcac9086c78e9f7791/internal/common/decorator/query.go",
+      "action": "kept",
+      "target": "fixtures/common/decorator/query.go",
+      "target_sha256": "b50924f072ae71148b898eb2c5085ab7e93e5a9ef92c6700926d38da934ca1ca",
+      "reason": "原业务源码/原测试/领域/泛型装饰器/许可字节保留；仅调整模块根布局"
+    },
+    {
+      "source": "internal/common/errors/errors.go",
+      "source_git_blob": "f544f6b09e87e02c0f52609c4876711675ec931f",
+      "source_sha256": "4086cd2ceee79364fbdffbd3639dbd8d222afa3df00bfb7fb58c2f966f4c3b1b",
+      "source_url": "https://raw.githubusercontent.com/ThreeDotsLabs/wild-workouts-go-ddd-example/8ecfcdf05b1462c4757bd2dcac9086c78e9f7791/internal/common/errors/errors.go",
+      "action": "kept",
+      "target": "fixtures/common/errors/errors.go",
+      "target_sha256": "4086cd2ceee79364fbdffbd3639dbd8d222afa3df00bfb7fb58c2f966f4c3b1b",
+      "reason": "原业务源码/原测试/领域/泛型装饰器/许可字节保留；仅调整模块根布局"
+    },
+    {
+      "source": "internal/common/go.mod",
+      "source_git_blob": "0c01a221486f63fd77882bb1aef3f97bc2600c7d",
+      "source_sha256": "87c1ec1b93db19d878aca431bf3c2c70ed36d5ae3c6271117dcd55b1c707cb89",
+      "source_url": "https://raw.githubusercontent.com/ThreeDotsLabs/wild-workouts-go-ddd-example/8ecfcdf05b1462c4757bd2dcac9086c78e9f7791/internal/common/go.mod",
+      "action": "modified",
+      "target": "fixtures/common/go.mod",
+      "target_sha256": "23b79095398d599b3d73c1389362f5a243a6afd97459b32e1a0b3d84adbbf2f6",
+      "reason": "保留原模块路径、Go 1.25.0 与实际依赖版本，裁掉云端/服务闭包；本地 common 与 SDK replace 固定"
+    },
+    {
+      "source": "internal/common/go.sum",
+      "source_git_blob": "ce7060e08c9a2070330c528d6c8e085b2602a381",
+      "source_sha256": "8b180df20618f8e7a5c8a3d4d3158305b1c645405a20bf2c281b0a132f930744",
+      "source_url": "https://raw.githubusercontent.com/ThreeDotsLabs/wild-workouts-go-ddd-example/8ecfcdf05b1462c4757bd2dcac9086c78e9f7791/internal/common/go.sum",
+      "action": "modified",
+      "target": "fixtures/common/go.sum",
+      "target_sha256": "f42826268f8c0b64cdc859d641e683e76977cc726f09bc1ac6ca47d127d12338",
+      "reason": "整理裁剪模块图校验和；完整上游原件单独保存"
+    },
+    {
+      "source": "internal/common/logs/cqrs.go",
+      "source_git_blob": "6c33f5892dc612c85de8771a6b76ba7b381fd5c3",
+      "source_sha256": "9afd9375791a53241f4da53163700f2b6bbda3a205c4e2a31f681d03c96e2afe",
+      "source_url": "https://raw.githubusercontent.com/ThreeDotsLabs/wild-workouts-go-ddd-example/8ecfcdf05b1462c4757bd2dcac9086c78e9f7791/internal/common/logs/cqrs.go",
+      "action": "kept",
+      "target": "fixtures/common/logs/cqrs.go",
+      "target_sha256": "9afd9375791a53241f4da53163700f2b6bbda3a205c4e2a31f681d03c96e2afe",
+      "reason": "原业务源码/原测试/领域/泛型装饰器/许可字节保留；仅调整模块根布局"
+    },
+    {
+      "source": "internal/common/logs/http.go",
+      "source_git_blob": "be5b1d265252b6edc74bf693633cf9f07d609653",
+      "source_sha256": "362dc8e9bd852dbffcc011c5fa79709f349580c9e381b7091a3a1a0331f31471",
+      "source_url": "https://raw.githubusercontent.com/ThreeDotsLabs/wild-workouts-go-ddd-example/8ecfcdf05b1462c4757bd2dcac9086c78e9f7791/internal/common/logs/http.go",
+      "action": "excluded",
+      "target": null,
+      "target_sha256": null,
+      "reason": "排除云端组件测试、HTTP/formatter 启动闭包；取消链不调用这些入口"
+    },
+    {
+      "source": "internal/common/logs/logrus.go",
+      "source_git_blob": "b6d145bb13afbf34ebf2693e75f3421df00e3caa",
+      "source_sha256": "c485a27b855819e4ef9af7075e0cf59b765ed9c016c4b8b04e0b1b4804221046",
+      "source_url": "https://raw.githubusercontent.com/ThreeDotsLabs/wild-workouts-go-ddd-example/8ecfcdf05b1462c4757bd2dcac9086c78e9f7791/internal/common/logs/logrus.go",
+      "action": "excluded",
+      "target": null,
+      "target_sha256": null,
+      "reason": "排除云端组件测试、HTTP/formatter 启动闭包；取消链不调用这些入口"
+    },
+    {
+      "source": "internal/common/metrics/dummy.go",
+      "source_git_blob": "bfe6b3242cd63b06b16bda9ac3c42bf1852488dc",
+      "source_sha256": "92694b8eda7816021a15fec474b187355853e741457bbf08574078a5f0380f87",
+      "source_url": "https://raw.githubusercontent.com/ThreeDotsLabs/wild-workouts-go-ddd-example/8ecfcdf05b1462c4757bd2dcac9086c78e9f7791/internal/common/metrics/dummy.go",
+      "action": "kept",
+      "target": "fixtures/common/metrics/dummy.go",
+      "target_sha256": "92694b8eda7816021a15fec474b187355853e741457bbf08574078a5f0380f87",
+      "reason": "原业务源码/原测试/领域/泛型装饰器/许可字节保留；仅调整模块根布局"
+    },
+    {
+      "source": "internal/trainings/adapters/trainer_grpc.go",
+      "source_git_blob": "fca21c146e6ee65a359f28d11ffa6260af0c954a",
+      "source_sha256": "c99f0e939bbb05a1e6847fbfbed140052e3f01867c4ab064b927464529c0f0d7",
+      "source_url": "https://raw.githubusercontent.com/ThreeDotsLabs/wild-workouts-go-ddd-example/8ecfcdf05b1462c4757bd2dcac9086c78e9f7791/internal/trainings/adapters/trainer_grpc.go",
+      "action": "modified",
+      "target": "fixtures/trainings/adapters/trainer_grpc.go",
+      "target_sha256": "ee6455c31241856bb4165269c601f0ac5920cacbb689b17c3cd4a3e615d6e8b4",
+      "reason": "将取消路径的 gRPC 传输替换为共用 rpcx-v1；保留用户、余额、训练时刻的含义，响应仅为空确认；其余适配器方法不在切片"
+    },
+    {
+      "source": "internal/trainings/adapters/users_grpc.go",
+      "source_git_blob": "49a7ac0a6fd5a05b0ad3676b7f140b92d793aaaf",
+      "source_sha256": "8cc5c50108136733bda9012462aa89dc580d2db5a1df548638a9e99013759dc9",
+      "source_url": "https://raw.githubusercontent.com/ThreeDotsLabs/wild-workouts-go-ddd-example/8ecfcdf05b1462c4757bd2dcac9086c78e9f7791/internal/trainings/adapters/users_grpc.go",
+      "action": "modified",
+      "target": "fixtures/trainings/adapters/users_grpc.go",
+      "target_sha256": "47c794e0d0f64685e1cc3db21692305c10f7bf44a2e3a45fed655f82ab312ada",
+      "reason": "将取消路径的 gRPC 传输替换为共用 rpcx-v1；保留用户、余额、训练时刻的含义，响应仅为空确认；其余适配器方法不在切片"
+    },
+    {
+      "source": "internal/trainings/app/command/cancel_training.go",
+      "source_git_blob": "3f78d20f57b0865e989224dbf29db7239c80b447",
+      "source_sha256": "d7dd3143d8fc72881629f07e176e7f15a9869ae64028ca6117447786d9610dd6",
+      "source_url": "https://raw.githubusercontent.com/ThreeDotsLabs/wild-workouts-go-ddd-example/8ecfcdf05b1462c4757bd2dcac9086c78e9f7791/internal/trainings/app/command/cancel_training.go",
+      "action": "kept",
+      "target": "fixtures/trainings/app/command/cancel_training.go",
+      "target_sha256": "d7dd3143d8fc72881629f07e176e7f15a9869ae64028ca6117447786d9610dd6",
+      "reason": "原业务源码/原测试/领域/泛型装饰器/许可字节保留；仅调整模块根布局"
+    },
+    {
+      "source": "internal/trainings/app/command/cancel_training_test.go",
+      "source_git_blob": "7b2b7c59ff6693b1e27ae067c365d93ef268fa1c",
+      "source_sha256": "b6655562b8a48efd75c56064ddf611b939d66be120d2f6712cb84721e39efbcb",
+      "source_url": "https://raw.githubusercontent.com/ThreeDotsLabs/wild-workouts-go-ddd-example/8ecfcdf05b1462c4757bd2dcac9086c78e9f7791/internal/trainings/app/command/cancel_training_test.go",
+      "action": "kept",
+      "target": "fixtures/trainings/app/command/cancel_training_test.go",
+      "target_sha256": "b6655562b8a48efd75c56064ddf611b939d66be120d2f6712cb84721e39efbcb",
+      "reason": "原业务源码/原测试/领域/泛型装饰器/许可字节保留；仅调整模块根布局"
+    },
+    {
+      "source": "internal/trainings/app/command/services.go",
+      "source_git_blob": "33552a4ef11daa5c8f6b8c0308ffaa29775dbc43",
+      "source_sha256": "f2516511b6f927d28e89cf5385bf804b890f3d48ed00c1119a893cffe137b676",
+      "source_url": "https://raw.githubusercontent.com/ThreeDotsLabs/wild-workouts-go-ddd-example/8ecfcdf05b1462c4757bd2dcac9086c78e9f7791/internal/trainings/app/command/services.go",
+      "action": "modified",
+      "target": "fixtures/trainings/app/command/services.go",
+      "target_sha256": "0611baedba0a71c9058a58247afdefbbb17774145d4944fd898cb8c6ae6d6920",
+      "reason": "仅保留取消路径需要的 UserService/TrainerService.CancelTraining；明确排除 Schedule/Move 的接口覆盖"
+    },
+    {
+      "source": "internal/trainings/domain/training/cancel.go",
+      "source_git_blob": "2a9d82bbb35ff1315a60ec62920a44c4787b4494",
+      "source_sha256": "42fee29212562fe5fa5b025841c47ee30f362994581b15dd6a0d54bd9761c4f1",
+      "source_url": "https://raw.githubusercontent.com/ThreeDotsLabs/wild-workouts-go-ddd-example/8ecfcdf05b1462c4757bd2dcac9086c78e9f7791/internal/trainings/domain/training/cancel.go",
+      "action": "kept",
+      "target": "fixtures/trainings/domain/training/cancel.go",
+      "target_sha256": "42fee29212562fe5fa5b025841c47ee30f362994581b15dd6a0d54bd9761c4f1",
+      "reason": "原业务源码/原测试/领域/泛型装饰器/许可字节保留；仅调整模块根布局"
+    },
+    {
+      "source": "internal/trainings/domain/training/cancel_balance.go",
+      "source_git_blob": "e9988b0a0bfbd0ef2c487f4faa07f52043e4335d",
+      "source_sha256": "3f6f7126b75e45b6781c495607e8d04e659cca8165196fb83c526967dacc795d",
+      "source_url": "https://raw.githubusercontent.com/ThreeDotsLabs/wild-workouts-go-ddd-example/8ecfcdf05b1462c4757bd2dcac9086c78e9f7791/internal/trainings/domain/training/cancel_balance.go",
+      "action": "kept",
+      "target": "fixtures/trainings/domain/training/cancel_balance.go",
+      "target_sha256": "3f6f7126b75e45b6781c495607e8d04e659cca8165196fb83c526967dacc795d",
+      "reason": "原业务源码/原测试/领域/泛型装饰器/许可字节保留；仅调整模块根布局"
+    },
+    {
+      "source": "internal/trainings/domain/training/cancel_test.go",
+      "source_git_blob": "dba338616ef3ed03089c39acf1fd43b75013dfdf",
+      "source_sha256": "5d10607b9a888a2d0e08451557538fdb52578895a8ded10a499fc3770007d30b",
+      "source_url": "https://raw.githubusercontent.com/ThreeDotsLabs/wild-workouts-go-ddd-example/8ecfcdf05b1462c4757bd2dcac9086c78e9f7791/internal/trainings/domain/training/cancel_test.go",
+      "action": "kept",
+      "target": "fixtures/trainings/domain/training/cancel_test.go",
+      "target_sha256": "5d10607b9a888a2d0e08451557538fdb52578895a8ded10a499fc3770007d30b",
+      "reason": "原业务源码/原测试/领域/泛型装饰器/许可字节保留；仅调整模块根布局"
+    },
+    {
+      "source": "internal/trainings/domain/training/repository.go",
+      "source_git_blob": "4edc0b006af1c9887cb2778ba7c699993872cddc",
+      "source_sha256": "9f7b8eb29b6e280302153de90eb3c5edd9ecec8f0d5d73e3f9b8e85b03a327a7",
+      "source_url": "https://raw.githubusercontent.com/ThreeDotsLabs/wild-workouts-go-ddd-example/8ecfcdf05b1462c4757bd2dcac9086c78e9f7791/internal/trainings/domain/training/repository.go",
+      "action": "kept",
+      "target": "fixtures/trainings/domain/training/repository.go",
+      "target_sha256": "9f7b8eb29b6e280302153de90eb3c5edd9ecec8f0d5d73e3f9b8e85b03a327a7",
+      "reason": "原业务源码/原测试/领域/泛型装饰器/许可字节保留；仅调整模块根布局"
+    },
+    {
+      "source": "internal/trainings/domain/training/reschedule.go",
+      "source_git_blob": "fe97e63f25bc2dccebdbc0ea219e2503106589ee",
+      "source_sha256": "5ace3ed2a2ea77ddd52335a80714802003872b1e4c303a3dd894ea93d983af96",
+      "source_url": "https://raw.githubusercontent.com/ThreeDotsLabs/wild-workouts-go-ddd-example/8ecfcdf05b1462c4757bd2dcac9086c78e9f7791/internal/trainings/domain/training/reschedule.go",
+      "action": "kept",
+      "target": "fixtures/trainings/domain/training/reschedule.go",
+      "target_sha256": "5ace3ed2a2ea77ddd52335a80714802003872b1e4c303a3dd894ea93d983af96",
+      "reason": "原业务源码/原测试/领域/泛型装饰器/许可字节保留；仅调整模块根布局"
+    },
+    {
+      "source": "internal/trainings/domain/training/reschedule_test.go",
+      "source_git_blob": "3391c7050319c5d368e3a2fc5f8c8c0549afa4b7",
+      "source_sha256": "b56b491e27494db7706b23d129523ccc793a0fbd7d5685aca36eb584daddda26",
+      "source_url": "https://raw.githubusercontent.com/ThreeDotsLabs/wild-workouts-go-ddd-example/8ecfcdf05b1462c4757bd2dcac9086c78e9f7791/internal/trainings/domain/training/reschedule_test.go",
+      "action": "kept",
+      "target": "fixtures/trainings/domain/training/reschedule_test.go",
+      "target_sha256": "b56b491e27494db7706b23d129523ccc793a0fbd7d5685aca36eb584daddda26",
+      "reason": "原业务源码/原测试/领域/泛型装饰器/许可字节保留；仅调整模块根布局"
+    },
+    {
+      "source": "internal/trainings/domain/training/training.go",
+      "source_git_blob": "af2d46d99bda3983311bc8cf08f999ecf746179a",
+      "source_sha256": "6661fb0fe70688398554c6d647213298b33c527a8756b882b3c95ae4bac19666",
+      "source_url": "https://raw.githubusercontent.com/ThreeDotsLabs/wild-workouts-go-ddd-example/8ecfcdf05b1462c4757bd2dcac9086c78e9f7791/internal/trainings/domain/training/training.go",
+      "action": "kept",
+      "target": "fixtures/trainings/domain/training/training.go",
+      "target_sha256": "6661fb0fe70688398554c6d647213298b33c527a8756b882b3c95ae4bac19666",
+      "reason": "原业务源码/原测试/领域/泛型装饰器/许可字节保留；仅调整模块根布局"
+    },
+    {
+      "source": "internal/trainings/domain/training/training_test.go",
+      "source_git_blob": "5ded8f07668254871f7c014fde96aeca3e52e4c4",
+      "source_sha256": "b2635a24ce84dcaf4e425b6c4ee58b25e08695cdedd626142a605ad60ece649a",
+      "source_url": "https://raw.githubusercontent.com/ThreeDotsLabs/wild-workouts-go-ddd-example/8ecfcdf05b1462c4757bd2dcac9086c78e9f7791/internal/trainings/domain/training/training_test.go",
+      "action": "kept",
+      "target": "fixtures/trainings/domain/training/training_test.go",
+      "target_sha256": "b2635a24ce84dcaf4e425b6c4ee58b25e08695cdedd626142a605ad60ece649a",
+      "reason": "原业务源码/原测试/领域/泛型装饰器/许可字节保留；仅调整模块根布局"
+    },
+    {
+      "source": "internal/trainings/domain/training/user.go",
+      "source_git_blob": "d18cf86dd97727dde9b2f1e4ff31829d79ce4ee3",
+      "source_sha256": "844553d6bc5e5d5140d6667be9a44e58131e1c30c770d35ec3bb54d6277f11df",
+      "source_url": "https://raw.githubusercontent.com/ThreeDotsLabs/wild-workouts-go-ddd-example/8ecfcdf05b1462c4757bd2dcac9086c78e9f7791/internal/trainings/domain/training/user.go",
+      "action": "kept",
+      "target": "fixtures/trainings/domain/training/user.go",
+      "target_sha256": "844553d6bc5e5d5140d6667be9a44e58131e1c30c770d35ec3bb54d6277f11df",
+      "reason": "原业务源码/原测试/领域/泛型装饰器/许可字节保留；仅调整模块根布局"
+    },
+    {
+      "source": "internal/trainings/domain/training/user_test.go",
+      "source_git_blob": "d603f878f36161088c4e03d3ba76c4b04d394b4f",
+      "source_sha256": "c42aa11abbf9f6ac7e384bbefa5918dc0da777a984715f024548fdb926bdf459",
+      "source_url": "https://raw.githubusercontent.com/ThreeDotsLabs/wild-workouts-go-ddd-example/8ecfcdf05b1462c4757bd2dcac9086c78e9f7791/internal/trainings/domain/training/user_test.go",
+      "action": "kept",
+      "target": "fixtures/trainings/domain/training/user_test.go",
+      "target_sha256": "c42aa11abbf9f6ac7e384bbefa5918dc0da777a984715f024548fdb926bdf459",
+      "reason": "原业务源码/原测试/领域/泛型装饰器/许可字节保留；仅调整模块根布局"
+    },
+    {
+      "source": "internal/trainings/go.mod",
+      "source_git_blob": "3bf7eddfeac2adb0ce328fe87ca53983b21ee4ff",
+      "source_sha256": "099a5cf9b5a500a10d705a838e258f3f1e40050f154b014d55214b1804498789",
+      "source_url": "https://raw.githubusercontent.com/ThreeDotsLabs/wild-workouts-go-ddd-example/8ecfcdf05b1462c4757bd2dcac9086c78e9f7791/internal/trainings/go.mod",
+      "action": "modified",
+      "target": "fixtures/trainings/go.mod",
+      "target_sha256": "61c7a38aaf8e3794ea9b52c9860599b7a4a64ef9be0b4f3dc0b74aa7c90747b4",
+      "reason": "保留原模块路径、Go 1.25.0 与实际依赖版本，裁掉云端/服务闭包；本地 common 与 SDK replace 固定"
+    },
+    {
+      "source": "internal/trainings/go.sum",
+      "source_git_blob": "aa98ef3d0ffe1eec42a318c2cedc7c56980062ac",
+      "source_sha256": "2ea64fabdc8693834dfc54caf4cdd188be431fbb8ade74a55137ecf1af8eb62d",
+      "source_url": "https://raw.githubusercontent.com/ThreeDotsLabs/wild-workouts-go-ddd-example/8ecfcdf05b1462c4757bd2dcac9086c78e9f7791/internal/trainings/go.sum",
+      "action": "modified",
+      "target": "fixtures/trainings/go.sum",
+      "target_sha256": "b16bc58e51ba754e949fd9e076ebb93b0f68725f78ca05a5a747bf82e599cab7",
+      "reason": "整理裁剪模块图校验和；完整上游原件单独保存"
+    },
+    {
+      "source": "internal/trainings/service/component_test.go",
+      "source_git_blob": "e21162a43d2f14a3a2ef3274ec1a9c3ec834b152",
+      "source_sha256": "52fe157152f5a8badefb96d3a433400ead19593fd110046675f7b4096808c02a",
+      "source_url": "https://raw.githubusercontent.com/ThreeDotsLabs/wild-workouts-go-ddd-example/8ecfcdf05b1462c4757bd2dcac9086c78e9f7791/internal/trainings/service/component_test.go",
+      "action": "excluded",
+      "target": null,
+      "target_sha256": null,
+      "reason": "排除云端组件测试、HTTP/formatter 启动闭包；取消链不调用这些入口"
+    },
+    {
+      "source": null,
+      "source_sha256": null,
+      "action": "added",
+      "target": "fixtures/common/decorator/command_test.go",
+      "target_sha256": "aada728e81a6675ce5e83df2456d76a0c9644f92eac61739da73b8bf8df8512c",
+      "reason": "新增真实取消 RPC/仓储回调/装饰器行为测试，不计为原测试或独立 oracle"
+    },
+    {
+      "source": null,
+      "source_sha256": null,
+      "action": "added",
+      "target": "fixtures/rpcx-v1/client.go",
+      "target_sha256": "d64ed95ffe5300f74e69c353676efed97c83b2fbf7d7044adc62206b6649e485",
+      "reason": "复制已发布的共用 rpcx-l2-sdk-v1，字节不变"
+    },
+    {
+      "source": null,
+      "source_sha256": null,
+      "action": "added",
+      "target": "fixtures/rpcx-v1/client_test.go",
+      "target_sha256": "6e02aa503e1d5063e68accf38db84811aebf227a0b10a9618eeaf2e603ad4612",
+      "reason": "复制已发布的共用 rpcx-l2-sdk-v1，字节不变"
+    },
+    {
+      "source": null,
+      "source_sha256": null,
+      "action": "added",
+      "target": "fixtures/rpcx-v1/deadline_test.go",
+      "target_sha256": "780940038c3a0f290acf029eeaf095b393b08d7519429352de5d26074c899e5f",
+      "reason": "复制已发布的共用 rpcx-l2-sdk-v1，字节不变"
+    },
+    {
+      "source": null,
+      "source_sha256": null,
+      "action": "added",
+      "target": "fixtures/rpcx-v1/go.mod",
+      "target_sha256": "698fe8774eaf0f9106bd19fd322b9f6abb82acd8739c8ed3919ddf4ea4eb6b44",
+      "reason": "复制已发布的共用 rpcx-l2-sdk-v1，字节不变"
+    },
+    {
+      "source": null,
+      "source_sha256": null,
+      "action": "added",
+      "target": "fixtures/rpcx-v2/client.go",
+      "target_sha256": "62b8f98d3986c47d856deccd3c89499fba0195530ffde3105e1eb8f67e51da73",
+      "reason": "复制已发布的共用 rpcx-l2-sdk-v1，字节不变"
+    },
+    {
+      "source": null,
+      "source_sha256": null,
+      "action": "added",
+      "target": "fixtures/rpcx-v2/client_test.go",
+      "target_sha256": "b469c0d91e2cf5c971faeba412c0b2f6df80204c049b945a86d21dafb2c0f0ca",
+      "reason": "复制已发布的共用 rpcx-l2-sdk-v1，字节不变"
+    },
+    {
+      "source": null,
+      "source_sha256": null,
+      "action": "added",
+      "target": "fixtures/rpcx-v2/deadline_test.go",
+      "target_sha256": "6e005b264b088753aa8f68dad105d62540ebfb37d072f86061985a69f4ce338c",
+      "reason": "复制已发布的共用 rpcx-l2-sdk-v1，字节不变"
+    },
+    {
+      "source": null,
+      "source_sha256": null,
+      "action": "added",
+      "target": "fixtures/rpcx-v2/go.mod",
+      "target_sha256": "b5c281563f355cf0cd376479fef44323561958bf6f012e67159b3714fb42582f",
+      "reason": "复制已发布的共用 rpcx-l2-sdk-v1，字节不变"
+    },
+    {
+      "source": null,
+      "source_sha256": null,
+      "action": "added",
+      "target": "fixtures/trainings/adapters/cancellation_rpcx_test.go",
+      "target_sha256": "399d8527e8a33558807a2355c4ebfbe6a17920569b009803b957382dd0c6c98e",
+      "reason": "新增真实取消 RPC/仓储回调/装饰器行为测试，不计为原测试或独立 oracle"
+    }
+  ],
+  "local_modules": [
+    {
+      "name": "common",
+      "module_path": "github.com/ThreeDotsLabs/wild-workouts-go-ddd-example/internal/common",
+      "directory": "fixtures/common",
+      "readonly": true
+    }
+  ],
+  "build_configurations": [
+    {
+      "id": "default",
+      "tags": [],
+      "origin": "upstream_default"
+    }
+  ],
+  "excluded_groups": [
+    {
+      "prefix": "internal/trainings/service/,ports/,main.go",
+      "reason": "不启动 Firestore/gRPC/HTTP 服务，原 service/component_test.go 依赖外部环境，明确排除"
+    },
+    {
+      "prefix": "internal/trainings/app/command/ 非 cancel_training/services",
+      "reason": "不纳入其他 command/query；不表示整个服务功能覆盖"
+    },
+    {
+      "prefix": "internal/trainings/adapters/ 非取消出站操作",
+      "reason": "排除 Firestore 等基础设施和 Schedule/Move 操作"
+    },
+    {
+      "prefix": "internal/common/ 非 errors/decorator/logs-cqrs/metrics",
+      "reason": "保留原取消所需闭包，不启动认证、HTTP 中间件、日志格式初始化或生成 gRPC"
+    },
+    {
+      "prefix": "CI/deployment/docs/其他服务",
+      "reason": "不作为可运行切片；固定 git_tree 用于复取完整来源"
+    }
+  ],
+  "injected_differences": [
+    "本地内存 rpcx-v1 替代原 gRPC，保留取消业务的请求含义和错误链，不检验网络/序列化/云端服务",
+    "30 秒默认超时来自共用 rpcx-v1 植入，原 gRPC 上下文在此基线的传输中丢失，迁移时需恢复",
+    "trainings/common 仍是两个本地模块，实际依赖由同级 replace 解析；common 在任务中只读",
+    "原回调和条件远程副作用保留；测试仓储仅成功时提交本地副本，不证明真实 Firestore 事务，也不保证远端回滚",
+    "新增 RPC 与 common 装饰器测试不属于上游原测试或迁移 oracle"
+  ]
+}

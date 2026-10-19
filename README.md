@@ -8,9 +8,9 @@
 
 [单仓库 Runner](scenarios/rpcx/runner/README.md)现在可以显式选择 T3 规范，并从实际结构化结果生成 `artifacts/review.md`，将条款、修改、证据和缺口关联，单列 Agent 自述。M2.4 的离线与 Docker 联调结果见[工作记录](docs/worklog/2026-10-18-m2-evidence-gate.md#21-m24新规范-runner-与确定性审核交付)。[T3 真实实验 04](docs/experiments/2026-10-19-rpcx-real-model-04.md)以 28 次模型、55 次工具正常提交，原判定 NeedsAttention；独立参考通过，不计自动成功。后续已有限支持新增测试导入，公共 helper 仍保留未知，原实验结果不变。[M2 收尾评审](docs/worklog/2026-10-18-m2-evidence-gate.md#25-m2-收尾有限范围验收与-m3-移交)确认判定与审核交付在声明范围内验收；真实自动迁移效果与人工审核成本仍待后续验证。
 
-[M3 具体设计](docs/worklog/2026-10-19-m3-batch-runtime.md)已记录多仓库任务、预算预留及 L2 数据划分方案，M3.1 已实现[预算核心](internal/budget/README.md)与单 Run 的可选 Go API 接入，在受控模型下验证调用前预留和未知费用保留；M3.2 已接入[明确的 Target 与宿主 Profile](scenarios/rpcx/runner/README.md#显式-target-与宿主-profile)，在模型调用前实际构建并核对十个基线测试；当前另接入 Goddd 与 Translation 的独立宿主配置。M3.3 新增 [Campaign Go API](internal/campaign/README.md)，提供 Target/命令双重并发限制、共享预算、故障隔离及结果汇总，并接入现有 Runner；目前以确定性模型验证机制，未开放付费批次命令。M3.4 已完成 [L2 样本选择和 Goddd 离线基线](scenarios/rpcx/l2/README.md)，[Goddd 迁移门禁与 Runner](scenarios/rpcx/goddd/README.md)已接入，正确/违规/证据不足候选分别校准三类判定；[Translation 双配置离线基线](scenarios/rpcx/l2/data/rpcx-l2-translation-v1/README.md)与[双配置迁移门禁及 Runner](scenarios/rpcx/translation/README.md)已接入，后续准备 Workouts 及独立效果评测，整体进度见[里程碑](docs/MILESTONES.md)。
+[M3 具体设计](docs/worklog/2026-10-19-m3-batch-runtime.md)已记录多仓库任务、预算预留及 L2 数据划分方案，M3.1 已实现[预算核心](internal/budget/README.md)与单 Run 的可选 Go API 接入，在受控模型下验证调用前预留和未知费用保留；M3.2 已接入[明确的 Target 与宿主 Profile](scenarios/rpcx/runner/README.md#显式-target-与宿主-profile)，在模型调用前实际构建并核对十个基线测试；当前另接入 Goddd 与 Translation 的独立宿主配置。M3.3 新增 [Campaign Go API](internal/campaign/README.md)，提供 Target/命令双重并发限制、共享预算、故障隔离及结果汇总，并接入现有 Runner；目前以确定性模型验证机制，未开放付费批次命令。M3.4 已完成 [L2 样本选择和 Goddd 离线基线](scenarios/rpcx/l2/README.md)，[Goddd 迁移门禁与 Runner](scenarios/rpcx/goddd/README.md)已接入，正确/违规/证据不足候选分别校准三类判定；[Translation 双配置离线基线](scenarios/rpcx/l2/data/rpcx-l2-translation-v1/README.md)与[双配置迁移门禁及 Runner](scenarios/rpcx/translation/README.md)已接入，[Workouts 回调与多模块基线](scenarios/rpcx/l2/data/rpcx-l2-workouts-v1/README.md)也已准备，待其迁移门禁及独立效果评测，整体进度见[里程碑](docs/MILESTONES.md)。
 
-Harness 需要本地 Go 1.23 或更新版本、Git 和 POSIX shell；Translation 夹具保留 Go 1.26.0 要求。已在 Go 1.26.5 / macOS arm64 验证。
+Harness 需要本地 Go 1.23 或更新版本、Git 和 POSIX shell；Translation / Workouts 夹具分别保留 Go 1.26.0 / 1.25.0 要求。已在 Go 1.26.5 / macOS arm64 验证。
 
 ```sh
 ./scripts/verify-rpcx-t1-t2.sh

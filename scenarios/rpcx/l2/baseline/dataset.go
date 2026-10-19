@@ -9,6 +9,7 @@ import (
 )
 
 const TranslationVersion = "rpcx-l2-translation-v1"
+const WorkoutsVersion = "rpcx-l2-workouts-v1"
 
 type buildConfiguration struct {
 	ID          string
@@ -21,6 +22,13 @@ type dataset struct {
 	Business       string
 	FreezeSHA256   string
 	Configurations []buildConfiguration
+	LocalModules   []string
+}
+
+// modules 先验证只读本地依赖，再验证业务模块；每项都独立执行完整基线。
+func (d dataset) modules() []string {
+	out := append([]string{"rpcx-v1", "rpcx-v2"}, d.LocalModules...)
+	return append(out, d.Business)
 }
 
 // 发布版本只选择宿主已知的准备流程，不接受任意测试命令或候选配置。
@@ -33,6 +41,8 @@ func lookupDataset(version string) (dataset, error) {
 			{ID: "default", ActiveFile: "translation_google.go", IgnoredFile: "translation_rpcx_alternate.go"},
 			{ID: "rpcx_alternate", Tags: []string{"rpcx_alternate"}, ActiveFile: "translation_rpcx_alternate.go", IgnoredFile: "translation_google.go"},
 		}}, nil
+	case WorkoutsVersion:
+		return dataset{Version: version, Business: "trainings", FreezeSHA256: "5efa3908ad6f80a8673a4893ef28bb6213a4a8d9a281bce4498726aa69282cb2", LocalModules: []string{"common"}, Configurations: []buildConfiguration{{ID: "default"}}}, nil
 	default:
 		return dataset{}, fmt.Errorf("unsupported baseline dataset: %s", version)
 	}

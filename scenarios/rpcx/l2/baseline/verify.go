@@ -111,8 +111,13 @@ func VerifyVersion(ctx context.Context, projectRoot, runRoot, version string, ba
 	if err := decode(files["tests.json"], &inventory); err != nil {
 		return report, err
 	}
-	if inventory.SchemaVersion != 1 || len(inventory.Modules) != 3 {
+	if inventory.SchemaVersion != 1 || len(inventory.Modules) != len(dataset.modules()) {
 		return report, errors.New("unsupported test inventory")
+	}
+	for _, name := range dataset.modules() {
+		if _, ok := inventory.Modules[name]; !ok {
+			return report, fmt.Errorf("missing module test inventory: %s", name)
+		}
 	}
 	workspace := filepath.Join(runRoot, "workspace")
 	for name, data := range files {
@@ -127,7 +132,7 @@ func VerifyVersion(ctx context.Context, projectRoot, runRoot, version string, ba
 		return report, err
 	}
 	mounted := []string{moduleCache}
-	for _, name := range []string{dataset.Business, "rpcx-v1", "rpcx-v2"} {
+	for _, name := range dataset.modules() {
 		mounted = append(mounted, filepath.Join(workspace, name))
 	}
 	workspaceBefore, err := read(ctx, workspace)
@@ -156,7 +161,7 @@ func VerifyVersion(ctx context.Context, projectRoot, runRoot, version string, ba
 		err = errors.Join(err, ctx.Err())
 		report.Accepted = completed && err == nil && report.InputsUnchanged
 	}()
-	for _, module := range []string{"rpcx-v1", "rpcx-v2", dataset.Business} {
+	for _, module := range dataset.modules() {
 		configurations := []buildConfiguration{{ID: "default"}}
 		if module == dataset.Business {
 			configurations = dataset.Configurations
