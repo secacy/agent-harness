@@ -20,6 +20,8 @@ Assess 返回一个新结果，不修改原门禁或参考报告。全部自动�
 
 参考数据由 `data/goddd-v2/freeze.json` 、`data/translation-v2/freeze.json` 与 `data/workouts-v1/freeze.json` 分别固定；Translation v1 保留早期校准身份，v2 改为观察内存字段，避免 JSON 标签引发假违规；Goddd 先前用于校准的 v1 也保留，v2 修正 HTTP 发送时刻与实际 RPC 期限之间的测量边界，并加入发送前延迟对照。报告分别保存 ReferenceVersion、数据摘要和实际工具源码摘要。复用 execution、L2 只读依赖装配和 gate 文件操作，不调用现有三场景 Evaluate、类型分析、测试完整性规则、quality.Decide 或其行为探针。源码边界测试检查直接调用范围；共享 Go/SDK/执行设施和同一作者仍存在共同盲区。
 
+生成前可调用 `PublishedIdentity(referenceVersion)` 取得当前发布的元数据：Version 对应报告的 ReferenceVersion（数据版本），另有 SpecSHA256、ReferenceSHA256、ToolSHA256。它认证冻结材料，使用与参考报告相同的摘要算法，不接受候选、不执行命令、不返回探针正文。当前支持 Goddd data-v2、Translation data-v2、Workouts data-v1；未知发布拒绝。生产工具源码改动会改变 ToolSHA256，已有清单须重新审查固定；历史报告和其归档工具材料保持原身份。
+
 机制与身份/未知处理测试：
 
 ```sh

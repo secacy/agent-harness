@@ -22,8 +22,12 @@ func validateManifest(m Manifest) error {
 	if m.SchemaVersion != 1 || !identifier.MatchString(m.ID) || !identifier.MatchString(m.CampaignID) || !slices.Contains([]string{Calibration, Development}, m.Kind) || !digest(m.PlanSHA256) || len(m.Targets) == 0 {
 		return errors.New("valid round identity, kind, plan digest and targets are required")
 	}
+	return validatePins(m.Targets)
+}
+
+func validatePins(targets []TargetPin) error {
 	seen := map[string]bool{}
-	for _, t := range m.Targets {
+	for _, t := range targets {
 		if !identifier.MatchString(t.ID) || seen[t.ID] || t.ProfileID == "" || t.BuildConfig == "" || t.ReferenceVersion == "" || !digest(t.BaselineSHA256) || !digest(t.SpecSHA256) || !digest(t.ReferenceSHA256) || !digest(t.ToolSHA256) {
 			return errors.New("invalid or duplicate round target pin")
 		}

@@ -15,6 +15,10 @@
   "execution": {
     "trusted_local": false
   },
+  "enrollment": {
+    "path": "rpcx-l2-enrollment.json",
+    "sha256": "dc39f9c3bc3fd76c220e0aa561f2e24687e0cbb05b95aaf5a2a3ce06ade4eb42"
+  },
   "targets": [
     {
       "input": {

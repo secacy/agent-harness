@@ -13,6 +13,7 @@
 - `Backend`：通常为已准备好镜像的 Docker；明确选择 `execution.Local{}` 仅用于可信代码。
 - `NewModel`：为每个 Target 创建独立模型状态，返回与 Plan 完全一致的 `budget.ProfiledModel`；工厂不得发起生成或修改输入。调用前完成全部模型配置检查，失败时不创建 Campaign。
 - `Execute`：可信宿主适配器。它在 `Services.RunsDir` 创建唯一 Run，通过 `Services.Budget` 绑定模型，所有命令只使用 `Services.Backend`，发布报告及磁盘 Run 终态后才返回。它必须响应 context，返回前完成回收。
+- `Prepare`（可选）：实际 plan.json 与 Running 控制记录同步发布后执行，接收计划的绝对路径与原文摘要。成功返回且计划复核未变后，才创建 Target/账本和接纳任务；适用于发布与实际计划绑定的宿主材料。错误保留 Failed、父取消保留 Cancelled，均零任务接纳，不保证已有完整 summary。工厂仍须遵守不生成的约定。
 
 rpcx 的组装关系为：`Config.Execute = runner.CampaignExecutor(trustedLocal)`。它将模型及 Target 账本交给 Runner，在真实基线通过后以实际 Run ID 调用 `budget.NewModel`；Agent 仅通过 Loop 接触包装后的模型。适配器验证报告身份、输入/候选摘要、判定及预算引用；Campaign 再检查磁盘终态、所属目录、账本 Run 绑定和报告摘要。
 

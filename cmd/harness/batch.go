@@ -94,6 +94,7 @@ func runBatch(ctx context.Context, args []string, stdout, stderr io.Writer) int 
 		Directory: filepath.Join(config.Directory, "campaign"), Plan: plan, Backend: backend,
 		Execute:  runner.CampaignExecutor(config.Execution.TrustedLocal),
 		NewModel: func(task.Target) (budget.ProfiledModel, error) { return deepseek.New(clientConfig) },
+		Prepare:  prepareBatchEnrollment(config),
 	})
 	if record.Directory != "" {
 		fmt.Fprintln(stdout, "Summary:", filepath.Join(record.Directory, "summary.md"))
@@ -133,15 +134,19 @@ func saveBatchMaterials(config batchConfig, capabilities deepseek.Capabilities, 
 		materials = append(materials, material{"execution.json", backend.Info()})
 	}
 	for _, material := range materials {
-		data, err := json.MarshalIndent(material.value, "", "  ")
-		if err != nil {
-			return err
-		}
-		if err := writeBatchFile(filepath.Join(config.Directory, material.name), append(data, '\n')); err != nil {
+		if err := writeBatchJSON(filepath.Join(config.Directory, material.name), material.value); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+func writeBatchJSON(path string, value any) error {
+	data, err := json.MarshalIndent(value, "", "  ")
+	if err != nil {
+		return err
+	}
+	return writeBatchFile(path, append(data, '\n'))
 }
 
 func batchError(err error, stderr io.Writer) int {

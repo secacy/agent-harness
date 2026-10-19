@@ -51,6 +51,9 @@ type Config struct {
 	// 每个 Target 独立创建模型，调用前不得消费生成额度。
 	NewModel func(task.Target) (budget.ProfiledModel, error)
 	Execute  Execute
+	// Prepare 在实际计划发布后、任何任务接纳前保存宿主材料；失败即停止批次。
+	// Artifact 包含 plan.json 的绝对路径和原文摘要，不暴露共享 Plan 对象。
+	Prepare func(context.Context, Artifact) error
 }
 
 type Status string

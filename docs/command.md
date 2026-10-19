@@ -115,6 +115,19 @@ runs/harness batch --config runs/l2-capability.json --probe-model
 | `targets[].input` | 既有 `task.Target`：版本、规范、依赖及仓库摘要；不包含 oracle/expected |
 | `targets[].budget` | 单 Target 生成次数与 Token 限额，同时受全批额度约束 |
 | `targets[].max_model_calls/max_tool_calls/timeout` | Agent 尝试/工具次数和整个 Run 时限（例如 `10m`） |
+| `enrollment.path/sha256`（可选） | 静态评测纳入清单的文件及原文字节摘要；相对路径基于本配置目录，任务与当前参考身份不符时在 API 访问前拒绝 |
+
+三仓模板现引用[静态纳入示例](../examples/rpcx-l2-enrollment.json)，固定 Target 顺序及基线/规范/参考数据/工具身份；仍不是完整实验协议。参考工具生产源码变化会使摘要过期，应先审查并发布匹配的清单，再开始新实验。普通批次可省略 enrollment，继续按原方式运行，但没有生成前的评测纳入记录。
+
+带 enrollment 的实际批次先固定静态文件快照；Campaign 保存真实 plan.json 后，在接纳任何 Target 前发布 `enrollment.json`、`round-manifest.json`、`round-request.json`。计划身份由实际原文字节计算，缺项、换序、身份漂移或发布失败均阻止任务开始。`--probe-model` 只检查静态清单，不生成这些动态文件。
+
+批次结束后，可先用自动生成的请求离线汇总：
+
+```sh
+go run ./scenarios/rpcx/l2/cmd/summarize -config /absolute/batch/round-request.json
+```
+
+请求中的 references 初始为空，缺独立参考/复核保留未知；不会把未复核候选计为成功。完成参考和复核后，在新请求副本中填写对应报告/复核路径与 SHA-256，并选择新的 evidence_dir 再汇总，保留原记录。原门禁、候选和运行状态不被改写。完整接口见[轮次说明](../scenarios/rpcx/l2/round/README.md)。
 
 实际运行形式如下，**会读取终端中已设置的 `DEEPSEEK_API_KEY` 并发送仓库代码与工具交互**；程序不自动加载 `.env`。先准备固定 Docker 镜像，并使用自己审核过的配置：
 

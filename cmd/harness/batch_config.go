@@ -18,19 +18,22 @@ import (
 	"github.com/secacy/agent-harness/internal/deepseek"
 	"github.com/secacy/agent-harness/internal/execution"
 	"github.com/secacy/agent-harness/internal/task"
+	"github.com/secacy/agent-harness/scenarios/rpcx/l2/round"
 	"github.com/secacy/agent-harness/scenarios/rpcx/runner"
 )
 
 type batchConfig struct {
-	SchemaVersion        int            `json:"schema_version"`
-	ID                   string         `json:"id"`
-	Directory            string         `json:"directory"`
-	Concurrency          int            `json:"concurrency"`
-	ExecutionConcurrency int            `json:"execution_concurrency"`
-	Budget               budget.Limits  `json:"budget"`
-	Model                batchModel     `json:"model"`
-	Execution            batchExecution `json:"execution"`
-	Targets              []batchTarget  `json:"targets"`
+	SchemaVersion        int             `json:"schema_version"`
+	ID                   string          `json:"id"`
+	Directory            string          `json:"directory"`
+	Concurrency          int             `json:"concurrency"`
+	ExecutionConcurrency int             `json:"execution_concurrency"`
+	Budget               budget.Limits   `json:"budget"`
+	Model                batchModel      `json:"model"`
+	Execution            batchExecution  `json:"execution"`
+	Targets              []batchTarget   `json:"targets"`
+	Enrollment           *round.Artifact `json:"enrollment,omitempty"`
+	enrollmentData       []byte
 }
 
 type batchModel struct {
@@ -164,6 +167,19 @@ func loadBatchConfig(path string) (batchConfig, campaign.Plan, error) {
 		}
 		plan.Targets = append(plan.Targets, campaign.Target{Input: *t, Budget: target.Budget,
 			Limits: agent.Limits{MaxModelCalls: target.MaxModelCalls, MaxToolCalls: target.MaxToolCalls}, Timeout: timeout})
+	}
+	if config.Enrollment != nil {
+		if config.Enrollment.Path == "" || config.Enrollment.SHA256 == "" {
+			return config, plan, errors.New("enrollment path and SHA-256 pin are required")
+		}
+		config.Enrollment.Path, err = resolve(config.Enrollment.Path)
+		if err != nil {
+			return config, plan, err
+		}
+		config.enrollmentData, err = readBatchEnrollment(config, plan.Targets)
+		if err != nil {
+			return config, plan, err
+		}
 	}
 	return config, plan, nil
 }

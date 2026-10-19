@@ -4,6 +4,10 @@
 
 输入分两部分：Manifest 固定轮次 kind、Campaign/计划摘要、按计划顺序纳入的 Target 集合，以及 Profile/构建/基线/规范/参考数据/参考工具身份；Request 指向该清单、Campaign 目录、尚不存在的输出目录和可选的逐 Target 参考/复核文件。Request 所有路径为绝对路径，参考/复核文件另带实际 SHA-256。纳入清单不是完整实验协议，也不授权模型调用。真实开发轮次的清单应在生成前固定；开发校准可以在既有受控运行上创建，必须标 `development_calibration`。受控模型 Campaign 不能通过更换 kind 冒充真实评测。
 
+生成前固定静态任务时使用 `Enrollment`：只有 schema_version、id、kind、targets，不填写动态 CampaignID/PlanSHA256。`Validate(plan.Targets)` 核对全部任务的顺序、输入身份和已发布参考的规范/数据/工具摘要；`Bind(planJSON)` 对实际计划原文取摘要并生成原格式 Manifest。它不预测时间或 JSON 格式，不选择候选，也不认证真实供应商或人工复核身份。
+
+[batch 配置](../../../../docs/command.md#受预算约束的批次入口)可引用静态清单的路径及 SHA-256，在 API 访问前核对并固定快照。Campaign 发布实际计划后、接纳任何任务前，由可信宿主保存 enrollment.json、round-manifest.json 和 round-request.json；发布失败停止接纳。新文件位于批次根目录，Agent/门禁可见根不增加。该顺序有模拟 POST 到达时的磁盘观测验证，不构成第三方签名或对抗可信宿主事后篡改的证明。设计与证据见[工作记录](../../../../docs/worklog/2026-10-20-pre-generation-enrollment.md)。
+
 可从 CLI 消费同一 Request JSON：
 
 ```sh

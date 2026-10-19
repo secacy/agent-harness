@@ -121,15 +121,31 @@ func Run(ctx context.Context, config Config) (record Record, summary Summary, er
 	if err = saveRecord(); err != nil {
 		return record, summary, fmt.Errorf("%w: %w", ErrControl, err)
 	}
-	// 初始化中途失败也留下 Failed；绝不删除目录或覆盖已发布的 Run。
+	// 初始化中途的失败或父取消也保存终态；绝不删除目录或覆盖已发布的 Run。
 	defer func() {
 		if record.Status == Running && err != nil {
 			record.Status, record.Error = Failed, err.Error()
+			if ctx.Err() != nil {
+				record.Status = Cancelled
+			}
 			now := time.Now().UTC()
 			record.FinishedAt = &now
 			err = errors.Join(err, saveRecord())
 		}
 	}()
+	if config.Prepare != nil {
+		planRef.Path = filepath.Join(root, "plan.json")
+		if err = config.Prepare(ctx, planRef); err != nil {
+			return record, summary, fmt.Errorf("%w: prepare campaign materials: %w", ErrControl, err)
+		}
+		data, readErr := os.ReadFile(planRef.Path)
+		if readErr != nil || checksum(data) != planRef.SHA256 {
+			return record, summary, fmt.Errorf("%w: campaign plan changed during preparation", ErrControl)
+		}
+		if err = ctx.Err(); err != nil {
+			return record, summary, err
+		}
+	}
 	if err = mkdir(filepath.Join(root, "targets")); err != nil {
 		return record, summary, fmt.Errorf("%w: %w", ErrControl, err)
 	}

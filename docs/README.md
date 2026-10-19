@@ -23,6 +23,8 @@ M3.4 已完成[样本设计与选择](worklog/2026-10-19-m3-4-sample-selection.m
 
 当前的[开发评测工作](worklog/2026-10-19-l2-development-evaluation.md)记录参考独立性的取舍、三仓判据、一次尝试口径及未知结果处理；Goddd、Translation 双配置与 Workouts 回调的单候选自动参考及待复核记录已实现；[轮次离线汇总](../scenarios/rpcx/l2/round/README.md)已完成机制与既有受控三仓 Campaign 的关联验收；[预算批次入口](worklog/2026-10-20-budgeted-batch-cli.md)已通过本机模拟 API 验收；[真实能力查询及预算准入复核](worklog/2026-10-20-l2-experiment-preparation.md#授权后实查模型能力与预算准入)已完成；完整协议和真实评测仍待完成。
 
+[生成前的计划与纳入绑定](worklog/2026-10-20-pre-generation-enrollment.md)记录静态 Enrollment 与动态 Manifest 的边界、Campaign 准备屏障和零任务接纳的失败语义。纳入清单固定参考身份，完整实验协议、预算与真实生成仍按 M3.4 推进。
+
 ## 记录原则
 
 **里程碑与工程记录**：`MILESTONES.md` 只跟踪已确定的开发目标及其验收状态。`worklog/` 按需记录重要的设计与开发过程，也可暂存尚未确定的技术问题；不要求每天或每次修改都写日志。
