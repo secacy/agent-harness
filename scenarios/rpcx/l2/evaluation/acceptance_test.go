@@ -72,64 +72,69 @@ func TestGodddReferenceAcceptance(t *testing.T) {
 				req.CandidateSHA256 = gate.TreeHash(files)
 				// 错误变体保留 correct 的 Run 名称，参考只能依据实际内容判定。
 			}
-			req.Backend = backend
-			req.TrustedLocal = backend.Info().Kind == execution.KindLocal
-			if output := os.Getenv("HARNESS_L2_REFERENCE_OUTPUT"); output != "" {
-				output, err := filepath.Abs(output)
-				if err != nil {
-					t.Fatal(err)
-				}
-				if err = os.MkdirAll(output, 0755); err != nil {
-					t.Fatal(err)
-				}
-				root, err := os.MkdirTemp(output, c.id+"-")
-				if err != nil {
-					t.Fatal(err)
-				}
-				req.EvidenceDir = filepath.Join(root, "reference")
-			}
-			report, err := Evaluate(ctx, req)
-			t.Log("reference artifacts:", req.EvidenceDir)
-			if err != nil || report.Automatic != c.status || !report.InputsUnchanged {
-				t.Fatalf("automatic=%s want=%s err=%v checks=%+v", report.Automatic, c.status, err, report.Checks)
-			}
-			if c.rule != "" {
-				found := false
-				for _, check := range report.Checks {
-					for _, finding := range check.Findings {
-						if finding.Rule == c.rule {
-							found = true
-						}
-					}
-				}
-				if !found {
-					t.Fatalf("missing reference rule %s", c.rule)
-				}
-			}
-			reference, err := os.ReadFile(filepath.Join(req.EvidenceDir, "reference.json"))
-			if err != nil {
-				t.Fatal(err)
-			}
-			review, err := os.ReadFile(filepath.Join(req.EvidenceDir, "review-template.json"))
-			if err != nil {
-				t.Fatal(err)
-			}
-			assessment, err := Assess(reference, review)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if c.status == Pass && assessment.Status != Inconclusive {
-				t.Fatal("automatic pass became full pass without review")
-			}
-			if c.status == Fail && assessment.Status != Fail {
-				t.Fatal("pending review erased violation")
-			}
-			if err := gate.WriteJSON(filepath.Join(req.EvidenceDir, "calibration.json"), map[string]any{"kind": "development_calibration", "case_id": c.id, "expected_automatic": c.status, "actual_automatic": report.Automatic, "assessment": assessment, "manual_review": "not performed"}); err != nil {
-				t.Fatal(err)
-			}
+			calibrateReference(t, ctx, req, backend, c.id, c.status, c.rule, Evaluate)
 		})
 	}
 	if matched == 0 {
 		t.Fatal("no reference calibration case selected")
+	}
+}
+
+func calibrateReference(t *testing.T, ctx context.Context, req Request, backend execution.Executor, id string, status Status, rule string, evaluate func(context.Context, Request) (Report, error)) {
+	t.Helper()
+	req.Backend = backend
+	req.TrustedLocal = backend.Info().Kind == execution.KindLocal
+	if output := os.Getenv("HARNESS_L2_REFERENCE_OUTPUT"); output != "" {
+		output, err := filepath.Abs(output)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err = os.MkdirAll(output, 0755); err != nil {
+			t.Fatal(err)
+		}
+		root, err := os.MkdirTemp(output, id+"-")
+		if err != nil {
+			t.Fatal(err)
+		}
+		req.EvidenceDir = filepath.Join(root, "reference")
+	}
+	report, err := evaluate(ctx, req)
+	t.Log("reference artifacts:", req.EvidenceDir)
+	if err != nil || report.Automatic != status || !report.InputsUnchanged {
+		t.Fatalf("automatic=%s want=%s err=%v checks=%+v", report.Automatic, status, err, report.Checks)
+	}
+	if rule != "" {
+		found := false
+		for _, check := range report.Checks {
+			for _, finding := range check.Findings {
+				if finding.Rule == rule {
+					found = true
+				}
+			}
+		}
+		if !found {
+			t.Fatalf("missing reference rule %s", rule)
+		}
+	}
+	reference, err := os.ReadFile(filepath.Join(req.EvidenceDir, "reference.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	review, err := os.ReadFile(filepath.Join(req.EvidenceDir, "review-template.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	assessment, err := Assess(reference, review)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if status == Pass && assessment.Status != Inconclusive {
+		t.Fatal("automatic pass became full pass without review")
+	}
+	if status == Fail && assessment.Status != Fail {
+		t.Fatal("pending review erased violation")
+	}
+	if err := gate.WriteJSON(filepath.Join(req.EvidenceDir, "calibration.json"), map[string]any{"kind": "development_calibration", "case_id": id, "expected_automatic": status, "actual_automatic": report.Automatic, "assessment": assessment, "manual_review": "not performed"}); err != nil {
+		t.Fatal(err)
 	}
 }

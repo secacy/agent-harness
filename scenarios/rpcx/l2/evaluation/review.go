@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"reflect"
 	"slices"
 	"strings"
 	"time"
@@ -49,7 +50,7 @@ func Assess(referenceJSON, reviewJSON []byte) (Assessment, error) {
 		return result, err
 	}
 	result.TargetID, result.RunID, result.CandidateSHA256, result.Kind = report.TargetID, report.RunID, report.CandidateSHA256, review.Kind
-	if report.SchemaVersion != 1 || report.Version != Version || review.SchemaVersion != 1 || !slices.Contains([]string{"candidate_review", "development_calibration"}, review.Kind) {
+	if report.SchemaVersion != 1 || !slices.Contains([]string{Version, TranslationVersion}, report.Version) || review.SchemaVersion != 1 || !slices.Contains([]string{"candidate_review", "development_calibration"}, review.Kind) {
 		return result, errors.New("unsupported reference or review schema")
 	}
 	if review.ReportSHA256 != result.ReportSHA256 || review.TargetID != report.TargetID || review.RunID != report.RunID || review.CandidateSHA256 != report.CandidateSHA256 {
@@ -62,6 +63,9 @@ func Assess(referenceJSON, reviewJSON []byte) (Assessment, error) {
 		if !validStatus(report.Checks[name].Status) {
 			return result, fmt.Errorf("invalid reference section: %s", name)
 		}
+	}
+	if err := validateConfigurations(report); err != nil {
+		return result, err
 	}
 	status := report.Automatic
 	if !report.InputsUnchanged {
@@ -98,6 +102,41 @@ func Assess(referenceJSON, reviewJSON []byte) (Assessment, error) {
 	}
 	result.Status = status
 	return result, nil
+}
+
+func validateConfigurations(report Report) error {
+	if report.Version == Version {
+		if len(report.Configurations) != 0 {
+			return errors.New("unexpected Goddd configuration records")
+		}
+		return nil
+	}
+	if len(report.Configurations) != 2 {
+		return errors.New("both Translation configurations are required")
+	}
+	for _, config := range translationScenario().configurations {
+		record, ok := report.Configurations[config.id]
+		if !ok || record.Tags != config.tags || len(record.Checks) != len(configurationSections) {
+			return errors.New("invalid Translation configuration identity or sections")
+		}
+		for _, name := range configurationSections {
+			if !validStatus(record.Checks[name].Status) {
+				return fmt.Errorf("invalid configuration section: %s/%s", config.id, name)
+			}
+		}
+		if record.Checks["selection"].Status == Pass {
+			files := record.SelectedFiles
+			if !slices.Contains(files["webapi/go"], config.adapter) || slices.Contains(files["webapi/go"], config.ignored) || !slices.Contains(files["webapi/ignored"], config.ignored) || !slices.Contains(files["usecase/tests"], "mocks_repo_test.go") {
+				return errors.New("configuration selection lacks required file evidence")
+			}
+		}
+	}
+	for name, expected := range mergedConfigurationChecks(report.Configurations) {
+		if !reflect.DeepEqual(report.Checks[name], expected) {
+			return fmt.Errorf("configuration aggregate is inconsistent: %s", name)
+		}
+	}
+	return nil
 }
 
 func validStatus(status Status) bool {

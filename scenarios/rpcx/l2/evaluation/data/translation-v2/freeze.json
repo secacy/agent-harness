@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "version": "rpcx-l2-reference-translation-data-v2",
+  "spec_sha256": "d45937d461cf056a82aba50741a27ba3c991c73967047e0d4e723cc70feb5e5f",
+  "files": {
+    "review.md": "294938d4c97dd4952465964b8cf873e0e84c94d02c7de2f0bf36d9844ac7fe24",
+    "translation_test.go.txt": "f7ab939e4294ff5776bdc5bd5d5daef48b1ec969d33791bf9ff7aa3d9ad4a865"
+  }
+}

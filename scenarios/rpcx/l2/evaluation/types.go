@@ -50,26 +50,34 @@ type Command struct {
 }
 
 type Report struct {
-	SchemaVersion    int                    `json:"schema_version"`
-	Version          string                 `json:"version"`
-	TargetID         string                 `json:"target_id"`
-	RunID            string                 `json:"run_id"`
-	CandidateSHA256  string                 `json:"candidate_sha256"`
-	ProductionSHA256 string                 `json:"production_sha256,omitempty"`
-	BaselineSHA256   string                 `json:"baseline_sha256,omitempty"`
-	SpecSHA256       string                 `json:"spec_sha256,omitempty"`
-	ReferenceVersion string                 `json:"reference_version,omitempty"`
-	ReferenceSHA256  string                 `json:"reference_sha256,omitempty"`
-	ToolSHA256       string                 `json:"tool_sha256,omitempty"`
-	Backend          execution.Info         `json:"backend"`
-	StartedAt        time.Time              `json:"started_at"`
-	FinishedAt       time.Time              `json:"finished_at"`
-	InputsUnchanged  bool                   `json:"inputs_unchanged"`
-	Automatic        Status                 `json:"automatic"`
-	Checks           map[string]Observation `json:"checks"`
-	Commands         []Command              `json:"commands"`
-	Artifacts        map[string]string      `json:"artifacts"`
-	Error            string                 `json:"error,omitempty"`
+	SchemaVersion    int                            `json:"schema_version"`
+	Version          string                         `json:"version"`
+	TargetID         string                         `json:"target_id"`
+	RunID            string                         `json:"run_id"`
+	CandidateSHA256  string                         `json:"candidate_sha256"`
+	ProductionSHA256 string                         `json:"production_sha256,omitempty"`
+	BaselineSHA256   string                         `json:"baseline_sha256,omitempty"`
+	SpecSHA256       string                         `json:"spec_sha256,omitempty"`
+	ReferenceVersion string                         `json:"reference_version,omitempty"`
+	ReferenceSHA256  string                         `json:"reference_sha256,omitempty"`
+	ToolSHA256       string                         `json:"tool_sha256,omitempty"`
+	Backend          execution.Info                 `json:"backend"`
+	StartedAt        time.Time                      `json:"started_at"`
+	FinishedAt       time.Time                      `json:"finished_at"`
+	InputsUnchanged  bool                           `json:"inputs_unchanged"`
+	Automatic        Status                         `json:"automatic"`
+	Checks           map[string]Observation         `json:"checks"`
+	Configurations   map[string]ConfigurationReport `json:"configurations,omitempty"`
+	Commands         []Command                      `json:"commands"`
+	Artifacts        map[string]string              `json:"artifacts"`
+	Error            string                         `json:"error,omitempty"`
+}
+
+// ConfigurationReport 记录实际执行配置，不把一套构建事件用于另一套配置。
+type ConfigurationReport struct {
+	Tags          string                 `json:"tags"`
+	SelectedFiles map[string][]string    `json:"selected_files"`
+	Checks        map[string]Observation `json:"checks"`
 }
 
 // Review 由复核者另行填写；模板不预填通过结果或人员身份。

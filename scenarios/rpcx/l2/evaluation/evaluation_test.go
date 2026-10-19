@@ -19,11 +19,16 @@ import (
 
 func candidateRequest(t *testing.T, patch string) Request {
 	t.Helper()
-	fixtures, err := filepath.Abs("../data/rpcx-l2-goddd-v1/fixtures")
+	return scenarioCandidate(t, "goddd", "v0.3.0", patch)
+}
+
+func scenarioCandidate(t *testing.T, scenario, version, patch string) Request {
+	t.Helper()
+	fixtures, err := filepath.Abs("../data/rpcx-l2-" + scenario + "-v1/fixtures")
 	if err != nil {
 		t.Fatal(err)
 	}
-	files, err := gate.ReadFiles(filepath.Join(fixtures, "goddd"))
+	files, err := gate.ReadFiles(filepath.Join(fixtures, scenario))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -32,7 +37,7 @@ func candidateRequest(t *testing.T, patch string) Request {
 	if err := gate.CopyFiles(candidate, files); err != nil {
 		t.Fatal(err)
 	}
-	patchFile, err := filepath.Abs("../../goddd/cases/patches/" + patch + ".patch")
+	patchFile, err := filepath.Abs("../../" + scenario + "/cases/patches/" + patch + ".patch")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -46,11 +51,11 @@ func candidateRequest(t *testing.T, patch string) Request {
 	if err != nil {
 		t.Fatal(err)
 	}
-	spec, err := filepath.Abs("../../goddd/specs/v0.3.0.md")
+	spec, err := filepath.Abs("../../" + scenario + "/specs/" + version + ".md")
 	if err != nil {
 		t.Fatal(err)
 	}
-	return Request{TargetID: "l2-goddd-booking", RunID: "calibration-" + patch, FixturesDir: fixtures, CandidateDir: candidate, CandidateSHA256: gate.TreeHash(files), SpecPath: spec, EvidenceDir: filepath.Join(root, "evidence"), Backend: execution.Local{}, TrustedLocal: true}
+	return Request{TargetID: "l2-" + scenario, RunID: "calibration-" + patch, FixturesDir: fixtures, CandidateDir: candidate, CandidateSHA256: gate.TreeHash(files), SpecPath: spec, EvidenceDir: filepath.Join(root, "evidence"), Backend: execution.Local{}, TrustedLocal: true}
 }
 
 type fakeExecutor struct {

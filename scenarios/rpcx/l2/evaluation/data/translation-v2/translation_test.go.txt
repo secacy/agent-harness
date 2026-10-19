@@ -1,0 +1,297 @@
+package webapi
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"reflect"
+	"testing"
+	"time"
+
+	"example.com/rpcx/v2"
+	"github.com/evrone/go-clean-template/internal/entity"
+	"github.com/evrone/go-clean-template/internal/usecase"
+	"github.com/evrone/go-clean-template/internal/usecase/translation"
+)
+
+type referenceKey struct{}
+
+func referenceViolation(t *testing.T, rule, detail string) {
+	t.Helper()
+	payload, _ := json.Marshal(map[string]string{"rule": rule, "detail": detail})
+	t.Log("L2_REFERENCE_FINDING " + string(payload))
+	t.Fatal(detail)
+}
+
+// 期限从后端观测时刻及可能的调用起点区间判断，不能把调度延迟算作候选错误。
+func referenceContext(t *testing.T, ctx, parent context.Context, start time.Time) {
+	t.Helper()
+	if ctx.Value(referenceKey{}) != "ref-context-29" {
+		referenceViolation(t, "CTX-001", "request context value did not reach RPC")
+	}
+	observed := time.Now()
+	deadline, ok := ctx.Deadline()
+	if !ok {
+		referenceViolation(t, "TIME-001", "RPC has no deadline")
+	}
+	latest := observed.Add(30 * time.Second)
+	earliest := start.Add(30 * time.Second)
+	if parentDeadline, ok := parent.Deadline(); ok {
+		if parentDeadline.Before(latest) {
+			latest = parentDeadline
+		}
+		if parentDeadline.Before(earliest) {
+			earliest = parentDeadline
+		}
+	}
+	const tolerance = 250 * time.Millisecond
+	if deadline.After(latest.Add(tolerance)) || deadline.Before(earliest.Add(-tolerance)) {
+		referenceViolation(t, "TIME-001", "RPC deadline is outside the permitted parent/default interval")
+	}
+	if observed.Sub(start) > time.Second {
+		t.Skip("reference call preparation exceeded observation window")
+	}
+	if deadline.Before(latest.Add(-tolerance)) {
+		t.Skip("deadline origin cannot be distinguished within preparation interval")
+	}
+}
+
+type referenceRepo struct {
+	t                    *testing.T
+	events               []string
+	stored               entity.Translation
+	storeErr, historyErr error
+	history              []entity.Translation
+}
+
+func (r *referenceRepo) Store(ctx context.Context, user string, value entity.Translation) error {
+	r.t.Helper()
+	if user != "ref-user-29" || ctx.Value(referenceKey{}) != "ref-context-29" {
+		referenceViolation(r.t, "BEHAVIOR-001", "Store lost user identity or request context")
+	}
+	if ctx.Err() != nil {
+		referenceViolation(r.t, "TIME-002", "RPC cleanup cancelled the Store parent")
+	}
+	r.events = append(r.events, "store")
+	r.stored = value
+	return r.storeErr
+}
+func (r *referenceRepo) GetHistory(ctx context.Context, user string) ([]entity.Translation, error) {
+	if user != "ref-user-29" || ctx.Value(referenceKey{}) != "ref-context-29" {
+		referenceViolation(r.t, "BEHAVIOR-001", "History lost identity or context")
+	}
+	r.events = append(r.events, "history")
+	return r.history, r.historyErr
+}
+
+func referenceUseCase(t *testing.T, r *referenceRepo, handler rpcx.Handler) usecase.Translation {
+	t.Helper()
+	t.Cleanup(rpcx.Register(t.Name(), handler))
+	api, err := New(t.Name())
+	if err != nil {
+		t.Fatal(err)
+	}
+	return translation.New(r, api)
+}
+
+func referenceInput() entity.Translation {
+	return entity.Translation{Source: "es", Destination: "ja", Original: "buenos días", Translation: "previous-value"}
+}
+
+func TestL2ReferenceTranslation(t *testing.T) {
+	for _, mode := range []string{"default", "short-parent", "long-parent", "cancelled", "expired", "remote-error", "store-error", "parent-cancel", "repeat", "empty-response", "history", "history-error"} {
+		t.Run(mode, func(t *testing.T) {
+			parent, cancel := context.WithCancel(context.WithValue(context.Background(), referenceKey{}, "ref-context-29"))
+			defer cancel()
+			switch mode {
+			case "short-parent", "long-parent":
+				duration := 3 * time.Second
+				if mode == "long-parent" {
+					duration = time.Minute
+				}
+				var release context.CancelFunc
+				parent, release = context.WithTimeout(parent, duration)
+				defer release()
+			case "cancelled":
+				cancel()
+			case "expired":
+				var release context.CancelFunc
+				parent, release = context.WithDeadline(parent, time.Now().Add(-time.Second))
+				defer release()
+			}
+			remoteErr := errors.New("reference remote failure 29")
+			storeErr := errors.New("reference store failure 29")
+			historyErr := errors.New("reference history failure 29")
+			r := &referenceRepo{t: t, history: []entity.Translation{{Source: "pt", Destination: "fr", Original: "olá", Translation: "bonjour"}}}
+			if mode == "store-error" {
+				r.storeErr = storeErr
+			}
+			if mode == "history-error" {
+				r.historyErr = historyErr
+			}
+			var received []context.Context
+			var start time.Time
+			uc := referenceUseCase(t, r, func(ctx context.Context, method string, request, response any) error {
+				received = append(received, ctx)
+				r.events = append(r.events, "rpc")
+				if mode == "cancelled" || mode == "expired" {
+					referenceViolation(t, "CTX-001", "cancelled or expired request entered backend")
+				}
+				referenceContext(t, ctx, parent, start)
+				if method != "translate" {
+					referenceViolation(t, "BEHAVIOR-001", "RPC method changed")
+				}
+				// 观察内存 RPC 的真实字段；JSON 标签不改变本夹具的传输语义。
+				value := reflect.ValueOf(request)
+				if value.Kind() == reflect.Pointer && !value.IsNil() {
+					value = value.Elem()
+				}
+				if value.Kind() != reflect.Struct {
+					referenceViolation(t, "BEHAVIOR-001", "translation request is not a field-bearing value")
+				}
+				for name, want := range map[string]string{"Text": "buenos días", "Source": "es", "Destination": "ja"} {
+					field := value.FieldByName(name)
+					if !field.IsValid() || field.Kind() != reflect.String || field.String() != want {
+						referenceViolation(t, "BEHAVIOR-001", "translation request field changed: "+name)
+					}
+				}
+				if mode == "remote-error" {
+					return remoteErr
+				}
+				if mode == "parent-cancel" {
+					cancel()
+					select {
+					case <-ctx.Done():
+						if !errors.Is(ctx.Err(), context.Canceled) {
+							referenceViolation(t, "CTX-001", "parent cancellation error changed")
+						}
+						return ctx.Err()
+					case <-time.After(time.Second):
+						referenceViolation(t, "CTX-001", "parent cancellation did not reach RPC")
+					}
+				}
+				text := "おはようございます"
+				if mode == "empty-response" {
+					text = ""
+				}
+				target := reflect.ValueOf(response)
+				if target.Kind() != reflect.Pointer || target.IsNil() || target.Elem().Kind() != reflect.Struct {
+					referenceViolation(t, "BEHAVIOR-001", "translation response target changed")
+				}
+				field := target.Elem().FieldByName("Text")
+				if !field.IsValid() || field.Kind() != reflect.String || !field.CanSet() {
+					referenceViolation(t, "BEHAVIOR-001", "translation response text target changed")
+				}
+				field.SetString(text)
+				return nil
+			})
+			if mode == "history" || mode == "history-error" {
+				result, err := uc.History(parent, "ref-user-29")
+				if !reflect.DeepEqual(r.events, []string{"history"}) || len(received) != 0 {
+					referenceViolation(t, "BEHAVIOR-001", "History introduced RPC or side effects")
+				}
+				if mode == "history" {
+					if err != nil || !reflect.DeepEqual(result.History, r.history) {
+						referenceViolation(t, "BEHAVIOR-001", "History mapping changed")
+					}
+				} else if !errors.Is(err, historyErr) || !reflect.DeepEqual(result, entity.TranslationHistory{}) {
+					referenceViolation(t, "BEHAVIOR-001", "History error chain or zero result changed")
+				}
+				return
+			}
+			repetitions := 1
+			if mode == "repeat" {
+				repetitions = 2
+			}
+			for i := 0; i < repetitions; i++ {
+				r.events = nil
+				start = time.Now()
+				result, err := uc.Translate(parent, "ref-user-29", referenceInput())
+				want := referenceInput()
+				want.Translation = "おはようございます"
+				if mode == "empty-response" {
+					want.Translation = ""
+				}
+				expectedErr := error(nil)
+				events := []string{"rpc", "store"}
+				switch mode {
+				case "remote-error":
+					expectedErr = remoteErr
+					events = []string{"rpc"}
+				case "store-error":
+					expectedErr = storeErr
+				case "cancelled", "parent-cancel":
+					expectedErr = context.Canceled
+					events = nil
+					if mode == "parent-cancel" {
+						events = []string{"rpc"}
+					}
+				case "expired":
+					expectedErr = context.DeadlineExceeded
+					events = nil
+				}
+				if !reflect.DeepEqual(r.events, events) {
+					referenceViolation(t, "BEHAVIOR-001", "RPC/Store side effect order changed")
+				}
+				if expectedErr != nil {
+					if !errors.Is(err, expectedErr) || result != (entity.Translation{}) {
+						referenceViolation(t, "BEHAVIOR-001", "error chain or zero result changed")
+					}
+				} else if err != nil || result != want || r.stored != want {
+					referenceViolation(t, "BEHAVIOR-001", "translation result or stored fields changed")
+				}
+				for _, ctx := range received {
+					if !errors.Is(ctx.Err(), context.Canceled) {
+						referenceViolation(t, "TIME-002", "derived RPC context not released after return")
+					}
+				}
+				if mode != "cancelled" && mode != "expired" && mode != "parent-cancel" && parent.Err() != nil {
+					referenceViolation(t, "TIME-002", "callee cancelled parent context")
+				}
+			}
+			if mode == "repeat" && (len(received) != 2 || received[0] == received[1]) {
+				referenceViolation(t, "TIME-001", "successive calls reused RPC context")
+			}
+		})
+	}
+}
+
+func TestL2ReferenceExpiry(t *testing.T) {
+	parent, cancel := context.WithCancel(context.WithValue(context.Background(), referenceKey{}, "ref-context-29"))
+	defer cancel()
+	r := &referenceRepo{t: t}
+	var start time.Time
+	calls := 0
+	uc := referenceUseCase(t, r, func(ctx context.Context, _ string, _, _ any) error {
+		calls++
+		referenceContext(t, ctx, parent, start)
+		stop := time.NewTimer(34 * time.Second)
+		defer stop.Stop()
+		select {
+		case <-ctx.Done():
+			if !errors.Is(ctx.Err(), context.DeadlineExceeded) {
+				referenceViolation(t, "TIME-002", "RPC ended before its deadline")
+			}
+			elapsed := time.Since(start)
+			t.Logf("reference elapsed=%s deadline_error=%v", elapsed, ctx.Err())
+			if elapsed < 29*time.Second {
+				referenceViolation(t, "TIME-001", "default expiry fired too early")
+			}
+			if elapsed > 33*time.Second {
+				t.Skip("reference expiry scheduling window exceeded")
+			}
+			return ctx.Err()
+		case <-stop.C:
+			t.Skip("reference expiry safety stop reached")
+			return errors.New("reference safety stop")
+		}
+	})
+	start = time.Now()
+	result, err := uc.Translate(parent, "ref-user-29", referenceInput())
+	if calls != 1 || len(r.events) != 0 || !errors.Is(err, context.DeadlineExceeded) || result != (entity.Translation{}) {
+		referenceViolation(t, "BEHAVIOR-001", "expiry changed error chain or performed Store")
+	}
+	if parent.Err() != nil {
+		referenceViolation(t, "TIME-002", "RPC expiry cancelled parent")
+	}
+}

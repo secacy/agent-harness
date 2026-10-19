@@ -38,7 +38,7 @@ func observe(data []byte, exit int, required, packages, emptyPackages []string, 
 		if reference && event.Action == "output" && slices.Contains(required, key) {
 			if _, payload, ok := strings.Cut(event.Output, "L2_REFERENCE_FINDING "); ok {
 				var finding Finding
-				if json.Unmarshal([]byte(strings.TrimSpace(payload)), &finding) != nil || finding.Detail == "" || !slices.Contains([]string{"CTX-003", "TIME-001", "TIME-002", "TIME-003", "BEHAVIOR-001"}, finding.Rule) {
+				if json.Unmarshal([]byte(strings.TrimSpace(payload)), &finding) != nil || finding.Detail == "" || !slices.Contains([]string{"CTX-001", "CTX-003", "TIME-001", "TIME-002", "TIME-003", "BEHAVIOR-001"}, finding.Rule) {
 					out.Reason = "invalid reference finding"
 					return out
 				}

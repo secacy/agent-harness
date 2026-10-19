@@ -20,7 +20,16 @@ import (
 
 // Evaluate 固定 Goddd 候选，在新的证据目录中执行参考检查并生成待复核模板。
 // 返回的 Automatic 只代表自动检查；完整结论由独立填写的 Review 与 Assess 合成。
-func Evaluate(ctx context.Context, req Request) (report Report, err error) {
+func Evaluate(ctx context.Context, req Request) (Report, error) {
+	return evaluate(ctx, req, godddScenario())
+}
+
+// EvaluateTranslation 对同一候选执行两种必需构建配置，不接受调用方裁剪配置。
+func EvaluateTranslation(ctx context.Context, req Request) (Report, error) {
+	return evaluate(ctx, req, translationScenario())
+}
+
+func evaluate(ctx context.Context, req Request, scenario referenceScenario) (report Report, err error) {
 	if req.TargetID == "" || req.RunID == "" || req.CandidateSHA256 == "" || req.Backend == nil {
 		return report, errors.New("target, run, candidate digest and backend are required")
 	}
@@ -47,11 +56,20 @@ func Evaluate(ctx context.Context, req Request) (report Report, err error) {
 	if err = os.Mkdir(req.EvidenceDir, 0755); err != nil {
 		return report, err
 	}
-	report = Report{SchemaVersion: 1, Version: Version, TargetID: req.TargetID, RunID: req.RunID, CandidateSHA256: req.CandidateSHA256, Backend: req.Backend.Info(), StartedAt: time.Now().UTC(), Automatic: Inconclusive, Checks: map[string]Observation{}, Artifacts: map[string]string{}}
-	for _, name := range []string{"dependencies", "protected_paths", "build", "candidate_tests", "behavior", "expiry"} {
+	report = Report{SchemaVersion: 1, Version: scenario.version, TargetID: req.TargetID, RunID: req.RunID, CandidateSHA256: req.CandidateSHA256, Backend: req.Backend.Info(), StartedAt: time.Now().UTC(), Automatic: Inconclusive, Checks: map[string]Observation{}, Artifacts: map[string]string{}}
+	for _, name := range automaticSections {
 		report.Checks[name] = Observation{Status: Inconclusive, Reason: "not executed"}
 	}
+	if scenario.module == "translation" {
+		report.Configurations = map[string]ConfigurationReport{}
+		for _, config := range scenario.configurations {
+			report.Configurations[config.id] = newConfiguration(config)
+		}
+	}
 	defer func() {
+		if report.Configurations != nil {
+			mergeConfigurations(&report)
+		}
 		report.FinishedAt = time.Now().UTC()
 		if err != nil {
 			report.Error = err.Error()
@@ -74,12 +92,12 @@ func Evaluate(ctx context.Context, req Request) (report Report, err error) {
 		}
 		err = errors.Join(err, gate.WriteJSON(filepath.Join(req.EvidenceDir, "review-template.json"), reviewTemplate(report, gate.Digest(data))))
 	}()
-	data, err := referenceData()
+	data, err := scenario.data()
 	if err != nil {
 		return report, err
 	}
 	report.ReferenceSHA256 = gate.Digest(data["freeze.json"])
-	report.ReferenceVersion = referenceDataVersion
+	report.ReferenceVersion = scenario.dataVersion
 	tools, err := toolData()
 	if err != nil {
 		return report, err
@@ -95,7 +113,7 @@ func Evaluate(ctx context.Context, req Request) (report Report, err error) {
 	if err != nil {
 		return report, err
 	}
-	host, err := l2.GodddMaterials()
+	host, err := scenario.materials()
 	if err != nil {
 		return report, err
 	}
@@ -112,7 +130,7 @@ func Evaluate(ctx context.Context, req Request) (report Report, err error) {
 		}
 	}
 	if !maps.Equal(gate.Hashes(fixtures), expected) {
-		return report, errors.New("Goddd fixture snapshot does not match release")
+		return report, errors.New("fixture snapshot does not match reference release")
 	}
 	candidate, err := gate.ReadFiles(req.CandidateDir)
 	if err != nil {
@@ -125,11 +143,11 @@ func Evaluate(ctx context.Context, req Request) (report Report, err error) {
 	if err != nil {
 		return report, err
 	}
-	if gate.Digest(spec) != godddSpecSHA256 {
-		return report, errors.New("unsupported Goddd specification")
+	if gate.Digest(spec) != scenario.specSHA256 {
+		return report, errors.New("unsupported reference specification")
 	}
 	report.SpecSHA256 = gate.Digest(spec)
-	report.BaselineSHA256 = gate.TreeHash(gate.Module(fixtures, "goddd"))
+	report.BaselineSHA256 = gate.TreeHash(gate.Module(fixtures, scenario.module))
 	prod := production(candidate)
 	report.ProductionSHA256 = gate.TreeHash(prod)
 	// 原输入和执行副本均在运行后核对；任何漂移使整份参考失去有效绑定。
@@ -157,12 +175,12 @@ func Evaluate(ctx context.Context, req Request) (report Report, err error) {
 	}()
 	layout := filepath.Join(req.EvidenceDir, "candidate")
 	trusted := filepath.Join(req.EvidenceDir, "production")
-	baseline := filepath.Join(req.EvidenceDir, "baseline/goddd")
+	baseline := filepath.Join(req.EvidenceDir, "baseline", scenario.module)
 	for _, entry := range []struct {
 		root  string
 		files map[string][]byte
 	}{
-		{filepath.Join(layout, "goddd"), candidate}, {filepath.Join(trusted, "goddd"), prod}, {baseline, gate.Module(fixtures, "goddd")},
+		{filepath.Join(layout, scenario.module), candidate}, {filepath.Join(trusted, scenario.module), prod}, {baseline, gate.Module(fixtures, scenario.module)},
 	} {
 		if err = gate.CopyFiles(entry.root, entry.files); err != nil {
 			return report, err
@@ -175,7 +193,7 @@ func Evaluate(ctx context.Context, req Request) (report Report, err error) {
 			}
 		}
 	}
-	if err = gate.Write(filepath.Join(trusted, "goddd/server/l2_reference_test.go"), data["routes_test.go.txt"]); err != nil {
+	if err = gate.Write(filepath.Join(trusted, scenario.module, scenario.probeFile), data[scenario.probeData]); err != nil {
 		return report, err
 	}
 	if err = gate.Write(filepath.Join(req.EvidenceDir, "materials/spec.md"), spec); err != nil {
@@ -236,15 +254,15 @@ func Evaluate(ctx context.Context, req Request) (report Report, err error) {
 	if baseMod.ExitCode != 0 {
 		return report, errors.New("authenticated baseline go.mod could not be read")
 	}
-	module := filepath.Join(layout, "goddd")
+	module := filepath.Join(layout, scenario.module)
 	mod, err := run("candidate-mod", module, "go", "mod", "edit", "-json")
 	if err != nil {
 		return report, err
 	}
 	report.Checks["dependencies"] = dependencyObservation(baseMod.Stdout, mod.Stdout, mod.ExitCode)
 	pathsCheck := Observation{Status: Pass}
-	for _, name := range []string{"LICENSE", "go.sum"} {
-		if !bytes.Equal(candidate[name], fixtures["goddd/"+name]) {
+	for _, name := range scenario.protected {
+		if !bytes.Equal(candidate[name], fixtures[scenario.module+"/"+name]) {
 			pathsCheck.Status = Fail
 			pathsCheck.Findings = append(pathsCheck.Findings, Finding{Rule: "PATH-001", Detail: "protected path changed: " + name})
 		}
@@ -254,54 +272,23 @@ func Evaluate(ctx context.Context, req Request) (report Report, err error) {
 	if report.Checks["dependencies"].Status != Pass {
 		return report, nil
 	}
-	baselineBuild, err := run("baseline-build", baseline, "go", "build", "-o", "/dev/null", "./...")
-	if err != nil {
-		return report, err
-	}
-	if baselineBuild.ExitCode != 0 {
-		return report, errors.New("authenticated baseline failed reference build")
-	}
-	build, err := run("candidate-build", module, "go", "build", "-o", "/dev/null", "./...")
-	if err != nil {
-		return report, err
-	}
-	report.Checks["build"] = Observation{Status: Pass}
-	if build.ExitCode != 0 {
-		report.Checks["build"] = Observation{Status: Fail, Findings: []Finding{{Rule: "BUILD-001", Detail: "candidate failed default configuration build"}}}
-		return report, nil
-	}
 	var inventory struct {
-		Modules map[string]struct {
-			Packages []string `json:"packages"`
-			Empty    []string `json:"packages_without_tests"`
-			Original []string `json:"original_tests"`
-			Added    []string `json:"added_tests"`
-		} `json:"modules"`
+		Modules map[string]testInventory `json:"modules"`
 	}
 	if err = json.Unmarshal(host["tests.json"], &inventory); err != nil {
 		return report, err
 	}
-	tests := inventory.Modules["goddd"]
-	result, err := run("candidate-tests", module, "go", "test", "-json", "-count=1", "-timeout=45s", "./...")
-	if err != nil {
-		return report, err
-	}
-	report.Checks["candidate_tests"] = observe(result.Stdout, result.ExitCode, append(tests.Original, tests.Added...), tests.Packages, tests.Empty, false)
-	referenceModule := filepath.Join(trusted, "goddd")
-	for _, step := range []struct {
-		id, pattern string
-		required    []string
-	}{
-		{"behavior", "^TestL2ReferenceRoutes$", referenceTests()},
-		{"expiry", "^TestL2ReferenceExpiry$", []string{godddPackage + "/server/TestL2ReferenceExpiry"}},
-	} {
-		result, err = run(step.id, referenceModule, "go", "test", "-json", "-count=1", "-timeout=40s", "-run="+step.pattern, "./server")
-		if err != nil {
-			return report, err
+	for _, config := range scenario.configurations {
+		checks, configErr := checkConfiguration(run, scenario, config, baseline, module, filepath.Join(trusted, scenario.module), inventory.Modules[scenario.module])
+		if report.Configurations != nil {
+			report.Configurations[config.id] = checks
+		} else {
+			for _, name := range []string{"build", "candidate_tests", "behavior", "expiry"} {
+				report.Checks[name] = checks.Checks[name]
+			}
 		}
-		report.Checks[step.id] = observe(result.Stdout, result.ExitCode, step.required, []string{godddPackage + "/server"}, nil, true)
-		if report.Checks[step.id].Status != Pass {
-			break
+		if configErr != nil {
+			return report, configErr
 		}
 	}
 	return report, nil

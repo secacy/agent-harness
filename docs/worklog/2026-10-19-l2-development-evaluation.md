@@ -1,7 +1,7 @@
 # M3.4：开发评测协议与独立参考设计
 
 - 日期：2026-10-19。
-- 状态：Goddd 单候选自动参考与复核记录在声明范围内已验收，结果见第 10 节；另两场景、完整人工复核及协议发布待完成，未运行真实模型评测。
+- 状态：Goddd 与 Translation 双配置独立参考在声明范围内已验收，见第 10—11 节。Workouts、轮次汇总、完整人工复核及协议发布待完成，未运行真实模型评测。
 - 对应里程碑：[M3](../MILESTONES.md#m3多仓库批量闭环)。
 - 代码基线：009d56a；前置：[三仓确定性 Campaign](2026-10-19-m3-4-heterogeneous-campaign.md)。
 - 本轮交付：确定首轮任务纳入、独立参考的边界、未知结果和指标口径，为实现提供验收条件。
@@ -158,3 +158,54 @@ Automatic 由六项自动检查聚合；缺事件、参考测试自身编译失�
 早期轮次与当前 v2 的结果分开保存，不累加重复测试数。最后的工具材料摘要为 `10008bad317540465060239199538d0523f9ff197b615ff0197075962815db22`；本地与 Docker v2 报告一致。go vet、Go 格式、106 个本地链接目标、17 个文档锚点、代码围栏及 git diff --check 通过，v1/v2 数据逐文件摘要与发布清单一致。没有读取 .env 或调用真实模型，运行材料不入 Git。
 
 本单元验收的是 Goddd 单候选自动参考、未知处理及复核记录接口；不能把待复核模板称为完整独立通过，或由手写对照计算真实模型效果。下一步扩展 Translation 双配置参考，再接 Workouts；轮次统计和真实模型能力/批次入口仍按第 8 节推进。
+
+## 11. Translation 双配置独立参考
+
+本单元目标是在同一候选摘要下，分别取得 default 与 rpcx_alternate 的选中文件、构建、原测试和独立行为证据。它们仍是一个 Target，不增加效果指标分母。实现与验收结果在本节后续补录。
+
+### 实现前的选择
+
+复制 Goddd 全流程最直接，但会复制输入认证、日志绑定和漂移检查，之后容易只修正一份；立即引入可配置评测插件又会扩大可信配置与验收范围。因此仅提取内部的固定场景描述和共用执行流程，保留 Evaluate 的 Goddd 入口，新增显式 EvaluateTranslation。场景描述由宿主源码固定，不允许候选或普通请求增删必需配置、测试与规则。
+
+Translation 的行为参考从规范与冻结业务接口另写，通过实际 usecase 及两层 tracing 进入 RPC，并观察 Store/History；不复制现有 Translation 门禁探针或类型模板。共用文件操作、离线模块装配及执行器；报告归档真实工具源码。代价是仍共享基础设施和 SDK，且同一作者不能提供信息盲审。
+
+两配置分别保留 go list 的实际活动/忽略源文件和 mock 参与信息，以及各自的原测试/行为/真实到期结果。不能用默认构建推断 alternate，也不能把一次测试的事件复用为另一次配置的通过。顶层自动项只聚合，Assess 另校验必需配置完整、配置身份和聚合一致。候选自行构建失败是 BUILD 违规，注入参考后才编译失败或缺事件仍为未知；原测试断言、未覆盖源码和交付依据继续待复核。
+
+验收包括正确、alternate 漏超时、只改默认接口、Background、等价 helper、保护 mock 与删断言；再增加合法 WithDeadline 和同名错误期限，检验参考不依赖补丁字节或名字。机制测试注入缺 alternate 事件、oracle 编译失败、配置选择错误及报告删除配置，完整复核不得因此通过。先运行可信本地校准，再用禁网 Docker 复验主要对照；不读取 .env 或请求模型。
+
+### 实现与判定边界
+
+新增 `EvaluateTranslation`，沿用 Request、Report 与待填写 Review。内部固定场景描述只提取认证、执行与归档流程；没有动态注册插件或用户规则。报告 `Configurations` 固定 default/rpcx_alternate，每项保存 tags、实际活动/忽略实现、mock 参与信息、selection/build/candidate_tests/behavior/expiry。选中文件不符合规范归 BUILD/PATH；顶层 build 同时聚合 selection。Assess 拒绝缺配置、缺检查、错标签、缺选中文件证据或顶层与配置结果不一致的报告。Goddd 的旧报告结构与入口保留。
+
+独立测试从实际 usecase 经 tracing、WebAPI 与 RPC 观察完整 Translation 字段、用户/ctx、RPC→Store 次序、远端与 Store 错误链、零结果、History、短/长父期限、前置取消、父取消、派生释放和重复调用。每配置另实际等待约 30 秒到期；采用固定 250ms 期限容差、1s 准备观察窗口和 29—33s 到期窗口，不能可靠判断的调度情形保持未知。基线与候选均实际构建；Translation 基线还分别跑完整测试作执行控制。候选测试与注入参考的生产副本分开，不能用候选自行新增的断言替代参考。
+
+### 发现与修正
+
+首次 `go test` 因沙箱禁止写用户 Go 缓存而未执行测试，随后使用 runs/go-build，无需读取凭证。源码审查发现早期参考 v1 用 JSON 中转检查内存实参，会把只添加 JSON 标签的等价候选当作映射错误。该夹具的传输不经过 JSON，这属于参考假设错误。v1 材料与已产生报告保留，发布 v2，直接观察内存字段，并新增 tagged-fields 对照；v2 同时统一参考源码格式，不改变旧发布。
+
+v1 freeze 为 `afeb051cd0d7d71eb3a0795a803147b0d8dd1de35c6454a229960be5bbb3c471`，当前 v2 为 `1687c993a76ff6682111f0f6eb6b9662e4bc193b7e92d3d4baa2c2fdcf54acbd`。旧 Goddd 数据、所有场景 fixture/spec/cases/oracle 均不修改。校准名称/预期只存在测试宿主；EvaluateTranslation 不读取补丁或原门禁。WithDeadline 与带标签改写用于检验不依赖正确补丁字节，同名 5s 期限用于检验不依赖名称。
+
+针对参考自身的错误，另从 tagged-fields 的稳定副本构造 `runs/m3-4-translation-reference/v1-tagged-counterexample/`，只装入冻结 v1 探针执行 default 快速叶子。它实际报 BEHAVIOR-001；同一候选的 v2 两配置及真实到期均通过。该反例仅检验旧探针，不伪装成完整参考 Run，也不修改 v2 原证据。命令、原始日志、候选身份与两版参考关系保存在 counterexample.json。
+
+### 校准结果与后续边界
+
+当前 v2 本地十个候选全部符合预期：自动参考 5 pass / 5 fail。correct、mapping-helper、WithDeadline 和 tagged-fields 可通过两配置行为及真实到期，但仍缺完整源码/交付复核，不能计作完整独立成功。alternate-missing-timeout、default-only-api、background-fallback、protected-mock、同名 5s 期限分别保留 TIME-001、BUILD-001、CTX-001、PATH-001、TIME-001 发现；alternate 失败不抹掉 default 的证据。
+
+删断言候选自动 pass，两个配置均保留原测试事件。助手对实际基线/候选 `internal/repo/webapi/translation_rpcx_test.go:27` 核对，确认 TestTranslationRoundTrip 的 method/request 断言被删除。另存 `review-codex-calibration.json`，作者明确标注助手开发校准检查，只有 test_preservation 为 TEST-001 fail，另外两项仍未知。Assess 消费后得到 fail；原模板和自动报告不回写，该记录不代表独立人工复核或真实模型成绩。
+
+| 验证 | 结果 | 证据 |
+| --- | --- | --- |
+| v2 本地完整校准 | 十个候选符合预期，5 pass / 5 fail；两个通过批次分开保存，不重复计数 | `runs/m3-4-translation-reference-v2-smoke.jsonl`、`runs/m3-4-translation-reference-v2-local.jsonl` |
+| 相关四包竞态回归 | 159 项测试及子测试通过，4 项显式验收跳过，无失败/竞态；包含双配置缺事件、编译/选择/取消故障及报告篡改 | `runs/m3-4-translation-reference-regression-race.jsonl` |
+| 发布 v2 后的 evaluation 竞态回归 | 62 项测试及子测试通过，2 项显式验收跳过，无失败/竞态；不与上一行重复累加 | `runs/m3-4-translation-reference-v2-evaluation-race.jsonl` |
+| Goddd 共用流程实测 | correct / missing-timeout 保持自动 pass / fail；正确候选含真实到期 | `runs/m3-4-translation-reference-goddd.jsonl` |
+| 原断言复核记录的消费 | 自动通过但明确源码违规，Assess 为 fail；kind=development_calibration，其他复核项未知 | `runs/m3-4-translation-reference/v2-local/deleted-assertion-1690693593/reference/review-codex-calibration.json`、`assessment-codex-calibration.json` |
+| 静态检查 | evaluation 的 go vet 通过 | `runs/m3-4-translation-reference-v2-vet.log` |
+| 当前 v2 禁网 Docker 对照 | correct / alternate-missing-timeout / mapping-helper 分别自动 pass / fail / pass；两配置及关键检查状态、候选摘要与本地一致 | `runs/m3-4-translation-reference-v2-docker.jsonl`、`v2-docker/*/reference/reference.json` |
+| 容器回收 | v1/v2 六份 Docker 报告记录的 112 个容器均已不存在 | `runs/m3-4-translation-reference/docker-container-audit.json` |
+
+本地与 Docker 当前 v2 归档使用同一工具摘要 `82b8d1a365a2fa844e65e191888d0d18381cb8c7e8fe08424ba8623d2bdd21f7`，已逐份核对候选、工具、参考清单及命令日志摘要。汇总 `runs/m3-4-translation-reference/summary.json` 明确标注 development_calibration，不产生真实模型指标。早期 v1 的本地与 Docker 校准另留原目录和日志，不与当前 v2 相加；旧探针对标签的反例也单列，不覆盖历史报告。
+
+本单元验收 Translation 双配置单候选参考与复核记录消费；原断言、生产改动覆盖及交付材料仍需实际复核，不能据自动 pass 宣称完整独立通过。没有读取 .env、发起真实模型请求或加入付费入口，运行材料不入 Git。下一步按第 8 节补 Workouts callback/两客户端参考，再完成三仓校准及轮次汇总；真实模型能力、批次命令与真实开发评测另行推进。
+
+活动 Go 源码与 v2 参考源码格式、四个版本的参考数据清单、git diff --check 均通过；五份进度/使用文档的 88 个本地链接目标、14 个锚点与围栏检查通过。历史归档与冻结场景输入不改写。
