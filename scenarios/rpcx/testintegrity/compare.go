@@ -18,6 +18,45 @@ func Compare(baseline, candidate map[string][]byte) (Report, error) {
 	if err != nil {
 		return Report{}, err
 	}
+	return compareAdapted(baseline, adapted, candidate, p, material)
+}
+
+// Plan 由可信宿主提供，固定原测试身份及其有限适配材料。
+// 候选不得提供或更改该计划；适配后的文件也必须来自宿主基线变换。
+type Plan struct {
+	Version               string
+	SpecSHA256            string
+	MaterialSHA256        string
+	BaselineFiles         map[string]string
+	AdditionalTestImports []string
+}
+
+// CompareAdapted 复用结构比较核心，接受另一个已认证场景的宿主适配结果。
+func CompareAdapted(baseline, adapted, candidate map[string][]byte, plan Plan) (Report, error) {
+	binding, err := bind(baseline)
+	if err != nil {
+		return Report{}, err
+	}
+	if plan.Version == "" || len(plan.SpecSHA256) != 64 || len(plan.MaterialSHA256) != 64 || len(binding.Files) == 0 || !reflect.DeepEqual(binding.Files, plan.BaselineFiles) {
+		return Report{}, errors.New("unsupported host test adaptation plan")
+	}
+	adaptedBinding, err := bind(adapted)
+	if err != nil {
+		return Report{}, err
+	}
+	if len(adaptedBinding.Files) != len(binding.Files) {
+		return Report{}, errors.New("adapted test inventory differs")
+	}
+	for name := range binding.Files {
+		if _, ok := adaptedBinding.Files[name]; !ok {
+			return Report{}, errors.New("adapted test path differs")
+		}
+	}
+	p := policy{Version: plan.Version, SpecSHA256: plan.SpecSHA256, BaselineFiles: plan.BaselineFiles, AdditionalTestImports: plan.AdditionalTestImports}
+	return compareAdapted(baseline, adapted, candidate, p, plan.MaterialSHA256)
+}
+
+func compareAdapted(baseline, adapted, candidate map[string][]byte, p policy, material string) (Report, error) {
 	candidateBinding, err := bind(candidate)
 	if err != nil {
 		return Report{}, err
@@ -51,7 +90,7 @@ func Compare(baseline, candidate map[string][]byte) (Report, error) {
 			complexChange = true
 			add("unknown", "test_file_scope_changed", "package, imports or semantic directives changed beyond the supported scope", Location{Tree: "candidate", File: path, Line: 1})
 		}
-		if len(file.other) > 0 {
+		if original == nil && len(file.other) > 0 || original != nil && !sameDeclarations(original.other, file.other) {
 			unknownFiles[path] = true
 			complexChange = true
 			add("unknown", "test_declaration_added", "additional test declarations may affect the original tests", Location{Tree: "candidate", File: path, Line: 1})
@@ -145,4 +184,17 @@ func Compare(baseline, candidate map[string][]byte) (Report, error) {
 		out.Status = "unknown"
 	}
 	return out, nil
+}
+
+// sameDeclarations 保留原表驱动数据和类型声明，新增、删除或改写均需确认。
+func sameDeclarations(before, after []ast.Decl) bool {
+	if len(before) != len(after) {
+		return false
+	}
+	for i := range before {
+		if canonical(before[i]) != canonical(after[i]) {
+			return false
+		}
+	}
+	return true
 }

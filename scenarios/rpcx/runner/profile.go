@@ -11,27 +11,30 @@ import (
 	"slices"
 
 	"github.com/secacy/agent-harness/internal/task"
+	"github.com/secacy/agent-harness/scenarios/rpcx/goddd"
 )
 
 const (
-	ProfileT1T2 = "rpcx-demo-orders-t1t2-v1"
-	ProfileT3   = "rpcx-demo-orders-t3-v1"
+	ProfileT1T2  = "rpcx-demo-orders-t1t2-v1"
+	ProfileT3    = "rpcx-demo-orders-t3-v1"
+	ProfileGoddd = "rpcx-goddd-t3-v1"
 )
 
 //go:embed profiles.json
 var profileData []byte
 
 type profile struct {
-	ID               string            `json:"id"`
-	RepositoryName   string            `json:"repository_name"`
-	SpecVersion      string            `json:"spec_version"`
-	SpecSHA256       string            `json:"spec_sha256"`
-	RepositorySHA256 string            `json:"repository_sha256"`
-	Dependencies     map[string]string `json:"dependencies"`
-	ProtectedPaths   []string          `json:"protected_paths"`
-	BuildConfig      string            `json:"build_config"`
-	RequiredTests    []string          `json:"required_tests"`
-	Verifier         string            `json:"verifier"`
+	ID                  string            `json:"id"`
+	RepositoryName      string            `json:"repository_name"`
+	SpecVersion         string            `json:"spec_version"`
+	SpecSHA256          string            `json:"spec_sha256"`
+	RepositorySHA256    string            `json:"repository_sha256"`
+	Dependencies        map[string]string `json:"dependencies"`
+	ProtectedPaths      []string          `json:"protected_paths"`
+	BuildConfig         string            `json:"build_config"`
+	RequiredTests       []string          `json:"required_tests"`
+	Verifier            string            `json:"verifier"`
+	HostMaterialsSHA256 string            `json:"host_materials_sha256,omitempty"`
 }
 
 func lookupProfile(id string) (profile, error) {
@@ -59,10 +62,42 @@ func (p profile) validate(t task.Target) error {
 			return fmt.Errorf("unsupported dependency snapshot: %s", name)
 		}
 	}
-	if !slices.Contains([]string{"rpcx-t1t2-evidence-v1", "rpcx-t3-evidence-v1"}, p.Verifier) {
+	if !slices.Contains([]string{"rpcx-t1t2-evidence-v1", "rpcx-t3-evidence-v1", goddd.VerifierVersion}, p.Verifier) {
 		return errors.New("unsupported rpcx verifier")
 	}
+	if p.Verifier == goddd.VerifierVersion {
+		hash, err := goddd.HostMaterialsSHA256()
+		if err != nil {
+			return err
+		}
+		if hash != p.HostMaterialsSHA256 {
+			return errors.New("unsupported Goddd host materials")
+		}
+	}
 	return nil
+}
+
+// TargetFromGoddd 描述已发布的 Goddd 输入；不读取候选或评测预期。
+func TargetFromGoddd(id, fixtures, spec string) (task.Target, error) {
+	p, err := lookupProfile(ProfileGoddd)
+	if err != nil {
+		return task.Target{}, err
+	}
+	fixtures, err = canonicalPath(fixtures)
+	if err != nil {
+		return task.Target{}, err
+	}
+	spec, err = canonicalPath(spec)
+	if err != nil {
+		return task.Target{}, err
+	}
+	t := task.Target{ID: id, ProfileID: p.ID, BuildConfig: p.BuildConfig,
+		Repository:    task.Snapshot{Directory: filepath.Join(fixtures, p.RepositoryName), SHA256: p.RepositorySHA256},
+		Specification: task.Specification{Path: spec, SHA256: p.SpecSHA256}, Dependencies: map[string]task.Snapshot{}}
+	for name, hash := range p.Dependencies {
+		t.Dependencies[name] = task.Snapshot{Directory: filepath.Join(fixtures, name), SHA256: hash}
+	}
+	return t, t.Validate()
 }
 
 // TargetFromScenario 只构造固定输入描述；实际读取与认证由 Run 完成。

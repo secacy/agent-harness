@@ -1,0 +1,187 @@
+package server
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+	"time"
+
+	"example.com/rpcx/v2"
+	"github.com/go-kit/kit/log"
+	"github.com/go-kit/kit/metrics/discard"
+	shipping "github.com/marcusolsson/goddd"
+	"github.com/marcusolsson/goddd/booking"
+	"github.com/marcusolsson/goddd/inmem"
+	"github.com/marcusolsson/goddd/routing"
+)
+
+func godddFailure(t *testing.T, rule, detail string) {
+	t.Helper()
+	data, _ := json.Marshal(map[string]string{"rule": rule, "detail": detail})
+	t.Errorf("GODDD_FINDING %s", data)
+}
+
+func godddHTTP(t *testing.T, addr string) (http.Handler, string) {
+	t.Helper()
+	rs := routing.NewProxyingMiddleware(context.Background(), addr)(nil)
+	s := booking.NewService(inmem.NewCargoRepository(), inmem.NewLocationRepository(), inmem.NewHandlingEventRepository(), rs)
+	s = booking.NewLoggingService(log.NewNopLogger(), s)
+	s = booking.NewInstrumentingService(discard.NewCounter(), discard.NewHistogram(), s)
+	id, err := s.BookNewCargo(shipping.SESTO, shipping.AUMEL, time.Date(2026, 12, 1, 0, 0, 0, 0, time.UTC))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return New(s, log.NewNopLogger()), string(id)
+}
+
+func TestHarnessGodddBoundary(t *testing.T) {
+	for _, mode := range []string{"default", "short-parent", "long-parent", "cancelled", "expired", "cancel-in-backend", "remote-error", "repeat", "unknown-cargo", "empty-response"} {
+		t.Run(mode, func(t *testing.T) {
+			type key struct{}
+			parent, cancel := context.WithCancel(context.WithValue(context.Background(), key{}, "trace-id"))
+			defer cancel()
+			var requestContext context.Context = parent
+			if mode == "short-parent" || mode == "long-parent" || mode == "expired" {
+				duration := 5 * time.Second
+				if mode == "long-parent" {
+					duration = time.Hour
+				}
+				if mode == "expired" {
+					duration = -time.Second
+				}
+				var release context.CancelFunc
+				requestContext, release = context.WithTimeout(parent, duration)
+				defer release()
+			}
+			if mode == "cancelled" {
+				cancel()
+			}
+			var observed []context.Context
+			var started time.Time
+			t.Cleanup(rpcx.Register(t.Name(), func(ctx context.Context, method string, request, response any) error {
+				observed = append(observed, ctx)
+				if ctx.Value(key{}) != "trace-id" {
+					godddFailure(t, "CTX-003", "request value did not reach RPC")
+				}
+				if method != "fetch_routes" || request != (routing.FetchRoutesRequest{From: "SESTO", To: "AUMEL"}) {
+					godddFailure(t, "BEHAVIOR-001", "RPC method or route request changed")
+				}
+				deadline, ok := ctx.Deadline()
+				if !ok {
+					godddFailure(t, "TIME-001", "RPC has no deadline")
+				} else if mode == "short-parent" {
+					want, _ := requestContext.Deadline()
+					if !deadline.Equal(want) {
+						godddFailure(t, "TIME-002", "shorter parent deadline was changed")
+					}
+				} else if deadline.Before(started.Add(30*time.Second)) || deadline.After(time.Now().Add(30*time.Second)) {
+					godddFailure(t, "TIME-002", "RPC deadline is not the per-call 30 second cap")
+				}
+				if mode == "cancelled" || mode == "expired" {
+					godddFailure(t, "CTX-003", "cancelled or expired request reached backend")
+					return errors.New("unexpected backend call")
+				}
+				if mode == "cancel-in-backend" {
+					cancel()
+					select {
+					case <-ctx.Done():
+					case <-time.After(time.Second):
+						godddFailure(t, "CTX-003", "parent cancellation did not reach RPC")
+					}
+					return ctx.Err()
+				}
+				if mode == "remote-error" {
+					return errors.New("remote failure")
+				}
+				if mode == "empty-response" {
+					return nil
+				}
+				return json.Unmarshal([]byte(`{"paths":[{"edges":[{"origin":"SESTO","destination":"AUMEL","voyage":"001A","departure":"2026-01-01T08:00:00Z","arrival":"2026-01-02T08:00:00Z"}]}]}`), response)
+			}))
+			h, id := godddHTTP(t, t.Name())
+			if mode == "unknown-cargo" {
+				id = "missing"
+			}
+			attempts := 1
+			if mode == "repeat" {
+				attempts = 2
+			}
+			for range attempts {
+				started = time.Now()
+				r := httptest.NewRequest(http.MethodGet, "/booking/v1/cargos/"+id+"/request_routes", nil).WithContext(requestContext)
+				w := httptest.NewRecorder()
+				h.ServeHTTP(w, r)
+				if w.Code != http.StatusOK {
+					godddFailure(t, "BEHAVIOR-001", fmt.Sprintf("HTTP status changed: %d", w.Code))
+				}
+				var result struct {
+					Routes []shipping.Itinerary `json:"routes"`
+				}
+				if err := json.NewDecoder(w.Body).Decode(&result); err != nil {
+					godddFailure(t, "BEHAVIOR-001", "HTTP route response is not valid JSON")
+					return
+				}
+				if mode == "default" || mode == "short-parent" || mode == "long-parent" || mode == "repeat" {
+					if len(result.Routes) != 1 || len(result.Routes[0].Legs) != 1 {
+						godddFailure(t, "BEHAVIOR-001", "route result missing")
+					} else {
+						leg := result.Routes[0].Legs[0]
+						wantDeparture := time.Date(2026, 1, 1, 8, 0, 0, 0, time.UTC)
+						if leg.VoyageNumber != "001A" || leg.LoadLocation != shipping.SESTO || leg.UnloadLocation != shipping.AUMEL || !leg.LoadTime.Equal(wantDeparture) || !leg.UnloadTime.Equal(wantDeparture.Add(24*time.Hour)) {
+							godddFailure(t, "BEHAVIOR-001", "route response fields changed")
+						}
+					}
+				} else if len(result.Routes) != 0 {
+					godddFailure(t, "BEHAVIOR-001", "error or empty request returned routes")
+				}
+				for _, ctx := range observed {
+					if ctx.Err() == nil {
+						godddFailure(t, "TIME-003", "derived context was not released")
+					}
+				}
+			}
+			wantCalls := attempts
+			if mode == "cancelled" || mode == "expired" || mode == "unknown-cargo" {
+				wantCalls = 0
+			}
+			if len(observed) != wantCalls {
+				godddFailure(t, "BEHAVIOR-001", fmt.Sprintf("backend calls=%d, want %d", len(observed), wantCalls))
+			}
+			if mode != "cancelled" && mode != "expired" && mode != "cancel-in-backend" && requestContext.Err() != nil {
+				godddFailure(t, "TIME-003", "caller context was cancelled by RPC")
+			}
+		})
+	}
+}
+
+func TestHarnessGodddExpiry(t *testing.T) {
+	calls := 0
+	t.Cleanup(rpcx.Register(t.Name(), func(ctx context.Context, _ string, _, _ any) error {
+		calls++
+		select {
+		case <-ctx.Done():
+			if !errors.Is(ctx.Err(), context.DeadlineExceeded) {
+				godddFailure(t, "TIME-001", "RPC did not expire by its deadline")
+			}
+			return ctx.Err()
+		case <-time.After(35 * time.Second):
+			godddFailure(t, "TIME-001", "RPC did not expire within the allowed observation interval")
+			return errors.New("expiry observation failed")
+		}
+	}))
+	h, id := godddHTTP(t, t.Name())
+	w := httptest.NewRecorder()
+	started := time.Now()
+	h.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/booking/v1/cargos/"+id+"/request_routes", nil))
+	elapsed := time.Since(started)
+	if elapsed < 29*time.Second || elapsed > 36*time.Second || calls != 1 {
+		godddFailure(t, "TIME-001", fmt.Sprintf("unexpected expiry observation: %v, calls=%d", elapsed, calls))
+	}
+	if w.Code != http.StatusOK {
+		godddFailure(t, "BEHAVIOR-001", "expiry changed HTTP error presentation")
+	}
+}

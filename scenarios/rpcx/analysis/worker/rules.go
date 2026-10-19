@@ -87,11 +87,11 @@ func inspectCalls(root, pkg string, fset *token.FileSet, file *ast.File, info *t
 	})
 }
 
-// 仅接受整个函数都匹配的直线封装；错误传播和调用方链路另由行为/完整性检查负责。
+// 证明从超时派生到 RPC 调用之间的直线前缀；业务处理与调用方链路由其他检查负责。
 func boundary(fn *ast.FuncDecl, call *ast.CallExpr, info *types.Info) (string, string, *int64) {
 	unknown := func(reason string) (string, string, *int64) { return "unknown", reason, nil }
 	body := fn.Body.List
-	if len(body) != 3 && len(body) != 4 {
+	if len(body) < 3 {
 		return unknown("unsupported_timeout_shape")
 	}
 	assign, ok := body[0].(*ast.AssignStmt)
@@ -115,14 +115,14 @@ func boundary(fn *ast.FuncDecl, call *ast.CallExpr, info *types.Info) (string, s
 	if !ok || len(deferred.Call.Args) != 0 || !sameObject(deferred.Call.Fun, info.ObjectOf(cancel), info) {
 		return unknown("unproven_cancel_release")
 	}
-	if len(call.Args) != 3 || !sameObject(call.Args[0], info.ObjectOf(ctx), info) {
+	if (len(call.Args) != 3 && len(call.Args) != 4) || !sameObject(call.Args[0], info.ObjectOf(ctx), info) {
 		return unknown("rpc_context_not_derived")
 	}
 	// 调用参数与接收者中的任意函数调用都可能先改变取消状态。
 	for _, expr := range append([]ast.Expr{call.Fun}, call.Args[1:]...) {
 		hasCall := false
 		ast.Inspect(expr, func(n ast.Node) bool {
-			if _, ok := n.(*ast.CallExpr); ok {
+			if nested, ok := n.(*ast.CallExpr); ok && !info.Types[nested.Fun].IsType() {
 				hasCall = true
 			}
 			return true
@@ -131,7 +131,7 @@ func boundary(fn *ast.FuncDecl, call *ast.CallExpr, info *types.Info) (string, s
 			return unknown("unproven_argument_effects")
 		}
 	}
-	if !directReturn(body[2:], call, info) {
+	if !directReturn(body[2:], call, info) && !responsePrefix(body[2:], call, info, info.ObjectOf(cancel)) {
 		return unknown("unsupported_control_flow")
 	}
 	value := info.Types[derive.Args[1]].Value
@@ -184,6 +184,9 @@ func directReturn(body []ast.Stmt, call *ast.CallExpr, info *types.Info) bool {
 		ret, ok := body[0].(*ast.ReturnStmt)
 		return ok && len(ret.Results) == 1 && ret.Results[0] == call
 	}
+	if len(body) != 2 {
+		return false
+	}
 	guard, ok := body[0].(*ast.IfStmt)
 	if !ok || guard.Else != nil || len(guard.Body.List) != 1 {
 		return false
@@ -210,4 +213,44 @@ func directReturn(body []ast.Stmt, call *ast.CallExpr, info *types.Info) bool {
 func isNil(expr ast.Expr, info *types.Info) bool {
 	id, ok := expr.(*ast.Ident)
 	return ok && info.Uses[id] == types.Universe.Lookup("nil")
+}
+
+// responsePrefix 只扩展无初始化的响应声明和紧随其后的 RPC；后续业务由范围检查证明。
+func responsePrefix(body []ast.Stmt, call *ast.CallExpr, info *types.Info, cancel types.Object) bool {
+	if len(body) < 2 {
+		return false
+	}
+	declaration, ok := body[0].(*ast.DeclStmt)
+	if !ok {
+		return false
+	}
+	variables, ok := declaration.Decl.(*ast.GenDecl)
+	if !ok || variables.Tok != token.VAR || len(variables.Specs) != 1 {
+		return false
+	}
+	value, ok := variables.Specs[0].(*ast.ValueSpec)
+	if !ok || len(value.Names) != 1 || len(value.Values) != 0 {
+		return false
+	}
+	if len(call.Args) != 4 {
+		return false
+	}
+	response, ok := call.Args[3].(*ast.UnaryExpr)
+	if !ok || response.Op != token.AND || !sameObject(response.X, info.Defs[value.Names[0]], info) {
+		return false
+	}
+	assignment, ok := body[1].(*ast.AssignStmt)
+	if !ok || assignment.Tok != token.DEFINE || len(assignment.Lhs) != 1 || len(assignment.Rhs) != 1 || assignment.Rhs[0] != call {
+		return false
+	}
+	stable := true
+	for _, statement := range body {
+		ast.Inspect(statement, func(n ast.Node) bool {
+			if id, ok := n.(*ast.Ident); ok && info.ObjectOf(id) == cancel {
+				stable = false
+			}
+			return true
+		})
+	}
+	return stable
 }

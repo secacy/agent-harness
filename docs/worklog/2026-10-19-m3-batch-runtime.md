@@ -361,3 +361,12 @@ Completed 结果须匹配磁盘 `run.json`、目标独占目录、合法判定�
 最终带竞态检测的 Runner 联调见 `runs/m3-3-rpcx-race-artifacts.jsonl`，通过。保留的混合 Campaign：`runs/m3-3-campaign-artifacts/rpcx-campaign-1458706397/campaign/summary.md`，6 个 Target 中 2 个完成交付（ReadyForReview / Rejected 各 1），4 个执行失败（基线非零、非法回复、Target 额度不足、输入缺失）；准入 4 次，受控模型声明用量 80 Token，无在途/未知占用。这些数字是脚本化模型的机制数据，不是实际供应商消费。项目回归 `runs/m3-3-project-tests.jsonl` 通过，18 个包、631 个测试及子测试，无失败。回归启动后补充的预算绑定负例、输入缺失及产物保留路径，另由最终核心/Runner 竞态检测覆盖；最终生产差异仅将质量名称改用既有 quality 常量，核心竞态再次通过。没有读取 .env、调用真实模型、变更冻结场景规范/补丁/oracle，或构建异构 L2。真实 Token 上界核实、付费批次命令、异构开发数据及留出保管仍待后续工作。
 
 本单元结论：M3.3 的 Go API 调度与汇总在上述受控范围验收；未开放 batch CLI，不宣布 M3 整体完成。后续先推进 M3.4 的来源摸底、开发/留出划分与宿主 Profile 接入；核实供应商能力及付费命令另作完整工作后，才启动付费批量开发实验。
+
+
+## 13. M3.4：Goddd 开发切片接入
+
+在[样本选择](2026-10-19-m3-4-sample-selection.md)之后，先完成[冻结基线与共用 SDK](2026-10-19-goddd-baseline.md)，再实现 [Goddd 新规范、Profile 与证据门禁](2026-10-19-goddd-evidence-gate.md)。新 Profile 保留多层接口/装饰器、原测试与业务映射，经原 Runner 交付；离线模块材料由宿主认证，只读装配且不进入 Agent 文件根。
+
+六份手写候选在可信本地按逐检查预期校准，三类主候选在真实 Docker 下分别得到 ReadyForReview、Rejected、NeedsAttention。Docker Runner 使用确定性编辑和真实构建/测试/独立门禁，补丁重放与审核材料通过。具体材料 pin、方案代价、失败轮次与验证记录以该工作记录为准。
+
+本步不计真实模型迁移效果、错误放行率或独立 oracle 验收，未改变留出名额状态、旧数据或选择清单。M3.4 尚需其余两个开发切片、独立参考和按协议的真实批次实验；付费能力材料与 batch 命令仍是独立依赖。

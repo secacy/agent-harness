@@ -15,19 +15,28 @@ import (
 	"github.com/secacy/agent-harness/internal/repotools"
 	"github.com/secacy/agent-harness/internal/task"
 	"github.com/secacy/agent-harness/scenarios/rpcx/checks"
+	"github.com/secacy/agent-harness/scenarios/rpcx/goddd"
 )
 
 type runState struct {
-	config     Config
-	profile    profile
-	baseline   *BaselineReport
-	record     Record
-	input      Input
-	fixtures   tree
-	spec       []byte
-	prepared   bool
-	agent      *agent.Result
-	validation *checks.Evaluation
+	config      Config
+	profile     profile
+	baseline    *BaselineReport
+	record      Record
+	input       Input
+	fixtures    tree
+	spec        []byte
+	prepared    bool
+	agent       *agent.Result
+	validation  *checks.Evaluation
+	hostBackend *goddd.ModuleBackend
+}
+
+func (r *runState) backend() execution.Executor {
+	if r.hostBackend != nil {
+		return r.hostBackend
+	}
+	return r.config.Backend
 }
 
 // Run 每次创建新目录。候选被拒绝仍可正常完成，调用方必须检查 Verdict。
@@ -115,7 +124,11 @@ func Run(parent context.Context, config Config) (record Record, err error) {
 	if err := r.checkInputs(ctx); err != nil {
 		return record, err
 	}
-	validation, err := checks.Evaluate(ctx, checks.EvaluationRequest{
+	evaluate := checks.Evaluate
+	if r.profile.Verifier == goddd.VerifierVersion {
+		evaluate = goddd.Evaluate
+	}
+	validation, err := evaluate(ctx, checks.EvaluationRequest{
 		BaselineDir: r.path("baseline/" + r.profile.RepositoryName), CandidateDir: r.path("workspace/" + r.profile.RepositoryName),
 		SpecPath: r.path("inputs/spec/spec.md"), EvidenceDir: r.path("evidence"),
 		CacheDir: r.path("cache/validation"), Backend: config.Backend,
@@ -250,6 +263,12 @@ func (r *runState) prepare(ctx context.Context) error {
 		}
 	}
 	r.prepared = true
+	if r.profile.HostMaterialsSHA256 != "" {
+		r.hostBackend, err = goddd.PrepareBackend(ctx, r.path("host-materials/rpcx-goddd-modules"), r.config.Backend)
+		if err != nil {
+			return fmt.Errorf("prepare host materials: %w", err)
+		}
+	}
 	return nil
 }
 
@@ -279,7 +298,7 @@ func (r *runState) generate(ctx context.Context) error {
 	}
 	executor, err := repotools.New(repotools.Config{
 		Workspace: r.path("workspace/" + r.profile.RepositoryName), ReadOnlyRoots: roots, ProtectedPaths: r.profile.ProtectedPaths,
-		GoCheck: &repotools.GoCheckConfig{CacheDir: r.path("cache/agent"), Backend: r.config.Backend, ReadOnlyDirs: mounts},
+		GoCheck: &repotools.GoCheckConfig{CacheDir: r.path("cache/agent"), Backend: r.backend(), ReadOnlyDirs: mounts},
 	})
 	if err != nil {
 		return err
@@ -313,6 +332,11 @@ func (r *runState) checkInputs(ctx context.Context) (err error) {
 			err = fmt.Errorf("%w: %w", ErrInputChanged, err)
 		}
 	}()
+	if r.hostBackend != nil {
+		if err := r.hostBackend.Check(ctx); err != nil {
+			return err
+		}
+	}
 	material, err := os.ReadFile(r.path("inputs/profile.json"))
 	if err != nil {
 		return err

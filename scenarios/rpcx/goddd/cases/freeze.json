@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "version": "rpcx-goddd-calibration-v1",
+  "baseline_freeze_sha256": "3b00ca14b81d7de45fc8d72fe4dd7c01f3a83ff9d31722373782ea71d23cd9ce",
+  "spec_sha256": "917575e0f4fc571f6f72c743ffded00771da838144371435ab0edfb61b578610",
+  "files": {
+    "manifest.json": "1843147201ca7658de85802af0b9579e00d1cab0d2771a6604be993207ec6275",
+    "patches/background-fallback.patch": "cdea0686a898189afcd5ad73695d7ecd0a9d442e1551f0ba884c4351e2824c9c",
+    "patches/correct.patch": "ba939b25a44e1b9d7c4eea7e30ad922a96805dd4afad46fbe24186b79a8e14b9",
+    "patches/deleted-assertion.patch": "c8115d87bb0df7630bc6cde3a9266f3f34cae263ffa4760af14eb15acf6ac87a",
+    "patches/mapping-helper.patch": "fd95c5257d3e4aad6f1d2323a456882109588213a80d5632e38e831e15f4904c",
+    "patches/missing-timeout.patch": "43fbde0ece36f5d68f4f4c8a16fc51b5b31e2b42cbaf71dde61bbe79968c16a9",
+    "patches/protected-license.patch": "aae24f5fcc6954c07b6c73bf85112336ea9240c58b5dedf3566348f2dc0814fa"
+  }
+}

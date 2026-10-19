@@ -9,8 +9,6 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/secacy/agent-harness/internal/execution"
@@ -86,15 +84,7 @@ func (r *runState) checkBaseline(ctx context.Context) (err error) {
 			return err
 		}
 	}
-	output := "/tmp/"
-	if r.config.Backend.Info().Kind == execution.KindLocal {
-		output = r.path("cache/agent/binaries")
-		if err = os.MkdirAll(output, 0700); err != nil {
-			return err
-		}
-		output += string(filepath.Separator)
-	}
-	if _, err = r.baselineCommand(ctx, "build", []string{binary, "build", "-o", output, "./..."}); err != nil {
+	if _, err = r.baselineCommand(ctx, "build", []string{binary, "build", "-o", "/dev/null", "./..."}); err != nil {
 		return err
 	}
 	data, err := r.baselineCommand(ctx, "test", []string{binary, "test", "-json", "-count=1", "-timeout=30s", "./..."})
@@ -133,13 +123,17 @@ func (r *runState) baselineCommand(parent context.Context, name string, args []s
 	for _, sdk := range sortedKeys(r.profile.Dependencies) {
 		mounts = append(mounts, r.path("baseline/"+sdk))
 	}
-	command := BaselineCommand{Name: name, Args: args, ExitCode: -1, Backend: r.config.Backend.Info(), Stdout: "preflight/" + name + ".stdout.log", Stderr: "preflight/" + name + ".stderr.log"}
+	actual := args
+	if r.hostBackend != nil {
+		actual = append([]string{"env", "GOMODCACHE=" + r.hostBackend.Environment()["GOMODCACHE"]}, args...)
+	}
+	command := BaselineCommand{Name: name, Args: actual, ExitCode: -1, Backend: r.backend().Info(), Stdout: "preflight/" + name + ".stdout.log", Stderr: "preflight/" + name + ".stderr.log"}
 	index := len(r.baseline.Commands)
 	r.baseline.Commands = append(r.baseline.Commands, command)
 	if err := writeJSON(r.path("preflight/baseline.json"), r.baseline); err != nil {
 		return nil, err
 	}
-	result, runErr := r.config.Backend.Run(ctx, execution.Request{Args: args, Directory: mounts[0], ReadOnlyDirs: mounts, CacheDir: r.path("cache/agent"), MaxBytes: 4 * 1024 * 1024})
+	result, runErr := r.backend().Run(ctx, execution.Request{Args: args, Directory: mounts[0], ReadOnlyDirs: mounts, CacheDir: r.path("cache/agent"), MaxBytes: 4 * 1024 * 1024})
 	command.ExitCode, command.ContainerID = result.ExitCode, result.ContainerID
 	if runErr != nil || result.ExitCode < 0 || result.OOMKilled || result.OutputLimit || ctx.Err() != nil {
 		r.baseline.Status = "error"
@@ -168,6 +162,8 @@ func (r *runState) baselineCommand(parent context.Context, name string, args []s
 func baselineEvents(data []byte, required []string) (map[string]string, error) {
 	states := map[string]string{}
 	packages := map[string]string{}
+	owners := map[string]string{}
+	runs := map[string]int{}
 	decoder := json.NewDecoder(bytes.NewReader(data))
 	for {
 		var event struct{ Action, Package, Test string }
@@ -177,14 +173,18 @@ func baselineEvents(data []byte, required []string) (map[string]string, error) {
 			return states, fmt.Errorf("decode baseline test events: %w", err)
 		}
 		if event.Test != "" {
-			states[event.Package+"/"+event.Test] = event.Action
+			id := event.Package + "/" + event.Test
+			states[id] = event.Action
+			owners[id] = event.Package
+			if event.Action == "run" {
+				runs[id]++
+			}
 		} else if event.Action == "pass" || event.Action == "fail" || event.Action == "skip" {
 			packages[event.Package] = event.Action
 		}
 	}
 	for _, test := range required {
-		pkg := test[:strings.LastIndex(test, "/")]
-		if states[test] != "pass" || packages[pkg] != "pass" {
+		if states[test] != "pass" || packages[owners[test]] != "pass" || runs[test] != 1 {
 			return states, fmt.Errorf("required baseline test or package did not pass: %s", test)
 		}
 	}

@@ -99,12 +99,9 @@ func newGoChecker(roots map[string]string, config GoCheckConfig, limit int) (*go
 func (c *goChecker) run(parent context.Context, kind string) (agent.ToolResult, error) {
 	ctx, cancel := context.WithTimeout(parent, c.timeout)
 	defer cancel()
-	args := []string{checkBuild, "./..."}
+	args := []string{checkBuild, "-o", "/dev/null", "./..."}
 	if kind == checkTest {
 		args = []string{checkTest, "-count=1", "-timeout=" + c.timeout.String(), "./..."}
-	}
-	if c.backend.Info().Kind == execution.KindDocker && kind == checkBuild {
-		args = []string{checkBuild, "-o", "/tmp/", "./..."}
 	}
 	result, err := c.backend.Run(ctx, execution.Request{Args: append([]string{c.goBinary}, args...), Directory: c.workspace, ReadOnlyDirs: c.mounts, CacheDir: c.cache})
 	output := newOutput(c.maxOutput)

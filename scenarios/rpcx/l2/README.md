@@ -1,6 +1,6 @@
 # rpcx L2 样本准备
 
-已完成样本选择和 [Goddd 迁移前离线基线](data/rpcx-l2-goddd-v1/README.md)，另两个开发样本待准备。Goddd 的可信本地与断网 Docker 复验均通过，仍未注册迁移 Profile。来源取舍见[样本选择记录](../../../docs/worklog/2026-10-19-m3-4-sample-selection.md)，实际准备与验证见[基线工作记录](../../../docs/worklog/2026-10-19-goddd-baseline.md)。
+已完成样本选择和 [Goddd 迁移前离线基线](data/rpcx-l2-goddd-v1/README.md)，另两个开发样本待准备。Goddd 的可信本地与断网 Docker 复验均通过，已新增 [Goddd 迁移规范、宿主 Profile 与证据门禁](../goddd/README.md)。来源取舍见[样本选择记录](../../../docs/worklog/2026-10-19-m3-4-sample-selection.md)，实际准备与验证见[基线工作记录](../../../docs/worklog/2026-10-19-goddd-baseline.md)。
 
 [选择清单 v0.1.0](selection-v0.1.0.json)固定三个开发来源及其 commit：
 
@@ -24,4 +24,4 @@
 
 Goddd 数据版本为 rpcx-l2-goddd-v1，包含共用 SDK 契约 rpcx-l2-sdk-v1、15 个原业务测试、离线依赖及来源映射。复验入口为 `go run ./scenarios/rpcx/l2/cmd/verify-baseline`，默认使用已有固定 Docker 镜像；显式 `-trusted-local` 运行可信本地夹具。工具核对 37 项测试及子测试、包终态和执行前后材料；不调用模型。
 
-下一步为该冻结基线准备迁移规范、新宿主 Profile、可信检查和正确/错误/未知候选对照，再进入 Agent 迁移验收；其余样本按原选择逐个准备。
+Goddd 已接入宿主 Profile 与确定性 Runner，正确/违规/未知候选的校准不计作真实模型迁移效果；实现与证据见 [Goddd 工作记录](../../../docs/worklog/2026-10-19-goddd-evidence-gate.md)。其余样本按原选择逐个准备，独立参考评测与真实批次实验仍待完成。

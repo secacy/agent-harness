@@ -141,3 +141,20 @@ func keys[T any](m map[string]T) []string {
 	sort.Strings(result)
 	return result
 }
+
+// Materials 返回比较器的实际发布材料，供宿主保存可审计的工具副本。
+func Materials() (map[string][]byte, error) {
+	out := map[string][]byte{}
+	entries, err := materials.ReadDir(".")
+	if err != nil {
+		return nil, err
+	}
+	for _, entry := range entries {
+		data, err := materials.ReadFile(entry.Name())
+		if err != nil {
+			return nil, err
+		}
+		out[entry.Name()] = data
+	}
+	return out, nil
+}

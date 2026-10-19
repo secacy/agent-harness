@@ -1,0 +1,347 @@
+--- a/booking/instrumenting.go
++++ b/booking/instrumenting.go
+@@ -1,6 +1,7 @@
+ package booking
+ 
+ import (
++	"context"
+ 	"time"
+ 
+ 	"github.com/go-kit/kit/metrics"
+@@ -41,13 +42,13 @@
+ 	return s.next.LoadCargo(id)
+ }
+ 
+-func (s *instrumentingService) RequestPossibleRoutesForCargo(id shipping.TrackingID) []shipping.Itinerary {
++func (s *instrumentingService) RequestPossibleRoutesForCargo(ctx context.Context, id shipping.TrackingID) []shipping.Itinerary {
+ 	defer func(begin time.Time) {
+ 		s.requestCount.With("method", "request_routes").Add(1)
+ 		s.requestLatency.With("method", "request_routes").Observe(time.Since(begin).Seconds())
+ 	}(time.Now())
+ 
+-	return s.next.RequestPossibleRoutesForCargo(id)
++	return s.next.RequestPossibleRoutesForCargo(ctx, id)
+ }
+ 
+ func (s *instrumentingService) AssignCargoToRoute(id shipping.TrackingID, itinerary shipping.Itinerary) (err error) {
+--- a/booking/logging.go
++++ b/booking/logging.go
+@@ -1,6 +1,7 @@
+ package booking
+ 
+ import (
++	"context"
+ 	"time"
+ 
+ 	"github.com/go-kit/kit/log"
+@@ -44,7 +45,7 @@
+ 	return s.next.LoadCargo(id)
+ }
+ 
+-func (s *loggingService) RequestPossibleRoutesForCargo(id shipping.TrackingID) []shipping.Itinerary {
++func (s *loggingService) RequestPossibleRoutesForCargo(ctx context.Context, id shipping.TrackingID) []shipping.Itinerary {
+ 	defer func(begin time.Time) {
+ 		s.logger.Log(
+ 			"method", "request_routes",
+@@ -52,7 +53,7 @@
+ 			"took", time.Since(begin),
+ 		)
+ 	}(time.Now())
+-	return s.next.RequestPossibleRoutesForCargo(id)
++	return s.next.RequestPossibleRoutesForCargo(ctx, id)
+ }
+ 
+ func (s *loggingService) AssignCargoToRoute(id shipping.TrackingID, itinerary shipping.Itinerary) (err error) {
+--- a/booking/service.go
++++ b/booking/service.go
+@@ -3,6 +3,7 @@
+ package booking
+ 
+ import (
++	"context"
+ 	"errors"
+ 	"time"
+ 
+@@ -23,7 +24,7 @@
+ 
+ 	// RequestPossibleRoutesForCargo requests a list of itineraries describing
+ 	// possible routes for this shipping.
+-	RequestPossibleRoutesForCargo(id shipping.TrackingID) []shipping.Itinerary
++	RequestPossibleRoutesForCargo(ctx context.Context, id shipping.TrackingID) []shipping.Itinerary
+ 
+ 	// AssignCargoToRoute assigns a cargo to the route specified by the
+ 	// itinerary.
+@@ -123,7 +124,7 @@
+ 	return nil
+ }
+ 
+-func (s *service) RequestPossibleRoutesForCargo(id shipping.TrackingID) []shipping.Itinerary {
++func (s *service) RequestPossibleRoutesForCargo(ctx context.Context, id shipping.TrackingID) []shipping.Itinerary {
+ 	if id == "" {
+ 		return nil
+ 	}
+@@ -133,7 +134,7 @@
+ 		return []shipping.Itinerary{}
+ 	}
+ 
+-	return s.routingService.FetchRoutesForSpecification(c.RouteSpecification)
++	return s.routingService.FetchRoutesForSpecification(ctx, c.RouteSpecification)
+ }
+ 
+ func (s *service) Cargos() []Cargo {
+--- a/booking/service_test.go
++++ b/booking/service_test.go
+@@ -1,6 +1,7 @@
+ package booking
+ 
+ import (
++	"context"
+ 	"testing"
+ 	"time"
+ 
+@@ -47,7 +48,7 @@
+ 
+ type stubRoutingService struct{}
+ 
+-func (s *stubRoutingService) FetchRoutesForSpecification(rs shipping.RouteSpecification) []shipping.Itinerary {
++func (s *stubRoutingService) FetchRoutesForSpecification(ctx context.Context, rs shipping.RouteSpecification) []shipping.Itinerary {
+ 	legs := []shipping.Leg{
+ 		{LoadLocation: rs.Origin, UnloadLocation: rs.Destination},
+ 	}
+@@ -70,7 +71,7 @@
+ 
+ 	s := NewService(&cargos, nil, nil, &rs)
+ 
+-	r := s.RequestPossibleRoutesForCargo("no_such_id")
++	r := s.RequestPossibleRoutesForCargo(context.Background(), "no_such_id")
+ 
+ 	if len(r) != 0 {
+ 		t.Errorf("len(r) = %d; want = %d", len(r), 0)
+@@ -81,7 +82,7 @@
+ 		t.Fatal(err)
+ 	}
+ 
+-	i := s.RequestPossibleRoutesForCargo(id)
++	i := s.RequestPossibleRoutesForCargo(context.Background(), id)
+ 
+ 	if len(i) != 1 {
+ 		t.Errorf("len(i) = %d; want = %d", len(i), 1)
+@@ -106,7 +107,7 @@
+ 		t.Fatal(err)
+ 	}
+ 
+-	i := s.RequestPossibleRoutesForCargo(id)
++	i := s.RequestPossibleRoutesForCargo(context.Background(), id)
+ 
+ 	if len(i) != 1 {
+ 		t.Errorf("len(i) = %d; want = %d", len(i), 1)
+--- a/go.mod
++++ b/go.mod
+@@ -3,7 +3,7 @@
+ go 1.23.0
+ 
+ require (
+-	example.com/rpcx v1.0.0
++	example.com/rpcx/v2 v2.0.0
+ 	github.com/go-chi/chi v3.3.3+incompatible
+ 	github.com/go-kit/kit v0.7.0
+ 	github.com/pborman/uuid v0.0.0-20180827223501-4c1ecd6722e8
+@@ -16,6 +16,5 @@
+ 	github.com/kr/logfmt v0.0.0-20140226030751-b84e30acd515 // indirect
+ )
+ 
+-replace example.com/rpcx => ../rpcx-v1
+ 
+ replace example.com/rpcx/v2 => ../rpcx-v2
+--- a/mock/mock.go
++++ b/mock/mock.go
+@@ -1,6 +1,7 @@
+ package mock
+ 
+ import (
++	"context"
+ 	shipping "github.com/marcusolsson/goddd"
+ )
+ 
+@@ -95,7 +96,7 @@
+ }
+ 
+ // FetchRoutesForSpecification calls the FetchRoutesFn.
+-func (s *RoutingService) FetchRoutesForSpecification(rs shipping.RouteSpecification) []shipping.Itinerary {
++func (s *RoutingService) FetchRoutesForSpecification(ctx context.Context, rs shipping.RouteSpecification) []shipping.Itinerary {
+ 	s.FetchRoutesInvoked = true
+ 	return s.FetchRoutesFn(rs)
+ }
+--- a/routing/proxying.go
++++ b/routing/proxying.go
+@@ -4,19 +4,20 @@
+ 	"context"
+ 	"time"
+ 
+-	"example.com/rpcx"
++	"example.com/rpcx/v2"
+ 	shipping "github.com/marcusolsson/goddd"
+ )
+ 
+ type proxyService struct {
+-	context.Context
+ 	client *rpcx.Client
+ 	shipping.RoutingService
+ }
+ 
+-func (s proxyService) FetchRoutesForSpecification(rs shipping.RouteSpecification) []shipping.Itinerary {
++func (s proxyService) FetchRoutesForSpecification(ctx context.Context, rs shipping.RouteSpecification) []shipping.Itinerary {
++	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
++	defer cancel()
+ 	var resp FetchRoutesResponse
+-	err := s.client.Call("fetch_routes", FetchRoutesRequest{
++	err := s.client.Call(ctx, "fetch_routes", FetchRoutesRequest{
+ 		From: string(rs.Origin),
+ 		To:   string(rs.Destination),
+ 	}, &resp)
+@@ -24,23 +25,7 @@
+ 		return []shipping.Itinerary{}
+ 	}
+ 
+-	var itineraries []shipping.Itinerary
+-	for _, r := range resp.Paths {
+-		var legs []shipping.Leg
+-		for _, e := range r.Edges {
+-			legs = append(legs, shipping.Leg{
+-				VoyageNumber:   shipping.VoyageNumber(e.Voyage),
+-				LoadLocation:   shipping.UNLocode(e.Origin),
+-				UnloadLocation: shipping.UNLocode(e.Destination),
+-				LoadTime:       e.Departure,
+-				UnloadTime:     e.Arrival,
+-			})
+-		}
+-
+-		itineraries = append(itineraries, shipping.Itinerary{Legs: legs})
+-	}
+-
+-	return itineraries
++	return convertRoutes(resp)
+ }
+ 
+ // ServiceMiddleware 包装业务路由服务。
+@@ -48,12 +33,12 @@
+ 
+ // NewProxyingMiddleware 使用本地 RPC 替代原 HTTP 与熔断传输。
+ func NewProxyingMiddleware(ctx context.Context, addr string) ServiceMiddleware {
+-	client, err := rpcx.NewClient(addr)
++	client, err := rpcx.Dial(addr)
+ 	if err != nil {
+ 		panic(err)
+ 	}
+ 	return func(next shipping.RoutingService) shipping.RoutingService {
+-		return proxyService{Context: ctx, client: client, RoutingService: next}
++		return proxyService{client: client, RoutingService: next}
+ 	}
+ }
+ 
+@@ -75,3 +60,23 @@
+ 		} `json:"edges"`
+ 	} `json:"paths"`
+ }
++
++func convertRoutes(resp FetchRoutesResponse) []shipping.Itinerary {
++	var itineraries []shipping.Itinerary
++	for _, r := range resp.Paths {
++		var legs []shipping.Leg
++		for _, e := range r.Edges {
++			legs = append(legs, shipping.Leg{
++				VoyageNumber:   shipping.VoyageNumber(e.Voyage),
++				LoadLocation:   shipping.UNLocode(e.Origin),
++				UnloadLocation: shipping.UNLocode(e.Destination),
++				LoadTime:       e.Departure,
++				UnloadTime:     e.Arrival,
++			})
++		}
++
++		itineraries = append(itineraries, shipping.Itinerary{Legs: legs})
++	}
++
++	return itineraries
++}
+--- a/routing/proxying_test.go
++++ b/routing/proxying_test.go
+@@ -8,7 +8,7 @@
+ 	"testing"
+ 	"time"
+ 
+-	"example.com/rpcx"
++	"example.com/rpcx/v2"
+ 	shipping "github.com/marcusolsson/goddd"
+ )
+ 
+@@ -27,7 +27,7 @@
+ 		]},{"edges":[{"origin":"SESTO","destination":"AUMEL","voyage":"003A","departure":"2026-01-01T08:00:00Z","arrival":"2026-01-02T08:00:00Z"}]}]}`), response)
+ 	}))
+ 	service := NewProxyingMiddleware(context.Background(), t.Name())(nil)
+-	got := service.FetchRoutesForSpecification(shipping.RouteSpecification{Origin: shipping.SESTO, Destination: shipping.AUMEL})
++	got := service.FetchRoutesForSpecification(context.Background(), shipping.RouteSpecification{Origin: shipping.SESTO, Destination: shipping.AUMEL})
+ 	want := []shipping.Itinerary{
+ 		{Legs: []shipping.Leg{
+ 			{VoyageNumber: "001A", LoadLocation: "SESTO", UnloadLocation: "CNHKG", LoadTime: departure, UnloadTime: arrival},
+@@ -47,7 +47,7 @@
+ 		return errors.New("routing unavailable")
+ 	}))
+ 	service := NewProxyingMiddleware(context.Background(), t.Name())(nil)
+-	got := service.FetchRoutesForSpecification(shipping.RouteSpecification{})
++	got := service.FetchRoutesForSpecification(context.Background(), shipping.RouteSpecification{})
+ 	if got == nil || len(got) != 0 {
+ 		t.Fatalf("got %#v, want non-nil empty routes", got)
+ 	}
+@@ -56,7 +56,7 @@
+ func TestEmptyRemoteResponse(t *testing.T) {
+ 	t.Cleanup(rpcx.Register(t.Name(), func(context.Context, string, any, any) error { return nil }))
+ 	service := NewProxyingMiddleware(context.Background(), t.Name())(nil)
+-	if got := service.FetchRoutesForSpecification(shipping.RouteSpecification{}); got != nil {
++	if got := service.FetchRoutesForSpecification(context.Background(), shipping.RouteSpecification{}); got != nil {
+ 		t.Fatalf("got %#v, want nil routes for empty response", got)
+ 	}
+ }
+--- a/routing.go
++++ b/routing.go
+@@ -1,8 +1,10 @@
+ package shipping
++
++import "context"
+ 
+ // RoutingService is a domain service for routing cargos.
+ type RoutingService interface {
+ 	// FetchRoutesForSpecification finds all possible routes that satisfy a
+ 	// given specification.
+-	FetchRoutesForSpecification(rs RouteSpecification) []Itinerary
++	FetchRoutesForSpecification(ctx context.Context, rs RouteSpecification) []Itinerary
+ }
+--- a/server/booking.go
++++ b/server/booking.go
+@@ -99,11 +99,11 @@
+ }
+ 
+ func (h *bookingHandler) requestRoutes(w http.ResponseWriter, r *http.Request) {
+-	ctx := context.Background()
+-
+-	trackingID := shipping.TrackingID(chi.URLParam(r, "trackingID"))
+-
+-	itin := h.s.RequestPossibleRoutesForCargo(trackingID)
++	ctx := r.Context()
++
++	trackingID := shipping.TrackingID(chi.URLParam(r, "trackingID"))
++
++	itin := h.s.RequestPossibleRoutesForCargo(ctx, trackingID)
+ 
+ 	var response = struct {
+ 		Routes []shipping.Itinerary `json:"routes"`
+--- a/server/booking_test.go
++++ b/server/booking_test.go
+@@ -9,7 +9,7 @@
+ 	"testing"
+ 	"time"
+ 
+-	"example.com/rpcx"
++	"example.com/rpcx/v2"
+ 	"github.com/go-kit/kit/log"
+ 	"github.com/go-kit/kit/metrics/discard"
+ 	shipping "github.com/marcusolsson/goddd"

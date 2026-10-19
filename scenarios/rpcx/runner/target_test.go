@@ -42,8 +42,10 @@ func passedBaselineEvents(p profile) []byte {
 	data := []byte{}
 	packages := map[string]bool{}
 	for _, name := range p.RequiredTests {
-		at := strings.LastIndex(name, "/")
+		at := strings.Index(name, "/Test")
 		pkg, test := name[:at], name[at+1:]
+		started, _ := json.Marshal(map[string]string{"Action": "run", "Package": pkg, "Test": test})
+		data = append(append(data, started...), '\n')
 		event, _ := json.Marshal(map[string]string{"Action": "pass", "Package": pkg, "Test": test})
 		data = append(append(data, event...), '\n')
 		packages[pkg] = true

@@ -120,6 +120,14 @@ env GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly G
 
 可信本地复验显式添加 `-trusted-local`。机制测试为 `go test -race ./scenarios/rpcx/l2/...`，包含冻结/来源异常在执行前拒绝、归档边界、缺失/跳过事件、失败证据与输入变化，不执行完整 Docker 基线。数据范围和限制见 [L2 说明](../scenarios/rpcx/l2/README.md)。
 
+## Goddd 候选与 Runner 校准
+
+```sh
+HARNESS_GODDD_ACCEPTANCE=1 HARNESS_GODDD_OUTPUT="$PWD/runs/goddd-calibration" go test -v -count=1 -timeout=15m -run '^TestGodddAcceptance$' ./scenarios/rpcx/goddd
+```
+
+上述命令只执行可信本地夹具。增加 `HARNESS_GODDD_BACKEND=docker` 使用已准备的固定镜像，`HARNESS_GODDD_CASES=correct,missing-timeout,mapping-helper` 可选择三类主要候选。改为 `-run '^TestRunGodddDelivery$' ./scenarios/rpcx/runner` 执行确定性 Runner 联调；不调用模型服务。机制单测、证据范围及冻结清单见 [Goddd 说明](../scenarios/rpcx/goddd/README.md)。
+
 ## 单仓库任务入口
 
 ```sh

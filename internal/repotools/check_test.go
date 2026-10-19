@@ -51,7 +51,7 @@ exit 1
 `)
 	for _, kind := range []string{"build", "test"} {
 		result := execute(t, executor, "go_check", fmt.Sprintf(`{"kind":%q}`, kind))
-		wantArgs := "build ./..."
+		wantArgs := "build -o /dev/null ./..."
 		if kind == "test" {
 			wantArgs = "test -count=1 -timeout=5s ./..."
 		}

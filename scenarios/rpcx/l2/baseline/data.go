@@ -228,3 +228,8 @@ func provenance(files map[string][]byte) error {
 	}
 	return nil
 }
+
+// ExtractModules 将已认证数据的依赖材料展开到宿主分配的空目录。
+func ExtractModules(files map[string][]byte, directory string) error {
+	return unpack(files, directory)
+}

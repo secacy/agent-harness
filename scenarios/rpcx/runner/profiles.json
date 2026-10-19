@@ -54,5 +54,47 @@
       "example.com/demo-orders/internal/orders/TestPlaceFailure"
     ],
     "verifier": "rpcx-t3-evidence-v1"
+  },
+  {
+    "id": "rpcx-goddd-t3-v1",
+    "repository_name": "goddd",
+    "spec_version": "v0.3.0",
+    "spec_sha256": "917575e0f4fc571f6f72c743ffded00771da838144371435ab0edfb61b578610",
+    "repository_sha256": "3f2f404c1947f4076dfcc1f54c03fc08a7475a44f30db8398848ef48dda7a610",
+    "dependencies": {
+      "rpcx-v1": "3494436826b66504e9d1f28fa22fa22db4f927d0ee43309ab92b2868e5c6d24b",
+      "rpcx-v2": "c8b687c6964c5659391144f0c74934e36a5c0462c438bc8ed886bcdeafb5357c"
+    },
+    "protected_paths": [
+      "LICENSE",
+      "go.sum"
+    ],
+    "build_config": "default",
+    "required_tests": [
+      "github.com/marcusolsson/goddd/TestConstruction",
+      "github.com/marcusolsson/goddd/TestItinerary_CreateEmpty",
+      "github.com/marcusolsson/goddd/TestItinerary_IsExpected",
+      "github.com/marcusolsson/goddd/TestItinerary_IsExpected_EmptyItinerary",
+      "github.com/marcusolsson/goddd/TestLastKnownLocation_WhenClaimed",
+      "github.com/marcusolsson/goddd/TestLastKnownLocation_WhenNoEvents",
+      "github.com/marcusolsson/goddd/TestLastKnownLocation_WhenReceived",
+      "github.com/marcusolsson/goddd/TestRoutingStatus",
+      "github.com/marcusolsson/goddd/TestRoutingStatus_Stringer",
+      "github.com/marcusolsson/goddd/TestTransportStatus_Stringer",
+      "github.com/marcusolsson/goddd/booking/TestAssignCargoToRoute",
+      "github.com/marcusolsson/goddd/booking/TestBookNewCargo",
+      "github.com/marcusolsson/goddd/booking/TestChangeCargoDestination",
+      "github.com/marcusolsson/goddd/booking/TestLoadCargo",
+      "github.com/marcusolsson/goddd/booking/TestRequestPossibleRoutesForCargo",
+      "github.com/marcusolsson/goddd/routing/TestEmptyRemoteResponse",
+      "github.com/marcusolsson/goddd/routing/TestRemoteFailureReturnsEmptyRoutes",
+      "github.com/marcusolsson/goddd/routing/TestRouteMapping",
+      "github.com/marcusolsson/goddd/server/TestBookingRoutesThroughRPC",
+      "github.com/marcusolsson/goddd/server/TestBookingRoutesThroughRPC/remote-failure",
+      "github.com/marcusolsson/goddd/server/TestBookingRoutesThroughRPC/success",
+      "github.com/marcusolsson/goddd/server/TestBookingRoutesThroughRPC/unknown-cargo"
+    ],
+    "verifier": "rpcx-goddd-evidence-v1",
+    "host_materials_sha256": "ac9ad1d04b631f76385db6291daebe7ff22398676545739cb8f309e9cbadebc6"
   }
 ]

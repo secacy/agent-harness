@@ -1,6 +1,6 @@
 # 单仓库生成、验证与审核交付
 
-Runner 接收 `agent.Model` 与显式执行后端，准备工作副本，驱动工具循环，固定提交候选，再调用独立 `checks.Evaluate`。模型只能看到业务工作副本、只读 SDK 和规范；cases、L1 期望、oracle、门禁材料及最终证据不属于工具根目录。文件工具与执行后端共同限定访问范围，摘要校验不替代执行隔离。
+Runner 接收 `agent.Model` 与显式执行后端，准备工作副本，驱动工具循环，固定提交候选，再由宿主 Profile 选择独立验证实现。模型只能看到业务工作副本、只读 SDK 和规范；cases、L1 期望、oracle、门禁材料及最终证据不属于工具根目录。文件工具与执行后端共同限定访问范围，摘要校验不替代执行隔离。
 
 ## 显式 Target 与宿主 Profile
 
@@ -8,15 +8,17 @@ Runner 接收 `agent.Model` 与显式执行后端，准备工作副本，驱动�
 
 ProfileT1T2 / ProfileT3 分别对应 rpcx-demo-orders-t1t2-v1 / rpcx-demo-orders-t3-v1，固定布局、SDK/基线/规范摘要、默认构建配置、十个必需测试和验证实现。原始仓库或 SDK 可以位于不同物理目录，工作副本按受认证的布局组装；这不是任意业务仓库支持。额外构建配置或未知 Profile 被拒绝，新仓库需单独接入可信规则。已使用 Profile 的内容调整发布新 ID，旧材料身份由固定摘要测试保护。
 
+新增 `ProfileGoddd` 对应 `rpcx-goddd-t3-v1`，绑定 Goddd 基线、v0.3.0 规范、22 项测试及子测试、LICENSE/go.sum 保护和离线宿主材料。使用 `TargetFromGoddd(id, fixturesDir, specPath)` 构造 Target；具体证据范围与验收入口见 [Goddd 说明](../goddd/README.md)。宿主模块材料不进入 Agent 文件根，生成前与最终门禁使用不同副本。
+
 显式 Target 先创建独立 Run，再读取和认证实际输入；文件消失、摘要漂移留下 Failed / Preparing 记录，failure_code=input_invalid。旧场景入口保留非法或变更输入在创建 Run 前拒绝的兼容行为；新的 T1/T2 Profile 也认证完整输入快照，不再让随意修改的基线借用旧探针。Task ID 与预算 Target ID 必须一致。
 
 ## 生成前基线检查
 
-准备副本后进入 CheckingBaseline 阶段，在配置的执行后端运行 go build 和 go test -json；十个必需测试及对应包必须真实通过。空成功、跳过、缺事件、命令失败、取消或超时均阻止模型调用，不产生候选质量判定。必需检查的非零退出记录 baseline_failed，执行设施错误记录 baseline_error，原始原因和退出状态保留。
+准备副本后进入 CheckingBaseline 阶段，在配置的执行后端运行 go build 和 go test -json；Profile 中的必需测试及对应包必须真实通过。空成功、跳过、缺事件、命令失败、取消或超时均阻止模型调用，不产生候选质量判定。必需检查的非零退出记录 baseline_failed，执行设施错误记录 baseline_error，原始原因和退出状态保留。
 
 inputs/profile.json 保存宿主实际配置，Input.ProfileSHA256 绑定其完整落盘字节；preflight/baseline.json 绑定配置、规范、基线及完整布局，命令记录后端/容器与 stdout/stderr 的路径和摘要。结构化报告的 baseline_check 同样保留这些事实。完整独立门禁仍在提交后重新认证并验证自己的输入，启动检查不会豁免任何质量要求。
 
-Run 的整体 Timeout 现在包含新增基线命令；每条基线命令上限 30 秒，模型预算准入发生在该阶段之后。当前仍只提供 Go API 的显式 Target 接入，没有 batch 命令、调度或恢复功能。
+Run 的整体 Timeout 现在包含新增基线命令；每条基线命令上限 30 秒，模型预算准入发生在该阶段之后。显式 Target 和批次调度通过 Go API 接入，没有付费 batch 命令或恢复功能。构建输出到 /dev/null，支持库模块并避免在只读副本中生成二进制。
 
 ## 选择规范
 
@@ -37,7 +39,7 @@ inputs/task.json 与 artifacts/report.json 的可选 budget 字段保存 Campaig
 - `run.json`：阶段与执行终态。只有 `Completed` 表示全部产物发布完成；`Rejected` 可以是完整交付的质量结论。
 - `preflight/`：生成前基线报告及命令日志，不属于候选质量门禁证据。
 - `inputs/`、`baseline/`：任务、规范和基线副本；`workspace/`：实际候选及只读 SDK 副本。
-- `artifacts/candidate.patch`：相对 `baseline/demo-orders` 的候选补丁，可用 Git 重放核对候选摘要。
+- `artifacts/candidate.patch`：相对 `baseline/<repository_name>` 的候选补丁，可用 Git 重放核对候选摘要。
 - `artifacts/report.json`：规范、后端、输入、补丁及 Evaluation 的结构化事实。
 - `artifacts/review.md`：确定性生成的审核入口，包含文件变化、检查对应条款、发现和源码位置、证据链接及摘要、缺口、直接命令和内层执行材料入口。
 - `artifacts/agent.json`：完整对话、工具反馈、预算通知和已知/未知用量。review 中 Agent 总结标为未经独立确认的自述，不用于质量判定。
@@ -59,4 +61,4 @@ env GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly G
 
 `CampaignExecutor(trustedLocal)` 将显式 Target 接到 [internal/campaign](../../../internal/campaign/README.md)。共享账本、模型和有界 Executor 由 Campaign 注入；Runner 继续拥有输入认证、基线检查、实际 Run ID、生成前预算绑定、独立门禁和完整交付。Campaign 只索引原报告，不重新判定质量。
 
-批次取消会传到排队命令和在途命令；单任务失败不取消其他任务。真实 Docker 强杀对照仅杀所属执行容器，不代表 worker/Harness 中断恢复。当前通过 Go API 联调，没有新增付费 batch CLI，两个既有宿主 Profile 的支持范围不变。
+批次取消会传到排队命令和在途命令；单任务失败不取消其他任务。真实 Docker 强杀对照仅杀所属执行容器，不代表 worker/Harness 中断恢复。当前通过 Go API 联调，没有新增付费 batch CLI，Goddd 可使用新 Profile；其余仓库仍须单独接入。
