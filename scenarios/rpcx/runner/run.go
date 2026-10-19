@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/secacy/agent-harness/internal/agent"
+	"github.com/secacy/agent-harness/internal/budget"
 	"github.com/secacy/agent-harness/internal/execution"
 	"github.com/secacy/agent-harness/internal/repotools"
 	"github.com/secacy/agent-harness/scenarios/rpcx/checks"
@@ -212,6 +213,22 @@ func (r *runState) prepare(ctx context.Context) error {
 }
 
 func (r *runState) generate(ctx context.Context) error {
+	model := r.config.Model
+	if target := r.config.Budget; target != nil {
+		if target.Ledger == nil || target.Ledger.Snapshot().Profile.Model != r.config.ModelName {
+			return errors.New("run model name does not match the budget ledger")
+		}
+		wrapped, err := budget.NewModel(target.Ledger, target.ID, r.record.ID, model)
+		if err != nil {
+			return fmt.Errorf("bind run budget: %w", err)
+		}
+		ref := wrapped.Reference()
+		r.input.Budget = &ref
+		model = wrapped
+		if err := writeJSON(r.path("inputs/task.json"), r.input); err != nil {
+			return err
+		}
+	}
 	executor, err := repotools.New(repotools.Config{
 		Workspace: r.path("workspace/demo-orders"),
 		ReadOnlyRoots: map[string]string{
@@ -227,7 +244,7 @@ func (r *runState) generate(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	loop := agent.Loop{Model: r.config.Model, Executor: executor, Tools: executor.Specs(), Limits: r.config.Limits}
+	loop := agent.Loop{Model: model, Executor: executor, Tools: executor.Specs(), Limits: r.config.Limits}
 	result, err := loop.Run(ctx, []agent.Message{
 		{Role: agent.RoleSystem, Content: "Migrate the workspace repository according to the supplied specification. " +
 			"Use repository tools to inspect and edit files, and go_check for build/test feedback. " +

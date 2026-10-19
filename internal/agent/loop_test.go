@@ -552,3 +552,16 @@ func TestLoopRecordsUsageForEachAttempt(t *testing.T) {
 		})
 	}
 }
+
+func TestLoopClassifiesExternalBudgetDenial(t *testing.T) {
+	loop := Loop{Model: modelFunc(func(context.Context, []Message, []ToolSpec) (Reply, error) {
+		return Reply{}, fmt.Errorf("campaign admission: %w", ErrModelBudget)
+	}), Executor: executorFunc(func(context.Context, ToolCall) (ToolResult, error) {
+		t.Fatal("tool ran after denied model call")
+		return ToolResult{}, nil
+	}), Tools: testTools(), Limits: Limits{MaxModelCalls: 3, MaxToolCalls: 3}}
+	result, err := loop.Run(context.Background(), testInitial())
+	if !errors.Is(err, ErrModelBudget) || result.Reason != ExitLimitReached || result.ModelCalls != 1 || result.ToolCalls != 0 || len(result.Usage) != 1 || result.Usage[0] != nil {
+		t.Fatalf("result=%+v err=%v", result, err)
+	}
+}

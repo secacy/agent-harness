@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/secacy/agent-harness/internal/agent"
+	"github.com/secacy/agent-harness/internal/budget"
 )
 
 const (
@@ -29,14 +30,17 @@ type Config struct {
 	Endpoint   string
 	MaxTokens  int
 	HTTPClient *http.Client
+	// BudgetProfile 由可信宿主核实；为空时只能运行原有无批次预算的单仓库流程。
+	BudgetProfile *budget.Profile
 }
 
 type Client struct {
-	apiKey     string
-	model      string
-	endpoint   string
-	maxTokens  int
-	httpClient *http.Client
+	apiKey        string
+	model         string
+	endpoint      string
+	maxTokens     int
+	httpClient    *http.Client
+	budgetProfile *budget.Profile
 }
 
 var _ agent.Model = (*Client)(nil)
@@ -90,14 +94,35 @@ func New(config Config) (*Client, error) {
 	if client.Timeout == 0 {
 		client.Timeout = 2 * time.Minute
 	}
+	var profile *budget.Profile
+	if config.BudgetProfile != nil {
+		value := *config.BudgetProfile
+		if err := value.Validate(); err != nil {
+			return nil, err
+		}
+		if value.Provider != "deepseek" || value.Endpoint != endpoint || value.Model != model || value.MaxOutputTokens != int64(maxTokens) {
+			return nil, errors.New("budget profile does not match the DeepSeek request configuration")
+		}
+		// 预算模式只允许标准传输，防止自定义 RoundTripper 隐式重试请求。
+		if client.Transport == nil {
+			client.Transport = http.DefaultTransport
+		}
+		if client.Transport != nil {
+			if _, ok := client.Transport.(*http.Transport); !ok {
+				return nil, errors.New("budgeted DeepSeek calls require a standard HTTP transport")
+			}
+		}
+		profile = &value
+	}
 	// 重定向作为 HTTP 错误返回，不向其他地址自动重放带密钥的请求。
 	client.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
 	return &Client{
-		apiKey:     key,
-		model:      model,
-		endpoint:   endpoint,
-		maxTokens:  maxTokens,
-		httpClient: &client,
+		apiKey:        key,
+		model:         model,
+		endpoint:      endpoint,
+		maxTokens:     maxTokens,
+		httpClient:    &client,
+		budgetProfile: profile,
 	}, nil
 }
 
@@ -157,4 +182,12 @@ func (c *Client) Complete(ctx context.Context, messages []agent.Message, tools [
 		return agent.Reply{}, fmt.Errorf("decode completion response: %w", err)
 	}
 	return decodeReply(completion)
+}
+
+// BudgetProfile 返回宿主提供的配置副本，不根据模型别名猜测上界。
+func (c *Client) BudgetProfile() (budget.Profile, error) {
+	if c.budgetProfile == nil {
+		return budget.Profile{}, errors.New("DeepSeek budget profile has not been verified by the host")
+	}
+	return *c.budgetProfile, nil
 }

@@ -8,6 +8,12 @@ Runner 接收 `agent.Model` 与显式执行后端，准备工作副本，驱动�
 
 迁移规范随任务进入提示和只读 spec 根目录。停止生成后，规范、基线及候选摘要必须与 Evaluation 绑定一致；验证后候选变化使证据失效，返回错误和空判定。模型预算耗尽、取消或未提交时保存部分修改，不自动补做独立验收。
 
+## 可选共享预算
+
+宿主可以设置 `Config.Budget`，提供 internal/budget 的账本及 Target ID。Runner 创建实际 Run ID 后绑定预算模型，在 Agent Complete 前预留；生成前的配置绑定失败不会调用模型。预算拒绝记录为 limit_reached，Run 失败并保留部分候选，不发布质量判定。
+
+inputs/task.json 与 artifacts/report.json 的可选 budget 字段保存 Campaign/Target/Run、共享账本路径和模型配置摘要；review.md 提供相同定位。Loop 的调用尝试数与账本实际准入数分别读取，未知用量不能算零。模型必须提供宿主核实的 Profile；目前这是 Go API 接口，CLI 尚未新增批次预算参数，详见[预算模块](../../../internal/budget/README.md)。
+
 ## 读取交付
 
 每次运行创建新的 `rpcx-agent-*` 目录，不覆盖既有 Run：

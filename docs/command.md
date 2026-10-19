@@ -66,6 +66,16 @@ env GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly G
 
 使用模型和工具替身，检查消息关联、工具顺序、错误反馈、调用预算、取消和退出分类，同时执行 `ExampleLoop_Run` 示例。不访问模型服务，也不实际修改业务仓库。根模块 `go test ./...` 同样包含这些测试。
 
+## M3.1 模型预算与单 Run 接入
+
+```sh
+env GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly GOCACHE="$PWD/runs/go-cache" GOMODCACHE="$PWD/runs/module-cache" go test -race -p 1 ./internal/budget ./internal/agent ./internal/deepseek
+```
+
+检查两级调用/Token 额度、并发争抢、FIFO 等待/取消、未知/非法用量、重复结算、存储故障、HTTP 前持久化和重定向拒绝。使用进程内模型与 localhost 模拟服务，需要本机临时端口权限，不需要 API Key。
+
+Runner 接入另由 `go test ./scenarios/rpcx/runner -run '^TestRunBudgetBindingAndDenial$'` 验证完整交付与零准入拒绝；使用相同离线环境变量。当前只提供 Go API 预算接入，不提供 batch CLI 或已核实的真实付费模型 Profile。预算记录格式及宿主示例见[模块说明](../internal/budget/README.md)。
+
 ## 仓库工具测试
 
 ```sh

@@ -29,6 +29,9 @@ func renderReview(report Report, baseline, candidate tree, trace *agent.Result) 
 	}
 	fmt.Fprint(&out, "ReadyForReview 表示当前门禁有充分证据，可进入常规人工审核；NeedsAttention 表示仍需确认缺口；Rejected 表示发现明确违规。判定只适用于列明的输入、构建配置和支持形态，不证明任意调用图或业务等价性。\n\n")
 	fmt.Fprintf(&out, "规范：%s（[原文](../inputs/spec/spec.md)）；后端：%s；镜像：%s。\n\n", textValue(report.Input.SpecVersion), textValue(report.Input.ExecutionMode), textValue(report.Input.Backend.Image))
+	if ref := report.Input.Budget; ref != nil {
+		fmt.Fprintf(&out, "共享预算：Campaign %s，Target %s，Run %s；账本 %s；模型配置 SHA-256 %s。准入请求及已知/未知消耗以共享账本为准。\n\n", textValue(ref.CampaignID), textValue(ref.TargetID), textValue(ref.RunID), textValue(ref.LedgerPath), textValue(ref.ProfileSHA256))
+	}
 	fmt.Fprint(&out, "| 对象 | SHA-256 |\n| --- | --- |\n")
 	for _, item := range [][2]string{{"规范", report.Input.SpecSHA256}, {"基线", report.Input.BaselineSHA256}, {"候选", report.CandidateSHA256}, {"补丁", report.PatchSHA256}} {
 		fmt.Fprintf(&out, "| %s | %s |\n", item[0], textValue(item[1]))
@@ -78,7 +81,7 @@ func renderReview(report Report, baseline, candidate tree, trace *agent.Result) 
 	fmt.Fprint(&out, "\n## Agent 自述（未经独立确认）\n\n下述文字仅来自模型，不能替代以上检查依据。\n")
 	if trace != nil {
 		fmt.Fprint(&out, "\n完整工具反馈、预算通知及服务返回用量见 [agent.json](agent.json)。\n")
-		fmt.Fprintf(&out, "\n模型调用 %d 次，工具尝试 %d 次；退出原因 %s。未知 Token 用量保留为未知，不计为零。\n", trace.ModelCalls, trace.ToolCalls, textValue(string(trace.Reason)))
+		fmt.Fprintf(&out, "\n模型调用尝试 %d 次，工具尝试 %d 次；退出原因 %s。未知 Token 用量保留为未知，不计为零。\n", trace.ModelCalls, trace.ToolCalls, textValue(string(trace.Reason)))
 		for i := len(trace.Messages) - 1; i >= 0; i-- {
 			m := trace.Messages[i]
 			if m.Role == agent.RoleAssistant && len(m.ToolCalls) == 0 && m.Content != "" {

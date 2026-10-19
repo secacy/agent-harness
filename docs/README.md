@@ -17,7 +17,7 @@
 
 本地文档由根目录 `.gitignore` 排除。
 
-整体开发路线、阶段交付与验收边界以[里程碑](MILESTONES.md)为准；本轮阶段顺序及预算、判定、评测边界的取舍见[路线规划记录](worklog/2026-10-18-milestone-roadmap.md)。当前推进 [M3 具体设计](worklog/2026-10-19-m3-batch-runtime.md)，预算的长期约束草案见 [ADR-006](adr/006-campaign-budget-reservations.md)。
+整体开发路线、阶段交付与验收边界以[里程碑](MILESTONES.md)为准；本轮阶段顺序及预算、判定、评测边界的取舍见[路线规划记录](worklog/2026-10-18-milestone-roadmap.md)。当前推进 [M3 具体设计](worklog/2026-10-19-m3-batch-runtime.md)，预算的长期约束见 [ADR-006](adr/006-campaign-budget-reservations.md)。
 
 ## 记录原则
 

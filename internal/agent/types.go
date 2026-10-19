@@ -3,7 +3,11 @@ package agent
 import (
 	"context"
 	"encoding/json"
+	"errors"
 )
+
+// ErrModelBudget 表示模型请求未获准入，不属于供应商执行失败。
+var ErrModelBudget = errors.New("model budget exhausted")
 
 type Role string
 

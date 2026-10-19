@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/secacy/agent-harness/internal/agent"
+	"github.com/secacy/agent-harness/internal/budget"
 	"github.com/secacy/agent-harness/internal/execution"
 	"github.com/secacy/agent-harness/scenarios/rpcx/checks"
 )
@@ -22,6 +23,7 @@ type Config struct {
 	RunsDir     string
 	Model       agent.Model
 	ModelName   string
+	Budget      *budget.Target
 	Limits      agent.Limits
 	Timeout     time.Duration
 	// 仅使用宿主后端时启用，不能与容器后端同时设置。
@@ -66,6 +68,7 @@ type Record struct {
 
 // Input 只保存可审计的任务配置与输入摘要，不序列化模型客户端或密钥。
 type Input struct {
+	Budget         *budget.Reference `json:"budget,omitempty"`
 	ScenarioDir    string            `json:"scenario_dir"`
 	ModelName      string            `json:"model_name"`
 	Backend        execution.Info    `json:"backend"`

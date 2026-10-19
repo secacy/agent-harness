@@ -62,11 +62,36 @@ type chatChoice struct {
 }
 
 type chatUsage struct {
+	incomplete            bool
 	PromptTokens          int64  `json:"prompt_tokens"`
 	CompletionTokens      int64  `json:"completion_tokens"`
 	TotalTokens           int64  `json:"total_tokens"`
 	PromptCacheHitTokens  *int64 `json:"prompt_cache_hit_tokens"`
 	PromptCacheMissTokens *int64 `json:"prompt_cache_miss_tokens"`
+}
+
+// UnmarshalJSON 避免将缺失的必需用量字段当作零消耗。
+func (u *chatUsage) UnmarshalJSON(data []byte) error {
+	type wireUsage struct {
+		Prompt     *int64 `json:"prompt_tokens"`
+		Completion *int64 `json:"completion_tokens"`
+		Total      *int64 `json:"total_tokens"`
+		Hit        *int64 `json:"prompt_cache_hit_tokens"`
+		Miss       *int64 `json:"prompt_cache_miss_tokens"`
+	}
+	var wire wireUsage
+	if err := json.Unmarshal(data, &wire); err != nil {
+		return err
+	}
+	u.incomplete = wire.Prompt == nil || wire.Completion == nil || wire.Total == nil
+	if !u.incomplete {
+		u.PromptTokens = *wire.Prompt
+		u.CompletionTokens = *wire.Completion
+		u.TotalTokens = *wire.Total
+	}
+	u.PromptCacheHitTokens = wire.Hit
+	u.PromptCacheMissTokens = wire.Miss
+	return nil
 }
 
 // encodeMessages 构造独立的协议消息，保留调用顺序、关联标识及参数原文。
@@ -117,7 +142,7 @@ func encodeTools(tools []agent.ToolSpec) []chatTool {
 
 func decodeReply(response chatResponse) (agent.Reply, error) {
 	var reply agent.Reply
-	if usage := response.Usage; usage != nil {
+	if usage := response.Usage; usage != nil && !usage.incomplete {
 		reply.Usage = &agent.Usage{
 			InputTokens:     usage.PromptTokens,
 			OutputTokens:    usage.CompletionTokens,

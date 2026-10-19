@@ -157,6 +157,8 @@ func stopWithError(ctx context.Context, result Result, err error) (Result, error
 	}
 	result.Reason = ExitFailed
 	switch {
+	case errors.Is(cause, ErrModelBudget):
+		result.Reason = ExitLimitReached
 	case errors.Is(cause, context.DeadlineExceeded):
 		result.Reason = ExitDeadlineExceeded
 	case errors.Is(cause, context.Canceled):
