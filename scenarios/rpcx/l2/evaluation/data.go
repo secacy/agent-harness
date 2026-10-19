@@ -17,7 +17,7 @@ const godddSpecSHA256 = "917575e0f4fc571f6f72c743ffded00771da838144371435ab0edfb
 const referenceDataVersion = "rpcx-l2-reference-goddd-data-v2"
 const referenceFreezeSHA256 = "5cd44c1d8c00f147809d41545086ce1c32ae7cfcc0f6bb47b867c8a7601715c7"
 
-//go:embed data/goddd-v1/* data/goddd-v2/* data/translation-v1/* data/translation-v2/* *.go
+//go:embed data/goddd-v1/* data/goddd-v2/* data/translation-v1/* data/translation-v2/* data/workouts-v1/* *.go
 var material embed.FS
 
 func referenceData() (map[string][]byte, error) {
@@ -108,4 +108,11 @@ func production(files map[string][]byte) map[string][]byte {
 		}
 	}
 	return out
+}
+
+const workoutsDataVersion = "rpcx-l2-reference-workouts-data-v1"
+const workoutsFreezeSHA256 = "400e7c32a2e6b9cac3936aa6bd5e2f1c4911d96aeca44fc25a20ff58dab6f669"
+
+func workoutsData() (map[string][]byte, error) {
+	return loadReferenceData("data/workouts-v1", workoutsDataVersion, workoutsFreezeSHA256, workoutsSpecSHA256)
 }

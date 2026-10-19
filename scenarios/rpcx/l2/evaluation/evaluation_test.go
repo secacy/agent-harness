@@ -28,7 +28,11 @@ func scenarioCandidate(t *testing.T, scenario, version, patch string) Request {
 	if err != nil {
 		t.Fatal(err)
 	}
-	files, err := gate.ReadFiles(filepath.Join(fixtures, scenario))
+	module := scenario
+	if scenario == "workouts" {
+		module = "trainings"
+	}
+	files, err := gate.ReadFiles(filepath.Join(fixtures, module))
 	if err != nil {
 		t.Fatal(err)
 	}

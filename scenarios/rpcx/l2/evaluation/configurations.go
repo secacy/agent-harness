@@ -123,7 +123,7 @@ func checkConfiguration(run commandRunner, scenario referenceScenario, config bu
 		return out, nil
 	}
 	required := append(append([]string{}, tests.Original...), tests.Added...)
-	if scenario.module == "translation" {
+	if scenario.module != "goddd" {
 		result, err = command("baseline-tests", baseline, "test", "-json", "-count=1", "-timeout=45s", "./...")
 		if err != nil {
 			return out, err
@@ -137,24 +137,34 @@ func checkConfiguration(run commandRunner, scenario referenceScenario, config bu
 		return out, err
 	}
 	out.Checks["candidate_tests"] = observe(result.Stdout, result.ExitCode, required, tests.Packages, tests.Empty, false)
-	for _, step := range []struct {
-		id, pattern string
-		required    []string
-	}{
-		{"behavior", scenario.behaviorPattern, scenario.behaviorTests},
-		{"expiry", "^TestL2ReferenceExpiry$", scenario.expiryTests},
-	} {
+	steps := []referenceStep{{"behavior", scenario.behaviorPattern, scenario.behaviorTests}, {"expiry", "^TestL2ReferenceExpiry$", scenario.expiryTests}}
+	if scenario.module == "trainings" {
+		steps = workoutsSteps()
+	}
+	expiry := make([]Observation, len(steps)-1)
+	for i := range expiry {
+		expiry[i] = Observation{Status: Inconclusive, Reason: "not executed"}
+	}
+	expiryIndex := 0
+	for _, step := range steps {
 		result, err = command(step.id, production, "test", "-json", "-count=1", "-timeout=40s", "-run="+step.pattern, scenario.probePackage)
 		if err != nil {
 			return out, err
 		}
-		// 测试身份含完整包名；不从候选的模块声明推导参考身份。
 		pkg := strings.Split(step.required[0], "/Test")[0]
-		out.Checks[step.id] = observe(result.Stdout, result.ExitCode, step.required, []string{pkg}, nil, true)
-		if out.Checks[step.id].Status != Pass {
-			break
+		observation := observe(result.Stdout, result.ExitCode, step.required, []string{pkg}, nil, true)
+		if step.id == "behavior" {
+			out.Checks["behavior"] = observation
+			if observation.Status != Pass {
+				break
+			}
+		} else {
+			expiry[expiryIndex] = observation
+			expiryIndex++
+			out.Checks["expiry"] = combineObservations(expiry...)
 		}
 	}
+
 	return out, nil
 }
 
@@ -245,4 +255,29 @@ func mergeConfigurations(report *Report) {
 	for name, check := range mergedConfigurationChecks(report.Configurations) {
 		report.Checks[name] = check
 	}
+}
+
+type referenceStep struct {
+	id, pattern string
+	required    []string
+}
+
+func combineObservations(items ...Observation) Observation {
+	checks := map[string]Observation{}
+	out := Observation{}
+	for i, item := range items {
+		checks[string(rune('a'+i))] = item
+		out.Findings = append(out.Findings, item.Findings...)
+		if len(item.Tests) > 0 && out.Tests == nil {
+			out.Tests = map[string]string{}
+		}
+		for name, status := range item.Tests {
+			out.Tests[name] = status
+		}
+		if item.Status == Inconclusive {
+			out.Reason = "required reference evidence incomplete"
+		}
+	}
+	out.Status = aggregate(checks)
+	return out
 }

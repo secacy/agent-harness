@@ -1,0 +1,398 @@
+package adapters_test
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"io"
+	"reflect"
+	"strings"
+	"testing"
+	"time"
+
+	"example.com/rpcx/v2"
+	"github.com/ThreeDotsLabs/wild-workouts-go-ddd-example/internal/common/metrics"
+	"github.com/ThreeDotsLabs/wild-workouts-go-ddd-example/internal/trainings/adapters"
+	"github.com/ThreeDotsLabs/wild-workouts-go-ddd-example/internal/trainings/app/command"
+	"github.com/ThreeDotsLabs/wild-workouts-go-ddd-example/internal/trainings/domain/training"
+	"github.com/sirupsen/logrus"
+)
+
+type referenceKey struct{}
+
+func referenceViolation(t *testing.T, rule, detail string) {
+	t.Helper()
+	payload, _ := json.Marshal(map[string]string{"rule": rule, "detail": detail})
+	t.Log("L2_REFERENCE_FINDING " + string(payload))
+	t.Fatal(detail)
+}
+
+func referenceContext(t *testing.T, ctx, parent context.Context, start time.Time) {
+	t.Helper()
+	if ctx.Value(referenceKey{}) != "callback-47" {
+		referenceViolation(t, "CTX-001", "RPC did not retain repository callback value")
+	}
+	observed := time.Now()
+	deadline, ok := ctx.Deadline()
+	if !ok {
+		referenceViolation(t, "TIME-001", "RPC has no deadline")
+	}
+	earliest, latest := start.Add(30*time.Second), observed.Add(30*time.Second)
+	if d, ok := parent.Deadline(); ok {
+		if d.Before(earliest) {
+			earliest = d
+		}
+		if d.Before(latest) {
+			latest = d
+		}
+	}
+	const tolerance = 250 * time.Millisecond
+	if deadline.Before(earliest.Add(-tolerance)) || deadline.After(latest.Add(tolerance)) {
+		referenceViolation(t, "TIME-001", "RPC deadline does not match its own invocation and callback parent")
+	}
+	if observed.Sub(start) > time.Second || deadline.Before(latest.Add(-tolerance)) {
+		t.Skip("reference cannot distinguish deadline origin within preparation window")
+	}
+}
+
+type referenceRepository struct {
+	t               *testing.T
+	outer, callback context.Context
+	value           training.Training
+	events          []string
+	err             error
+	before          func()
+}
+
+func (r *referenceRepository) AddTraining(context.Context, *training.Training) error {
+	referenceViolation(r.t, "BEHAVIOR-001", "unexpected AddTraining")
+	return nil
+}
+func (r *referenceRepository) GetTraining(context.Context, string, training.User) (*training.Training, error) {
+	referenceViolation(r.t, "BEHAVIOR-001", "unexpected GetTraining")
+	return nil, nil
+}
+func (r *referenceRepository) UpdateTraining(ctx context.Context, id string, user training.User, update func(context.Context, *training.Training) (*training.Training, error)) error {
+	if ctx != r.outer || id != "training-ref-47" || user.UUID() != "actor-ref-47" {
+		referenceViolation(r.t, "CTX-001", "Handle did not preserve repository context or command identity")
+	}
+	r.events = append(r.events, "load")
+	if r.err != nil {
+		return r.err
+	}
+	candidate := r.value
+	r.before()
+	next, err := update(r.callback, &candidate)
+	if err != nil {
+		if next != nil {
+			referenceViolation(r.t, "BEHAVIOR-001", "failed callback returned a committable training")
+		}
+		return err
+	}
+	if next == nil || !next.IsCanceled() || next.UUID() != r.value.UUID() || next.UserUUID() != r.value.UserUUID() || !next.Time().Equal(r.value.Time()) || next.Notes() != r.value.Notes() {
+		referenceViolation(r.t, "BEHAVIOR-001", "successful callback returned invalid training state")
+	}
+	r.value = *next
+	r.events = append(r.events, "commit")
+	return nil
+}
+
+type referenceHarness struct {
+	repo    *referenceRepository
+	handler command.CancelTrainingHandler
+	cmd     command.CancelTraining
+	users   adapters.UsersGrpc
+	trainer adapters.TrainerGrpc
+}
+
+func referenceNew(t *testing.T, outer, callback context.Context, role training.UserType, hours int, users, trainer rpcx.Handler) referenceHarness {
+	t.Helper()
+	tr, err := training.NewTraining("training-ref-47", "owner-ref-47", "Reference Owner", time.Now().Add(time.Duration(hours)*time.Hour))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = tr.UpdateNotes("preserved reference notes"); err != nil {
+		t.Fatal(err)
+	}
+	r := &referenceRepository{t: t, outer: outer, callback: callback, value: *tr, before: func() {}}
+	t.Cleanup(rpcx.Register(t.Name()+"-users", users))
+	t.Cleanup(rpcx.Register(t.Name()+"-trainer", trainer))
+	u, err := adapters.NewUsersGrpc(t.Name() + "-users")
+	if err != nil {
+		t.Fatal(err)
+	}
+	v, err := adapters.NewTrainerGrpc(t.Name() + "-trainer")
+	if err != nil {
+		t.Fatal(err)
+	}
+	logger := logrus.New()
+	logger.SetOutput(io.Discard)
+	h := command.NewCancelTrainingHandler(r, u, v, logrus.NewEntry(logger), metrics.NoOp{})
+	return referenceHarness{repo: r, handler: h, cmd: command.CancelTraining{TrainingUUID: "training-ref-47", User: training.MustNewUser("actor-ref-47", role)}, users: u, trainer: v}
+}
+
+func referenceFields(t *testing.T, method string, request, response any, client string, delta int64, at time.Time) {
+	t.Helper()
+	// 内存 RPC 不经过 JSON；只检查实际字段与空确认，不要求固定生产复合字面量。
+	value := reflect.ValueOf(request)
+	if value.Kind() == reflect.Pointer && !value.IsNil() {
+		value = value.Elem()
+	}
+	if value.Kind() != reflect.Struct {
+		referenceViolation(t, "BEHAVIOR-001", "RPC request shape changed")
+	}
+	if _, ok := response.(*struct{}); !ok {
+		referenceViolation(t, "BEHAVIOR-001", "empty acknowledgement target changed")
+	}
+	if client == "users" {
+		user, amount := value.FieldByName("UserID"), value.FieldByName("AmountChange")
+		if method != "update_training_balance" || !user.IsValid() || user.Kind() != reflect.String || user.String() != "owner-ref-47" || !amount.IsValid() || amount.Kind() != reflect.Int64 || amount.Int() != delta {
+			referenceViolation(t, "BEHAVIOR-001", "balance method, owner or amount mapping changed")
+		}
+	} else {
+		field := value.FieldByName("Time")
+		if method != "cancel_training" || !field.IsValid() || !field.CanInterface() {
+			referenceViolation(t, "BEHAVIOR-001", "trainer method or time field changed")
+		}
+		actual, ok := field.Interface().(time.Time)
+		if !ok || !actual.Equal(at) {
+			referenceViolation(t, "BEHAVIOR-001", "training instant changed")
+		}
+	}
+}
+
+func TestL2ReferenceCancellation(t *testing.T) {
+	for _, mode := range []string{"attendee-free", "trainer-free", "trainer-penalty", "zero-balance", "users-error", "trainer-error", "repository-error", "already-cancelled", "callback-cancelled", "callback-expired", "short-callback", "long-callback", "users-parent-cancel", "trainer-parent-cancel", "per-call-origin", "repeat"} {
+		t.Run(mode, func(t *testing.T) {
+			// 外层与回调上下文故意不是同一条取消链，不能用外层值代替回调值。
+			outer, releaseOuter := context.WithCancel(context.WithValue(context.Background(), referenceKey{}, "outer-47"))
+			defer releaseOuter()
+			callback, cancel := context.WithCancel(context.WithValue(context.Background(), referenceKey{}, "callback-47"))
+			defer cancel()
+			if mode == "short-callback" || mode == "long-callback" {
+				duration := 4 * time.Second
+				if mode == "long-callback" {
+					duration = time.Minute
+				}
+				var release context.CancelFunc
+				callback, release = context.WithTimeout(callback, duration)
+				defer release()
+			}
+			if mode == "callback-cancelled" {
+				cancel()
+			}
+			if mode == "callback-expired" {
+				var release context.CancelFunc
+				callback, release = context.WithDeadline(callback, time.Now().Add(-time.Second))
+				defer release()
+			}
+			role, hours, delta := training.Attendee, 72, int64(1)
+			if mode == "trainer-free" || mode == "trainer-penalty" {
+				role = training.Trainer
+			}
+			if mode == "trainer-penalty" {
+				hours = 8
+				delta = 2
+			}
+			if mode == "zero-balance" {
+				hours = 8
+				delta = 0
+			}
+			failure := errors.New("reference remote failure 47")
+			var h referenceHarness
+			var start, trainerStart time.Time
+			var received []context.Context
+			balances := 0
+			handler := func(client string) rpcx.Handler {
+				return func(ctx context.Context, method string, request, response any) error {
+					if mode == "callback-cancelled" || mode == "callback-expired" {
+						referenceViolation(t, "CTX-001", "cancelled callback entered backend")
+					}
+					origin := start
+					if client == "trainer" && !trainerStart.IsZero() {
+						origin = trainerStart
+					}
+					referenceContext(t, ctx, callback, origin)
+					referenceFields(t, method, request, response, client, delta, h.repo.value.Time())
+					received = append(received, ctx)
+					h.repo.events = append(h.repo.events, client)
+					if mode == client+"-error" {
+						return failure
+					}
+					if mode == client+"-parent-cancel" {
+						cancel()
+						select {
+						case <-ctx.Done():
+							return ctx.Err()
+						case <-time.After(time.Second):
+							referenceViolation(t, "CTX-001", "callback cancellation did not reach RPC")
+						}
+					}
+					if client == "users" {
+						balances++
+						if mode == "per-call-origin" {
+							time.Sleep(500 * time.Millisecond)
+						}
+						trainerStart = time.Now()
+					}
+					return nil
+				}
+			}
+			h = referenceNew(t, outer, callback, role, hours, handler("users"), handler("trainer"))
+			h.repo.before = func() { start = time.Now() }
+			expectedErr := error(nil)
+			expected := []string{"load", "users", "trainer", "commit"}
+			prefix := ""
+			switch mode {
+			case "zero-balance":
+				expected = []string{"load", "trainer", "commit"}
+			case "users-error":
+				expected = []string{"load", "users"}
+				expectedErr = failure
+				prefix = "unable to change trainings balance"
+			case "trainer-error":
+				expected = []string{"load", "users", "trainer"}
+				expectedErr = failure
+				prefix = "unable to cancel training"
+			case "repository-error":
+				expected = []string{"load"}
+				expectedErr = failure
+				h.repo.err = failure
+			case "already-cancelled":
+				expected = []string{"load"}
+				expectedErr = training.ErrTrainingAlreadyCanceled
+				if err := h.repo.value.Cancel(); err != nil {
+					t.Fatal(err)
+				}
+			case "callback-cancelled", "callback-expired":
+				expected = []string{"load"}
+				expectedErr = context.Canceled
+				if mode == "callback-expired" {
+					expectedErr = context.DeadlineExceeded
+				}
+			case "users-parent-cancel":
+				expected = []string{"load", "users"}
+				expectedErr = context.Canceled
+			case "trainer-parent-cancel":
+				expected = []string{"load", "users", "trainer"}
+				expectedErr = context.Canceled
+			}
+			err := h.handler.Handle(outer, h.cmd)
+			if expectedErr == nil {
+				if err != nil || !h.repo.value.IsCanceled() {
+					referenceViolation(t, "BEHAVIOR-001", "successful cancellation did not commit")
+				}
+			} else {
+				if !errors.Is(err, expectedErr) || prefix != "" && !strings.Contains(err.Error(), prefix) {
+					referenceViolation(t, "BEHAVIOR-001", "callback error chain or wrapping changed")
+				}
+				if mode != "already-cancelled" && h.repo.value.IsCanceled() {
+					referenceViolation(t, "BEHAVIOR-001", "failed cancellation committed local state")
+				}
+			}
+			if !reflect.DeepEqual(h.repo.events, expected) {
+				referenceViolation(t, "BEHAVIOR-001", "conditional RPC or commit sequence changed")
+			}
+			if (mode == "trainer-error" || mode == "trainer-parent-cancel") && balances != 1 {
+				referenceViolation(t, "BEHAVIOR-001", "successful balance effect was hidden or retried")
+			}
+			for _, ctx := range received {
+				if !errors.Is(ctx.Err(), context.Canceled) {
+					referenceViolation(t, "TIME-002", "derived RPC context not released after return")
+				}
+			}
+			if outer.Err() != nil {
+				referenceViolation(t, "TIME-002", "callee cancelled Handle parent")
+			}
+			if mode != "callback-cancelled" && mode != "callback-expired" && !strings.Contains(mode, "parent-cancel") && callback.Err() != nil {
+				referenceViolation(t, "TIME-002", "callee cancelled callback parent")
+			}
+			if mode == "repeat" {
+				received = nil
+				trainerStart = time.Time{}
+				for i := 0; i < 2; i++ {
+					start = time.Now()
+					if err := h.users.UpdateTrainingBalance(callback, "owner-ref-47", 1); err != nil {
+						referenceViolation(t, "TIME-002", "repeated users call failed")
+					}
+					if err := h.trainer.CancelTraining(callback, h.repo.value.Time()); err != nil {
+						referenceViolation(t, "TIME-002", "repeated trainer call failed")
+					}
+				}
+				if len(received) != 4 {
+					referenceViolation(t, "BEHAVIOR-001", "repeated calls lost or duplicated RPC")
+				}
+				for i, ctx := range received {
+					if !errors.Is(ctx.Err(), context.Canceled) {
+						referenceViolation(t, "TIME-002", "repeated context not released")
+					}
+					for _, previous := range received[:i] {
+						if previous == ctx {
+							referenceViolation(t, "TIME-001", "RPC invocations reused context")
+						}
+					}
+				}
+			}
+		})
+	}
+}
+
+func TestL2ReferenceExpiry(t *testing.T) {
+	for _, client := range []string{"users", "trainer"} {
+		t.Run(client, func(t *testing.T) {
+			outer := context.WithValue(context.Background(), referenceKey{}, "outer-47")
+			callback, cancel := context.WithCancel(context.WithValue(context.Background(), referenceKey{}, "callback-47"))
+			defer cancel()
+			var h referenceHarness
+			var start, trainerStart time.Time
+			handler := func(name string) rpcx.Handler {
+				return func(ctx context.Context, method string, request, response any) error {
+					origin := start
+					if name == "trainer" && !trainerStart.IsZero() {
+						origin = trainerStart
+					}
+					referenceContext(t, ctx, callback, origin)
+					referenceFields(t, method, request, response, name, 1, h.repo.value.Time())
+					h.repo.events = append(h.repo.events, name)
+					if name != client {
+						trainerStart = time.Now()
+						return nil
+					}
+					stop := time.NewTimer(34 * time.Second)
+					defer stop.Stop()
+					select {
+					case <-ctx.Done():
+						if !errors.Is(ctx.Err(), context.DeadlineExceeded) {
+							referenceViolation(t, "TIME-002", "RPC ended before its deadline")
+						}
+						elapsed := time.Since(origin)
+						t.Logf("client=%s reference elapsed=%s error=%v", name, elapsed, ctx.Err())
+						if elapsed < 29*time.Second {
+							referenceViolation(t, "TIME-001", "RPC default expired too early")
+						}
+						if elapsed > 33*time.Second {
+							t.Skip("reference expiry scheduling window exceeded")
+						}
+						return ctx.Err()
+					case <-stop.C:
+						t.Skip("reference expiry safety stop reached")
+						return errors.New("reference safety stop")
+					}
+				}
+			}
+			h = referenceNew(t, outer, callback, training.Attendee, 72, handler("users"), handler("trainer"))
+			h.repo.before = func() { start = time.Now() }
+			err := h.handler.Handle(outer, h.cmd)
+			expected := []string{"load", "users"}
+			if client == "trainer" {
+				expected = append(expected, "trainer")
+			}
+			if !errors.Is(err, context.DeadlineExceeded) || h.repo.value.IsCanceled() || !reflect.DeepEqual(h.repo.events, expected) {
+				referenceViolation(t, "BEHAVIOR-001", "expiry committed, retried or lost error chain")
+			}
+			if callback.Err() != nil {
+				referenceViolation(t, "TIME-002", "RPC expiry cancelled callback parent")
+			}
+		})
+	}
+}

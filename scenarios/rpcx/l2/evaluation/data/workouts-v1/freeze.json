@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "version": "rpcx-l2-reference-workouts-data-v1",
+  "spec_sha256": "789d30540799249d0f5d96b3ba921b7e00d4cbc1e457491a2a79eba89829a526",
+  "files": {
+    "review.md": "4b9a8bd5d20ba72b4d65fd8ef65e3b8b08efc45833fa743b220d2d4d53656fd6",
+    "workouts_test.go.txt": "8a64ee728f84118576bade63afe028e5f2dbd50d327ed4deb69a86fe60e4b3f4"
+  }
+}

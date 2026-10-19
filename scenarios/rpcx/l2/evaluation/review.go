@@ -50,19 +50,22 @@ func Assess(referenceJSON, reviewJSON []byte) (Assessment, error) {
 		return result, err
 	}
 	result.TargetID, result.RunID, result.CandidateSHA256, result.Kind = report.TargetID, report.RunID, report.CandidateSHA256, review.Kind
-	if report.SchemaVersion != 1 || !slices.Contains([]string{Version, TranslationVersion}, report.Version) || review.SchemaVersion != 1 || !slices.Contains([]string{"candidate_review", "development_calibration"}, review.Kind) {
+	if report.SchemaVersion != 1 || !slices.Contains([]string{Version, TranslationVersion, WorkoutsVersion}, report.Version) || review.SchemaVersion != 1 || !slices.Contains([]string{"candidate_review", "development_calibration"}, review.Kind) {
 		return result, errors.New("unsupported reference or review schema")
 	}
 	if review.ReportSHA256 != result.ReportSHA256 || review.TargetID != report.TargetID || review.RunID != report.RunID || review.CandidateSHA256 != report.CandidateSHA256 {
 		return result, errors.New("review does not match reference identity")
 	}
-	if len(report.Checks) != len(automaticSections) || len(review.Items) != len(reviewSections) {
+	if len(report.Checks) != len(automaticSectionsFor(report.Version)) || len(review.Items) != len(reviewSections) {
 		return result, errors.New("incomplete reference or review sections")
 	}
-	for _, name := range automaticSections {
+	for _, name := range automaticSectionsFor(report.Version) {
 		if !validStatus(report.Checks[name].Status) {
 			return result, fmt.Errorf("invalid reference section: %s", name)
 		}
+	}
+	if err := validateLocalModules(report); err != nil {
+		return result, err
 	}
 	if err := validateConfigurations(report); err != nil {
 		return result, err
@@ -105,9 +108,9 @@ func Assess(referenceJSON, reviewJSON []byte) (Assessment, error) {
 }
 
 func validateConfigurations(report Report) error {
-	if report.Version == Version {
+	if report.Version != TranslationVersion {
 		if len(report.Configurations) != 0 {
-			return errors.New("unexpected Goddd configuration records")
+			return errors.New("unexpected single-configuration records")
 		}
 		return nil
 	}

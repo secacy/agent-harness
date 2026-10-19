@@ -1,7 +1,7 @@
 # M3.4：开发评测协议与独立参考设计
 
 - 日期：2026-10-19。
-- 状态：Goddd 与 Translation 双配置独立参考在声明范围内已验收，见第 10—11 节。Workouts、轮次汇总、完整人工复核及协议发布待完成，未运行真实模型评测。
+- 状态：Goddd、Translation 双配置与 Workouts 回调的单候选独立参考在声明范围内已验收，见第 10—12 节。轮次汇总、完整人工复核及协议发布待完成，未运行真实模型评测。
 - 对应里程碑：[M3](../MILESTONES.md#m3多仓库批量闭环)。
 - 代码基线：009d56a；前置：[三仓确定性 Campaign](2026-10-19-m3-4-heterogeneous-campaign.md)。
 - 本轮交付：确定首轮任务纳入、独立参考的边界、未知结果和指标口径，为实现提供验收条件。
@@ -209,3 +209,48 @@ v1 freeze 为 `afeb051cd0d7d71eb3a0795a803147b0d8dd1de35c6454a229960be5bbb3c471`
 本单元验收 Translation 双配置单候选参考与复核记录消费；原断言、生产改动覆盖及交付材料仍需实际复核，不能据自动 pass 宣称完整独立通过。没有读取 .env、发起真实模型请求或加入付费入口，运行材料不入 Git。下一步按第 8 节补 Workouts callback/两客户端参考，再完成三仓校准及轮次汇总；真实模型能力、批次命令与真实开发评测另行推进。
 
 活动 Go 源码与 v2 参考源码格式、四个版本的参考数据清单、git diff --check 均通过；五份进度/使用文档的 88 个本地链接目标、14 个锚点与围栏检查通过。历史归档与冻结场景输入不改写。
+
+## 12. Workouts 回调与两客户端独立参考
+
+- 日期：2026-10-20；基于 3716310，实施与验收结果在本节补录。
+- 目标：补齐第三个开发切片的单候选参考，不在本单元混入轮次统计或付费实验。
+
+### 实现前的取舍与验收条件
+
+仅直接调用两个适配器，能测 ctx/期限，但观察不到 Handle 错误捕获外层上下文、余额为零分支和提交次序；复制运行时探针则无法形成另一条证据路径。因此从真实 decorated Handle 进入自编仓储控制，给回调独立的值/取消/期限；真实 RPC 后端记录参数、空确认、逐调用 deadline、余额远端效果和本地提交。选择保留少量直接适配器对照检验重复调用与错误释放，不能替代 Handle 主路径。只读 common 从认证输入复制，单独保存构建和全部三项测试证据，不从 trainings 成功推断 common 通过。
+
+两个客户端分别执行约 30 秒实际到期，避免合并成一条 40 秒命令导致第二项永远测不到；报告必须同时保留两组必需事件。额度是本地验证时间，不涉及模型费用。既有文件/执行/离线模块装配继续复用，行为参考从规范及冻结业务接口独立编写，不调用 Workouts 门禁、分析器或原探针。
+
+校准包括 correct、trainer 漏超时、Background、外层 ctx、零余额多调、吞错、helper、保护路径与删断言；另构造 WithDeadline、两调用共用期限和同名错误期限。前两者的行为合规性不按生产模板判断；源码/交付复核未完成仍未知。机制注入 common 缺事件/失败、第二客户端缺到期事件、参考自身编译失败及输入/日志漂移，不能获得完整通过。先可信本地，再禁网 Docker 主要对照；不读取 .env 或请求模型。
+
+### 实际实现与首轮修正
+
+新增 EvaluateWorkouts，宿主固定 trainings/common/SDK 与 v0.5.0 的身份，沿用单候选 Request 和三个待复核项目。Workouts 的自动检查新增 local_modules；LocalModules.common 记录只读快照摘要及独立 build/tests，Assess 拒绝缺项或聚合不一致。输入认证之后才执行 common，认证 common 自身失败属于评测执行问题，记录 inconclusive 和 error，不当作候选违反 TEST/BUILD。
+
+生产参考副本剥离 trainings 的候选测试，注入新编写的 adapters_test，common 与两个 SDK 仍从认证基线只读复制。真实命令从 Handle 经 command decorators、独立仓储的真实 callback、生产适配器到两个 SDK 后端。仓储只对副本执行 callback，callback 成功且返回完整取消状态才提交；记录成功的余额远端效果，不模拟跨远端回滚。原领域与其他改动的覆盖仍须源码复核。
+
+default 快速检查包括两角色/时限下的条件余额、零余额、两个远端错误、仓储/已取消前置条件、回调的值/取消/期限、两客户端父取消、重复派生及分次计时。分次对照在 users 后端成功返回前等 500ms，再以 trainer 自己的调用区间判断期限，不能按整个 Handle 开始时间放行。users/trainer 两个 expiry 分别发命令，各自最多 40 秒测试时间、60 秒执行时间；第二个未执行或异常时，expiry 仍未知。固定 250ms deadline 容差、1s 准备观察窗口、29—33s 实际到期窗口及 34s 安全停止，不根据候选表现放宽标准。
+
+首轮机制测试 `runs/m3-4-workouts-reference-mechanisms.jsonl` 失败：尚未执行 common 测试时组合结果含空 Tests map，JSON omitempty 将其省略，Assess 读取后的 nil 与重算的空 map 不相等，误报聚合不一致。修正为空时不创建 map，保留失败日志；`boundaries-fixed.jsonl` 重跑通过。该问题没有把未知放行为成功，但会阻止有效未知记录被消费。实现审查同时去重 common 自身命令的只读挂载，避免 Docker 重复 destination；早期 smoke 与 local/docker 报告另留，不覆盖，最终验收使用 accepted-local/accepted-docker。
+
+当前参考数据独立发布为 rpcx-l2-reference-workouts-data-v1，freeze 摘要 `400e7c32a2e6b9cac3936aa6bd5e2f1c4911d96aeca44fc25a20ff58dab6f669`；报告保存实际使用的数据、工具源码、规范、基线、候选、common、命令与双日志身份。旧 Goddd/Translation 数据及所有场景 fixtures/specs/cases/oracle 未修改。Workouts 采用第七个 local_modules 自动项，旧两个场景的六项结构仍可消费。
+
+### 验收结果与限制
+
+accepted-local 的十二个候选均符合校准预期，自动 4 pass / 8 fail：correct、helper、WithDeadline 与删断言自动通过；trainer 漏超时、Background、外层 ctx、零余额多调、吞错、保护路径、回调共用期限与同名 5s 期限均有对应 TIME/CTX/BEHAVIOR/PATH 条款。共用期限变体仍从正确 callback ctx 派生一个 30s，但两个适配器不再单独派生；参考通过第二次调用的实际期限观察发现 TIME-001，而非检查它是否长得像正确补丁。
+
+删断言样本在 `adapters/cancellation_rpcx_test.go:83` 删除余额 method/request 比较失败时的 t.Errorf，保留原测试名和空 if 条件。助手核对实际基线/候选后另存 development_calibration 的 review，test_preservation 为 TEST-001 fail，作者明确标注不是独立人工复核，其他两项未知。Assess 得到 fail，原自动报告和待填模板不覆盖。其余自动通过样本也仍需实际源码与交付复核，不计完整独立成功。
+
+| 验证 | 实际结果 | 证据 |
+| --- | --- | --- |
+| 最终可信本地校准 | 十二个候选符合预期，4 pass / 8 fail；通过组各含 users/trainer 两次实际到期 | `runs/m3-4-workouts-reference-local-final.jsonl`、`accepted-local/*/reference/reference.json` |
+| 最终禁网 Docker 主要对照 | correct / outer-context / mapping-helper 分别自动 pass / fail / pass，候选摘要及关键检查状态与本地一致 | `runs/m3-4-workouts-reference-docker-final.jsonl`、`accepted-docker/*/reference/reference.json` |
+| 最终三包竞态回归 | evaluation、L2 baseline、Workouts 共 140 项测试及子测试通过，4 项显式验收跳过，无失败/竞态；包含第二 expiry 异常、common 缺事件/执行失败、输入漂移及报告篡改 | `runs/m3-4-workouts-reference-race-final.jsonl` |
+| 共用流程真实回归 | Translation correct 两配置通过，包含两次实际到期，自动通过配待复核模板仍未知；Goddd 机制回归在上一行内 | `runs/m3-4-workouts-reference-translation.jsonl` |
+| 删断言记录消费 | 自动 pass，经有源码定位的助手开发复核得到 fail，不冒充独立人员 | `accepted-local/deleted-assertion-1469139847/reference/review-codex-calibration.json`、`assessment-codex-calibration.json` |
+| 容器回收 | 早期及最终六份 Docker 报告中的 68 个容器均已不存在 | `runs/m3-4-workouts-reference/docker-container-audit.json` |
+| 静态检查 | evaluation 的 go vet、活动 Go/新参考源码格式、git diff --check 通过；五份文档的 88 个本地链接和 14 个锚点有效，五个参考数据版本清单一致 | `runs/m3-4-workouts-reference-vet-final.log`、`document-check.json` |
+
+最终工具源码摘要 `18025a8c5846f21b8319f6a9ca451e0b8499fecec5ced5e991e2c84104c03978` 与 accepted-local/accepted-docker 相同，当前源码与归档材料一致；候选、common、工具、参考与每条日志摘要已逐份核验。汇总在 `runs/m3-4-workouts-reference/summary.json`，明确标 development_calibration，不生成真实模型效果率。早期 smoke/失败机制和修正前回归均保留，后续通过项不与这些轮次重复计数。
+
+本单元完成第三个场景的单候选自动参考，尚未完成跨 Campaign/Run 的校准关联及指标汇总、完整人工复核或真实模型评测。不读取 .env，不调用模型，不开放付费命令，运行产物不入 Git。下一步完成三场景轮次汇总，以固定身份关联原门禁、参考及复核，验证零分母、未知区间与失败任务不漏计；供应商能力及批次命令仍可另行推进。

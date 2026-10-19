@@ -68,9 +68,16 @@ type Report struct {
 	Automatic        Status                         `json:"automatic"`
 	Checks           map[string]Observation         `json:"checks"`
 	Configurations   map[string]ConfigurationReport `json:"configurations,omitempty"`
+	LocalModules     map[string]ModuleReport        `json:"local_modules,omitempty"`
 	Commands         []Command                      `json:"commands"`
 	Artifacts        map[string]string              `json:"artifacts"`
 	Error            string                         `json:"error,omitempty"`
+}
+
+// ModuleReport 保存只读本地依赖自身的构建与测试，不能由业务模块成功推断。
+type ModuleReport struct {
+	SHA256 string                 `json:"sha256"`
+	Checks map[string]Observation `json:"checks"`
 }
 
 // ConfigurationReport 记录实际执行配置，不把一套构建事件用于另一套配置。

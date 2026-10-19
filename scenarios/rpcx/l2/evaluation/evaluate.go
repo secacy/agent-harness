@@ -29,6 +29,11 @@ func EvaluateTranslation(ctx context.Context, req Request) (Report, error) {
 	return evaluate(ctx, req, translationScenario())
 }
 
+// EvaluateWorkouts 验证取消回调、两个客户端和只读 common 模块。
+func EvaluateWorkouts(ctx context.Context, req Request) (Report, error) {
+	return evaluate(ctx, req, workoutsScenario())
+}
+
 func evaluate(ctx context.Context, req Request, scenario referenceScenario) (report Report, err error) {
 	if req.TargetID == "" || req.RunID == "" || req.CandidateSHA256 == "" || req.Backend == nil {
 		return report, errors.New("target, run, candidate digest and backend are required")
@@ -57,7 +62,7 @@ func evaluate(ctx context.Context, req Request, scenario referenceScenario) (rep
 		return report, err
 	}
 	report = Report{SchemaVersion: 1, Version: scenario.version, TargetID: req.TargetID, RunID: req.RunID, CandidateSHA256: req.CandidateSHA256, Backend: req.Backend.Info(), StartedAt: time.Now().UTC(), Automatic: Inconclusive, Checks: map[string]Observation{}, Artifacts: map[string]string{}}
-	for _, name := range automaticSections {
+	for _, name := range automaticSectionsFor(scenario.version) {
 		report.Checks[name] = Observation{Status: Inconclusive, Reason: "not executed"}
 	}
 	if scenario.module == "translation" {
@@ -66,9 +71,17 @@ func evaluate(ctx context.Context, req Request, scenario referenceScenario) (rep
 			report.Configurations[config.id] = newConfiguration(config)
 		}
 	}
+	if scenario.module == "trainings" {
+		report.LocalModules = map[string]ModuleReport{"common": {Checks: map[string]Observation{
+			"build": {Status: Inconclusive, Reason: "not executed"}, "tests": {Status: Inconclusive, Reason: "not executed"},
+		}}}
+	}
 	defer func() {
 		if report.Configurations != nil {
 			mergeConfigurations(&report)
+		}
+		if report.LocalModules != nil {
+			mergeLocalModules(&report)
 		}
 		report.FinishedAt = time.Now().UTC()
 		if err != nil {
@@ -186,8 +199,12 @@ func evaluate(ctx context.Context, req Request, scenario referenceScenario) (rep
 			return report, err
 		}
 	}
+	siblings := []string{"rpcx-v1", "rpcx-v2"}
+	if scenario.module == "trainings" {
+		siblings = append(siblings, "common")
+	}
 	for _, root := range []string{layout, trusted, filepath.Dir(baseline)} {
-		for _, sdk := range []string{"rpcx-v1", "rpcx-v2"} {
+		for _, sdk := range siblings {
 			if err = gate.CopyFiles(filepath.Join(root, sdk), gate.Module(fixtures, sdk)); err != nil {
 				return report, err
 			}
@@ -215,9 +232,9 @@ func evaluate(ctx context.Context, req Request, scenario referenceScenario) (rep
 		start := time.Now()
 		root := filepath.Dir(dir)
 		mounts := []string{dir}
-		for _, sdk := range []string{"rpcx-v1", "rpcx-v2"} {
+		for _, sdk := range siblings {
 			path := filepath.Join(root, sdk)
-			if _, e := os.Stat(path); e == nil {
+			if _, e := os.Stat(path); e == nil && path != dir {
 				mounts = append(mounts, path)
 			}
 		}
@@ -277,6 +294,16 @@ func evaluate(ctx context.Context, req Request, scenario referenceScenario) (rep
 	}
 	if err = json.Unmarshal(host["tests.json"], &inventory); err != nil {
 		return report, err
+	}
+	if scenario.module == "trainings" {
+		record, moduleErr := checkCommon(run, filepath.Join(layout, "common"), gate.TreeHash(gate.Module(fixtures, "common")), inventory.Modules["common"])
+		report.LocalModules["common"] = record
+		if moduleErr != nil {
+			return report, moduleErr
+		}
+		if aggregate(record.Checks) != Pass {
+			return report, nil
+		}
 	}
 	for _, config := range scenario.configurations {
 		checks, configErr := checkConfiguration(run, scenario, config, baseline, module, filepath.Join(trusted, scenario.module), inventory.Modules[scenario.module])
