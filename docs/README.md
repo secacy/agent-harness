@@ -19,6 +19,8 @@
 
 整体开发路线、阶段交付与验收边界以[里程碑](MILESTONES.md)为准；本轮阶段顺序及预算、判定、评测边界的取舍见[路线规划记录](worklog/2026-10-18-milestone-roadmap.md)。当前推进 [M3 具体设计](worklog/2026-10-19-m3-batch-runtime.md)，预算的长期约束见 [ADR-006](adr/006-campaign-budget-reservations.md)。任务输入与宿主验证配置的边界见 [ADR-007](adr/007-host-owned-task-profiles.md)。
 
+M3.4 已完成[样本设计与选择](worklog/2026-10-19-m3-4-sample-selection.md)，三个开发来源及待独立准备的留出名额见 [L2 选择清单](../scenarios/rpcx/l2/README.md)；样本的离线准备、验证接入与效果评测仍待完成。
+
 ## 记录原则
 
 **里程碑与工程记录**：`MILESTONES.md` 只跟踪已确定的开发目标及其验收状态。`worklog/` 按需记录重要的设计与开发过程，也可暂存尚未确定的技术问题；不要求每天或每次修改都写日志。

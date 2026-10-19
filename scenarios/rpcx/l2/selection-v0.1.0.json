@@ -1,0 +1,306 @@
+{
+  "schema_version": 1,
+  "selection_version": "rpcx-l2-selection-v0.1.0",
+  "selected_on": "2026-10-19",
+  "purpose": "样本选择记录；不是可运行的 Target、已冻结数据集或效果评测结果",
+  "worklog": "docs/worklog/2026-10-19-m3-4-sample-selection.md",
+  "development_samples": [
+    {
+      "id": "l2-goddd-booking",
+      "split": "development",
+      "status": "selected_for_preparation",
+      "origin_group": "goddd",
+      "source": {
+        "repository": "https://github.com/marcusolsson/goddd",
+        "commit": "7c414addc7a127df0b4ea38653be6a7c6380a37a",
+        "tree_url": "https://github.com/marcusolsson/goddd/tree/7c414addc7a127df0b4ea38653be6a7c6380a37a",
+        "license": "MIT",
+        "license_url": "https://github.com/marcusolsson/goddd/blob/7c414addc7a127df0b4ea38653be6a7c6380a37a/LICENSE"
+      },
+      "planned_scope": "货运预订、路线查询及 HTTP booking 请求链",
+      "planned_traits": [
+        "无 ctx 的跨接口调用链",
+        "日志与指标装饰器",
+        "手写 stub 与领域测试",
+        "远程失败转换为空路线"
+      ],
+      "planned_build_configurations": [
+        {
+          "id": "default",
+          "tags": [],
+          "origin": "upstream_default"
+        }
+      ],
+      "reviewed_files": [
+        {
+          "path": "LICENSE",
+          "sha256": "f70acd35757afe41a7910d12e9c71277e95474dbde038d626ce87a26002b4763",
+          "bytes": 1079,
+          "url": "https://raw.githubusercontent.com/marcusolsson/goddd/7c414addc7a127df0b4ea38653be6a7c6380a37a/LICENSE"
+        },
+        {
+          "path": "go.mod",
+          "sha256": "6b31d451203a7ddef8354550e73143694bb42683426612284978928474f796f0",
+          "bytes": 1852,
+          "url": "https://raw.githubusercontent.com/marcusolsson/goddd/7c414addc7a127df0b4ea38653be6a7c6380a37a/go.mod"
+        },
+        {
+          "path": "booking/service.go",
+          "sha256": "20513027d821885bd6b5e9d409deed6dcfb63e011756a25c5271b587f5cf4a31",
+          "bytes": 5236,
+          "url": "https://raw.githubusercontent.com/marcusolsson/goddd/7c414addc7a127df0b4ea38653be6a7c6380a37a/booking/service.go"
+        },
+        {
+          "path": "booking/service_test.go",
+          "sha256": "9245f7270411adc70ad7acd262b944ed80702539dcafa4bd9b29a02950a53b39",
+          "bytes": 5886,
+          "url": "https://raw.githubusercontent.com/marcusolsson/goddd/7c414addc7a127df0b4ea38653be6a7c6380a37a/booking/service_test.go"
+        },
+        {
+          "path": "booking/logging.go",
+          "sha256": "7828c13b670490b125ec0a4375c163df4c156d2824966dd7b59b7250daa693dd",
+          "bytes": 2411,
+          "url": "https://raw.githubusercontent.com/marcusolsson/goddd/7c414addc7a127df0b4ea38653be6a7c6380a37a/booking/logging.go"
+        },
+        {
+          "path": "routing/proxying.go",
+          "sha256": "dfa3f99f7b0a8373591a8795c0f224db9a4f89f47d6d01c53bbb606105914b4a",
+          "bytes": 2911,
+          "url": "https://raw.githubusercontent.com/marcusolsson/goddd/7c414addc7a127df0b4ea38653be6a7c6380a37a/routing/proxying.go"
+        },
+        {
+          "path": "server/booking.go",
+          "sha256": "4f864231577f6d670c8f8c186f20c618a1ec9a07ec5b77b36292c52ea90c3ffa",
+          "bytes": 4606,
+          "url": "https://raw.githubusercontent.com/marcusolsson/goddd/7c414addc7a127df0b4ea38653be6a7c6380a37a/server/booking.go"
+        }
+      ],
+      "prepared_dataset": null,
+      "runtime_profile_id": null
+    },
+    {
+      "id": "l2-clean-translation",
+      "split": "development",
+      "status": "selected_for_preparation",
+      "origin_group": "go-clean-template",
+      "source": {
+        "repository": "https://github.com/evrone/go-clean-template",
+        "commit": "d1f46523e9a8435713aabb70222c6189564d4501",
+        "tree_url": "https://github.com/evrone/go-clean-template/tree/d1f46523e9a8435713aabb70222c6189564d4501",
+        "license": "MIT",
+        "license_url": "https://github.com/evrone/go-clean-template/blob/d1f46523e9a8435713aabb70222c6189564d4501/LICENSE",
+        "release_tag": "v1.18.0"
+      },
+      "planned_scope": "翻译 usecase 与出站适配器；以 usecase ctx 为入口",
+      "planned_traits": [
+        "已有 ctx 的用例与服务接口",
+        "生成 mock 实际参与原测试",
+        "翻译成功后才存储",
+        "两种必需构建配置，其中配置挑战为植入"
+      ],
+      "planned_build_configurations": [
+        {
+          "id": "default",
+          "tags": [],
+          "origin": "prepared_variant"
+        },
+        {
+          "id": "rpcx_alternate",
+          "tags": [
+            "rpcx_alternate"
+          ],
+          "origin": "injected"
+        }
+      ],
+      "reviewed_files": [
+        {
+          "path": "LICENSE",
+          "sha256": "1518f1edbbdd2983f2df311e2dcb90edd48c71c34d7a2851dbf5c6c683dd815c",
+          "bytes": 1080,
+          "url": "https://raw.githubusercontent.com/evrone/go-clean-template/d1f46523e9a8435713aabb70222c6189564d4501/LICENSE"
+        },
+        {
+          "path": "go.mod",
+          "sha256": "0fc6308388c724747ad13b2064efe4273c3715256f9ea9c3124d3f7e389d7b2d",
+          "bytes": 22987,
+          "url": "https://raw.githubusercontent.com/evrone/go-clean-template/d1f46523e9a8435713aabb70222c6189564d4501/go.mod"
+        },
+        {
+          "path": "internal/repo/webapi/translation_google.go",
+          "sha256": "4ef0eb66f726fdd4a0786c103149b1177db0f3577dbade9a2aebae42293c508c",
+          "bytes": 1249,
+          "url": "https://raw.githubusercontent.com/evrone/go-clean-template/d1f46523e9a8435713aabb70222c6189564d4501/internal/repo/webapi/translation_google.go"
+        },
+        {
+          "path": "internal/usecase/translation/translation.go",
+          "sha256": "1948525e7d1766a44d4a0a4ab9fda79d782b519bd56ed07c50b7ec6e14d574fc",
+          "bytes": 1446,
+          "url": "https://raw.githubusercontent.com/evrone/go-clean-template/d1f46523e9a8435713aabb70222c6189564d4501/internal/usecase/translation/translation.go"
+        },
+        {
+          "path": "internal/usecase/translation_test.go",
+          "sha256": "3c99343bf4276379c8cd9f0858a4dd4f558f5663093c6f782ebab51cee1fb02b",
+          "bytes": 2741,
+          "url": "https://raw.githubusercontent.com/evrone/go-clean-template/d1f46523e9a8435713aabb70222c6189564d4501/internal/usecase/translation_test.go"
+        },
+        {
+          "path": "internal/usecase/mocks_repo_test.go",
+          "sha256": "a4dc547678a7c7a1803a75e02a69b8f98907b0b3122c641bdf65663b8c07007e",
+          "bytes": 9331,
+          "url": "https://raw.githubusercontent.com/evrone/go-clean-template/d1f46523e9a8435713aabb70222c6189564d4501/internal/usecase/mocks_repo_test.go"
+        }
+      ],
+      "prepared_dataset": null,
+      "runtime_profile_id": null
+    },
+    {
+      "id": "l2-workouts-cancel",
+      "split": "development",
+      "status": "selected_for_preparation",
+      "origin_group": "wild-workouts",
+      "source": {
+        "repository": "https://github.com/ThreeDotsLabs/wild-workouts-go-ddd-example",
+        "commit": "8ecfcdf05b1462c4757bd2dcac9086c78e9f7791",
+        "tree_url": "https://github.com/ThreeDotsLabs/wild-workouts-go-ddd-example/tree/8ecfcdf05b1462c4757bd2dcac9086c78e9f7791",
+        "license": "MIT",
+        "license_url": "https://github.com/ThreeDotsLabs/wild-workouts-go-ddd-example/blob/8ecfcdf05b1462c4757bd2dcac9086c78e9f7791/LICENSE"
+      },
+      "planned_scope": "取消训练 command、领域与 common 本地模块；以 Handle ctx 为入口",
+      "planned_traits": [
+        "仓储回调内调用远程服务",
+        "条件余额更新与取消顺序",
+        "泛型 command 装饰器",
+        "trainings/common 本地模块关系"
+      ],
+      "planned_build_configurations": [
+        {
+          "id": "default",
+          "tags": [],
+          "origin": "upstream_default"
+        }
+      ],
+      "reviewed_files": [
+        {
+          "path": "LICENSE",
+          "sha256": "f259f498d51c1715f81ae2ec9a3111be1afa954bc45a15ca67d9775c28a567ec",
+          "bytes": 1072,
+          "url": "https://raw.githubusercontent.com/ThreeDotsLabs/wild-workouts-go-ddd-example/8ecfcdf05b1462c4757bd2dcac9086c78e9f7791/LICENSE"
+        },
+        {
+          "path": "internal/trainings/go.mod",
+          "sha256": "099a5cf9b5a500a10d705a838e258f3f1e40050f154b014d55214b1804498789",
+          "bytes": 4162,
+          "url": "https://raw.githubusercontent.com/ThreeDotsLabs/wild-workouts-go-ddd-example/8ecfcdf05b1462c4757bd2dcac9086c78e9f7791/internal/trainings/go.mod"
+        },
+        {
+          "path": "internal/common/go.mod",
+          "sha256": "87c1ec1b93db19d878aca431bf3c2c70ed36d5ae3c6271117dcd55b1c707cb89",
+          "bytes": 3984,
+          "url": "https://raw.githubusercontent.com/ThreeDotsLabs/wild-workouts-go-ddd-example/8ecfcdf05b1462c4757bd2dcac9086c78e9f7791/internal/common/go.mod"
+        },
+        {
+          "path": "internal/trainings/app/command/cancel_training.go",
+          "sha256": "d7dd3143d8fc72881629f07e176e7f15a9869ae64028ca6117447786d9610dd6",
+          "bytes": 2045,
+          "url": "https://raw.githubusercontent.com/ThreeDotsLabs/wild-workouts-go-ddd-example/8ecfcdf05b1462c4757bd2dcac9086c78e9f7791/internal/trainings/app/command/cancel_training.go"
+        },
+        {
+          "path": "internal/trainings/app/command/cancel_training_test.go",
+          "sha256": "b6655562b8a48efd75c56064ddf611b939d66be120d2f6712cb84721e39efbcb",
+          "bytes": 5629,
+          "url": "https://raw.githubusercontent.com/ThreeDotsLabs/wild-workouts-go-ddd-example/8ecfcdf05b1462c4757bd2dcac9086c78e9f7791/internal/trainings/app/command/cancel_training_test.go"
+        },
+        {
+          "path": "internal/trainings/adapters/trainer_grpc.go",
+          "sha256": "c99f0e939bbb05a1e6847fbfbed140052e3f01867c4ab064b927464529c0f0d7",
+          "bytes": 1212,
+          "url": "https://raw.githubusercontent.com/ThreeDotsLabs/wild-workouts-go-ddd-example/8ecfcdf05b1462c4757bd2dcac9086c78e9f7791/internal/trainings/adapters/trainer_grpc.go"
+        },
+        {
+          "path": "internal/trainings/adapters/users_grpc.go",
+          "sha256": "8cc5c50108136733bda9012462aa89dc580d2db5a1df548638a9e99013759dc9",
+          "bytes": 557,
+          "url": "https://raw.githubusercontent.com/ThreeDotsLabs/wild-workouts-go-ddd-example/8ecfcdf05b1462c4757bd2dcac9086c78e9f7791/internal/trainings/adapters/users_grpc.go"
+        },
+        {
+          "path": "internal/trainings/service/component_test.go",
+          "sha256": "52fe157152f5a8badefb96d3a433400ead19593fd110046675f7b4096808c02a",
+          "bytes": 1997,
+          "url": "https://raw.githubusercontent.com/ThreeDotsLabs/wild-workouts-go-ddd-example/8ecfcdf05b1462c4757bd2dcac9086c78e9f7791/internal/trainings/service/component_test.go"
+        }
+      ],
+      "prepared_dataset": null,
+      "runtime_profile_id": null
+    }
+  ],
+  "heldout_slots": [
+    {
+      "id": "l2-heldout-01",
+      "split": "heldout",
+      "status": "awaiting_independent_preparer",
+      "source": null,
+      "origin_group": null,
+      "prepared_dataset": null,
+      "runtime_profile_id": null,
+      "counts_as_prepared_sample": false
+    }
+  ],
+  "surveyed_sources": [
+    {
+      "repository": "https://github.com/marcusolsson/goddd",
+      "commit": "7c414addc7a127df0b4ea38653be6a7c6380a37a",
+      "origin_group": "goddd",
+      "decision": "selected",
+      "development_visible": true,
+      "tree_url": "https://github.com/marcusolsson/goddd/tree/7c414addc7a127df0b4ea38653be6a7c6380a37a"
+    },
+    {
+      "repository": "https://github.com/evrone/go-clean-template",
+      "commit": "d1f46523e9a8435713aabb70222c6189564d4501",
+      "origin_group": "go-clean-template",
+      "decision": "selected",
+      "development_visible": true,
+      "tree_url": "https://github.com/evrone/go-clean-template/tree/d1f46523e9a8435713aabb70222c6189564d4501"
+    },
+    {
+      "repository": "https://github.com/evrone/go-clean-template",
+      "commit": "e72dda1c4aeafe55490c4118427ddca13b70187e",
+      "origin_group": "go-clean-template",
+      "decision": "not_selected_toolchain_requirement",
+      "development_visible": true,
+      "tree_url": "https://github.com/evrone/go-clean-template/tree/e72dda1c4aeafe55490c4118427ddca13b70187e"
+    },
+    {
+      "repository": "https://github.com/ThreeDotsLabs/wild-workouts-go-ddd-example",
+      "commit": "8ecfcdf05b1462c4757bd2dcac9086c78e9f7791",
+      "origin_group": "wild-workouts",
+      "decision": "selected",
+      "development_visible": true,
+      "tree_url": "https://github.com/ThreeDotsLabs/wild-workouts-go-ddd-example/tree/8ecfcdf05b1462c4757bd2dcac9086c78e9f7791"
+    },
+    {
+      "repository": "https://github.com/go-kit/examples",
+      "commit": "e18c82edc2f9c7de3aff9748751d63270c052c1b",
+      "origin_group": "goddd",
+      "decision": "not_selected_same_origin_fewer_business_tests",
+      "development_visible": true,
+      "tree_url": "https://github.com/go-kit/examples/tree/e18c82edc2f9c7de3aff9748751d63270c052c1b"
+    },
+    {
+      "repository": "https://github.com/GoogleCloudPlatform/microservices-demo",
+      "commit": "38e7348eb289eb5b87c0c6e8cb19ced0449dc389",
+      "origin_group": "microservices-demo",
+      "decision": "not_selected_boundary_test_alignment",
+      "development_visible": true,
+      "tree_url": "https://github.com/GoogleCloudPlatform/microservices-demo/tree/38e7348eb289eb5b87c0c6e8cb19ced0449dc389"
+    },
+    {
+      "repository": "https://github.com/powerman/go-service-example",
+      "commit": "7c7c69f4015856446016c0ee1b8eaba01947aa43",
+      "origin_group": "go-service-example",
+      "decision": "not_selected_database_boundary_and_environment",
+      "development_visible": true,
+      "tree_url": "https://github.com/powerman/go-service-example/tree/7c7c69f4015856446016c0ee1b8eaba01947aa43"
+    }
+  ]
+}
