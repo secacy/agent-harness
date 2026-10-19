@@ -54,3 +54,9 @@ env GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly G
 ```
 
 确定性模型通过真实编辑工具提交三种 T3 候选，调用真实门禁；验证正确超时、漏超时、未知 helper 的三种判定及原 M1 行为、摘要、证据、补丁重放、审核链接和发布失败。可信行为通过的候选各包含实际 30 秒到期，故不是纯替身单测。命令测试使用本机模拟 HTTP 服务，不访问真实模型。可设置 `HARNESS_RUNNER_ARTIFACTS` 保留 T3 测试运行目录；`HARNESS_DOCKER_TEST=1` 启用相同三例的真实 Docker 对照，需已有固定镜像。
+
+## Campaign 接入
+
+`CampaignExecutor(trustedLocal)` 将显式 Target 接到 [internal/campaign](../../../internal/campaign/README.md)。共享账本、模型和有界 Executor 由 Campaign 注入；Runner 继续拥有输入认证、基线检查、实际 Run ID、生成前预算绑定、独立门禁和完整交付。Campaign 只索引原报告，不重新判定质量。
+
+批次取消会传到排队命令和在途命令；单任务失败不取消其他任务。真实 Docker 强杀对照仅杀所属执行容器，不代表 worker/Harness 中断恢复。当前通过 Go API 联调，没有新增付费 batch CLI，两个既有宿主 Profile 的支持范围不变。
