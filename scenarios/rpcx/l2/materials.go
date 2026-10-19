@@ -81,3 +81,12 @@ func loadMaterials(material embed.FS, root, freeze string) (map[string][]byte, e
 	}
 	return files, nil
 }
+
+const WorkoutsFreezeSHA256 = "5efa3908ad6f80a8673a4893ef28bb6213a4a8d9a281bce4498726aa69282cb2"
+
+//go:embed data/rpcx-l2-workouts-v1/freeze.json data/rpcx-l2-workouts-v1/tests.json data/rpcx-l2-workouts-v1/dependencies
+var workoutsMaterial embed.FS
+
+func WorkoutsMaterials() (map[string][]byte, error) {
+	return loadMaterials(workoutsMaterial, "data/rpcx-l2-workouts-v1", WorkoutsFreezeSHA256)
+}

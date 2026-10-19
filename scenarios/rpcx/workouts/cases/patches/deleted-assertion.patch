@@ -1,0 +1,96 @@
+--- a/adapters/cancellation_rpcx_test.go
++++ b/adapters/cancellation_rpcx_test.go
+@@ -9,7 +9,7 @@
+ 	"testing"
+ 	"time"
+ 
+-	"example.com/rpcx"
++	"example.com/rpcx/v2"
+ 	"github.com/ThreeDotsLabs/wild-workouts-go-ddd-example/internal/common/metrics"
+ 	"github.com/ThreeDotsLabs/wild-workouts-go-ddd-example/internal/trainings/adapters"
+ 	"github.com/ThreeDotsLabs/wild-workouts-go-ddd-example/internal/trainings/app/command"
+@@ -80,7 +80,7 @@
+ 				observed = append(observed, ctx)
+ 				want := adapters.UpdateTrainingBalanceRequest{UserID: "owner", AmountChange: tc.delta}
+ 				if method != "update_training_balance" || request != want {
+-					t.Errorf("balance request=%+v method=%s", request, method)
++
+ 				}
+ 				if _, ok := response.(*struct{}); !ok {
+ 					t.Error("unexpected balance response")
+--- a/adapters/trainer_grpc.go
++++ b/adapters/trainer_grpc.go
+@@ -2,7 +2,7 @@
+ 
+ import (
+ 	"context"
+-	"example.com/rpcx"
++	"example.com/rpcx/v2"
+ 	"time"
+ )
+ 
+@@ -10,13 +10,15 @@
+ type TrainerGrpc struct{ client *rpcx.Client }
+ 
+ func NewTrainerGrpc(addr string) (TrainerGrpc, error) {
+-	client, err := rpcx.NewClient(addr)
++	client, err := rpcx.Dial(addr)
+ 	return TrainerGrpc{client: client}, err
+ }
+ 
+ // CancelTraining 保留原训练时刻，v1 的 Call 不接受 ctx。
+ func (s TrainerGrpc) CancelTraining(ctx context.Context, trainingTime time.Time) error {
+-	return s.client.Call("cancel_training", CancelTrainingRequest{Time: trainingTime}, &struct{}{})
++	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
++	defer cancel()
++	return s.client.Call(ctx, "cancel_training", CancelTrainingRequest{Time: trainingTime}, &struct{}{})
+ }
+ 
+ // CancelTrainingRequest 用 Go 时刻表示原 protobuf 时间戳的同一时刻。
+--- a/adapters/users_grpc.go
++++ b/adapters/users_grpc.go
+@@ -2,20 +2,23 @@
+ 
+ import (
+ 	"context"
+-	"example.com/rpcx"
++	"example.com/rpcx/v2"
++	"time"
+ )
+ 
+ // UsersGrpc 保留存量类型名称；本切片将出站传输替换为 rpcx-v1。
+ type UsersGrpc struct{ client *rpcx.Client }
+ 
+ func NewUsersGrpc(addr string) (UsersGrpc, error) {
+-	client, err := rpcx.NewClient(addr)
++	client, err := rpcx.Dial(addr)
+ 	return UsersGrpc{client: client}, err
+ }
+ 
+ // UpdateTrainingBalance 保留原用户与余额映射，v1 的 Call 不接受 ctx。
+ func (s UsersGrpc) UpdateTrainingBalance(ctx context.Context, userID string, amountChange int) error {
+-	return s.client.Call("update_training_balance", UpdateTrainingBalanceRequest{UserID: userID, AmountChange: int64(amountChange)}, &struct{}{})
++	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
++	defer cancel()
++	return s.client.Call(ctx, "update_training_balance", UpdateTrainingBalanceRequest{UserID: userID, AmountChange: int64(amountChange)}, &struct{}{})
+ }
+ 
+ // UpdateTrainingBalanceRequest 对应原余额请求的两个字段。
+--- a/go.mod
++++ b/go.mod
+@@ -3,7 +3,7 @@
+ go 1.25.0
+ 
+ require (
+-	example.com/rpcx v1.0.0
++	example.com/rpcx/v2 v2.0.0
+ 	github.com/ThreeDotsLabs/wild-workouts-go-ddd-example/internal/common v0.0.0-00010101000000-000000000000
+ 	github.com/google/uuid v1.6.0
+ 	github.com/pkg/errors v0.9.1
+@@ -18,6 +18,5 @@
+ 
+ replace github.com/ThreeDotsLabs/wild-workouts-go-ddd-example/internal/common => ../common
+ 
+-replace example.com/rpcx => ../rpcx-v1
+ 
+ replace example.com/rpcx/v2 => ../rpcx-v2

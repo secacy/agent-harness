@@ -1,0 +1,16 @@
+{
+  "spec_sha256": "789d30540799249d0f5d96b3ba921b7e00d4cbc1e457491a2a79eba89829a526",
+  "baseline_freeze_sha256": "5efa3908ad6f80a8673a4893ef28bb6213a4a8d9a281bce4498726aa69282cb2",
+  "files": {
+    "manifest.json": "6d5887a3bd3e381f9d825eb804108b722784029326d1623623a05f8cb70bab04",
+    "patches/background-fallback.patch": "ac8c0567f28a858c03c80e0da0b0749a51e86f3d90597646c2810f642d2f6e35",
+    "patches/correct.patch": "621e7e185f724293789595cb654b62e49840a7bb2b16e90b01d40269d31d12cd",
+    "patches/deleted-assertion.patch": "c1441f32328bb379eedbf75568da57a14fb0a3e777fb1b8f897e8760cc18b3e4",
+    "patches/mapping-helper.patch": "22319e7760a0616715495f2fdc2cbeaa98290cd1f41bb1bd2511f9ff981e7c5e",
+    "patches/outer-context.patch": "5ad046dda16296dc7e0203cbd0ecac367b0770ff4215414e18168ff222097379",
+    "patches/protected-license.patch": "cd7f24bd86936035acfdbea03821a2f3cd5dd3d8faef5239732061d10d7e4ad9",
+    "patches/swallowed-error.patch": "433cc45f2c1c420fd703911538b3e73ca9274b242fc1be39c793397d59b71638",
+    "patches/trainer-missing-timeout.patch": "6841372f53373b5af6f8bc1aa33d1b7d8896310c594c8ff0bb6c7aa5588b1210",
+    "patches/zero-balance-call.patch": "7df4e96f370a8a7d6d05b739c764e25ea760f9a668f4680ff5d9261b168c3277"
+  }
+}

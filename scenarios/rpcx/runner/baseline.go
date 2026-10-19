@@ -41,6 +41,7 @@ type BaselineReport struct {
 	Tests              map[string]string            `json:"tests"`
 	Error              string                       `json:"error,omitempty"`
 	ConfigurationTests map[string]map[string]string `json:"configuration_tests,omitempty"`
+	ModuleTests        map[string]map[string]string `json:"module_tests,omitempty"`
 }
 
 func (r *runState) checkBaseline(ctx context.Context) (err error) {
@@ -85,6 +86,25 @@ func (r *runState) checkBaseline(ctx context.Context) (err error) {
 		if err != nil {
 			return err
 		}
+	}
+
+	// 宿主声明的只读本地模块先验收，失败时不进入业务或模型。
+	for _, name := range sortedKeys(r.profile.PrerequisiteTests) {
+		if _, err = r.baselineModuleCommand(ctx, name, name+"-build", []string{binary, "build", "-o", "/dev/null", "./..."}); err != nil {
+			return err
+		}
+		data, runErr := r.baselineModuleCommand(ctx, name, name+"-test", []string{binary, "test", "-json", "-count=1", "-timeout=30s", "./..."})
+		if runErr != nil {
+			return runErr
+		}
+		states, runErr := baselineEvents(data, r.profile.PrerequisiteTests[name])
+		if runErr != nil {
+			return runErr
+		}
+		if report.ModuleTests == nil {
+			report.ModuleTests = map[string]map[string]string{}
+		}
+		report.ModuleTests[name] = states
 	}
 
 	for _, config := range r.profile.configurations() {
@@ -143,11 +163,17 @@ func (r *runState) checkInitialWorkspace(ctx context.Context) error {
 }
 
 func (r *runState) baselineCommand(parent context.Context, name string, args []string) ([]byte, error) {
+	return r.baselineModuleCommand(parent, r.profile.RepositoryName, name, args)
+}
+
+func (r *runState) baselineModuleCommand(parent context.Context, module, name string, args []string) ([]byte, error) {
 	ctx, cancel := context.WithTimeout(parent, 30*time.Second)
 	defer cancel()
-	mounts := []string{r.path("baseline/" + r.profile.RepositoryName)}
+	mounts := []string{r.path("baseline/" + module)}
 	for _, sdk := range sortedKeys(r.profile.Dependencies) {
-		mounts = append(mounts, r.path("baseline/"+sdk))
+		if sdk != module {
+			mounts = append(mounts, r.path("baseline/"+sdk))
+		}
 	}
 	actual := args
 	if r.hostBackend != nil {

@@ -13,6 +13,7 @@ import (
 	"github.com/secacy/agent-harness/internal/task"
 	"github.com/secacy/agent-harness/scenarios/rpcx/goddd"
 	"github.com/secacy/agent-harness/scenarios/rpcx/translation"
+	"github.com/secacy/agent-harness/scenarios/rpcx/workouts"
 )
 
 const (
@@ -20,6 +21,7 @@ const (
 	ProfileT3          = "rpcx-demo-orders-t3-v1"
 	ProfileGoddd       = "rpcx-goddd-t3-v1"
 	ProfileTranslation = "rpcx-translation-t3-v1"
+	ProfileWorkouts    = "rpcx-workouts-t3-v1"
 )
 
 //go:embed profiles.json
@@ -38,6 +40,7 @@ type profile struct {
 	Verifier            string                    `json:"verifier"`
 	HostMaterialsSHA256 string                    `json:"host_materials_sha256,omitempty"`
 	BuildConfigurations []task.BuildConfiguration `json:"build_configurations,omitempty"`
+	PrerequisiteTests   map[string][]string       `json:"prerequisite_tests,omitempty"`
 }
 
 func lookupProfile(id string) (profile, error) {
@@ -65,13 +68,16 @@ func (p profile) validate(t task.Target) error {
 			return fmt.Errorf("unsupported dependency snapshot: %s", name)
 		}
 	}
-	if !slices.Contains([]string{"rpcx-t1t2-evidence-v1", "rpcx-t3-evidence-v1", goddd.VerifierVersion, translation.VerifierVersion}, p.Verifier) {
+	if !slices.Contains([]string{"rpcx-t1t2-evidence-v1", "rpcx-t3-evidence-v1", goddd.VerifierVersion, translation.VerifierVersion, workouts.VerifierVersion}, p.Verifier) {
 		return errors.New("unsupported rpcx verifier")
 	}
-	if p.Verifier == goddd.VerifierVersion || p.Verifier == translation.VerifierVersion {
+	if p.Verifier == goddd.VerifierVersion || p.Verifier == translation.VerifierVersion || p.Verifier == workouts.VerifierVersion {
 		materials := goddd.HostMaterialsSHA256
 		if p.Verifier == translation.VerifierVersion {
 			materials = translation.HostMaterialsSHA256
+		}
+		if p.Verifier == workouts.VerifierVersion {
+			materials = workouts.HostMaterialsSHA256
 		}
 		hash, err := materials()
 		if err != nil {
@@ -79,6 +85,11 @@ func (p profile) validate(t task.Target) error {
 		}
 		if hash != p.HostMaterialsSHA256 {
 			return errors.New("unsupported host materials")
+		}
+	}
+	for name, tests := range p.PrerequisiteTests {
+		if _, ok := p.Dependencies[name]; !ok || len(tests) == 0 {
+			return errors.New("invalid prerequisite module test inventory")
 		}
 	}
 	return task.ValidateBuildConfigurations(p.BuildConfigurations)
@@ -220,4 +231,9 @@ func normalizeTarget(t task.Target, output string) (task.Target, error) {
 		}
 	}
 	return t, nil
+}
+
+// TargetFromWorkouts 描述包含只读 common 模块的固定取消切片。
+func TargetFromWorkouts(id, fixtures, spec string) (task.Target, error) {
+	return targetFromFixtures(id, fixtures, spec, ProfileWorkouts)
 }

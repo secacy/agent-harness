@@ -155,5 +155,70 @@
         ]
       }
     ]
+  },
+  {
+    "id": "rpcx-workouts-t3-v1",
+    "repository_name": "trainings",
+    "spec_version": "v0.5.0",
+    "spec_sha256": "789d30540799249d0f5d96b3ba921b7e00d4cbc1e457491a2a79eba89829a526",
+    "repository_sha256": "4f269c1ee06787cd3b08cfc68de33eb9a6ac9afb3ac2922738f8b15b3659d670",
+    "dependencies": {
+      "common": "761bbbcbc890a042e6d4c6cab2da56b205412097e903dd49d2b8d060badb519f",
+      "rpcx-v1": "3494436826b66504e9d1f28fa22fa22db4f927d0ee43309ab92b2868e5c6d24b",
+      "rpcx-v2": "c8b687c6964c5659391144f0c74934e36a5c0462c438bc8ed886bcdeafb5357c"
+    },
+    "protected_paths": [
+      "LICENSE",
+      "go.sum"
+    ],
+    "build_config": "default",
+    "required_tests": [
+      "github.com/ThreeDotsLabs/wild-workouts-go-ddd-example/internal/trainings/app/command/TestCancelTraining",
+      "github.com/ThreeDotsLabs/wild-workouts-go-ddd-example/internal/trainings/app/command/TestCancelTraining/extra_training_balance_when_trainer_cancels_before_24h",
+      "github.com/ThreeDotsLabs/wild-workouts-go-ddd-example/internal/trainings/app/command/TestCancelTraining/no_training_balance_returned_when_attendee_cancels_before_24h",
+      "github.com/ThreeDotsLabs/wild-workouts-go-ddd-example/internal/trainings/app/command/TestCancelTraining/return_training_balance_when_attendee_cancels",
+      "github.com/ThreeDotsLabs/wild-workouts-go-ddd-example/internal/trainings/app/command/TestCancelTraining/return_training_balance_when_trainer_cancels",
+      "github.com/ThreeDotsLabs/wild-workouts-go-ddd-example/internal/trainings/domain/training/TestIsUserAllowedToSeeTraining",
+      "github.com/ThreeDotsLabs/wild-workouts-go-ddd-example/internal/trainings/domain/training/TestIsUserAllowedToSeeTraining/another_attendees_training",
+      "github.com/ThreeDotsLabs/wild-workouts-go-ddd-example/internal/trainings/domain/training/TestIsUserAllowedToSeeTraining/attendees_training",
+      "github.com/ThreeDotsLabs/wild-workouts-go-ddd-example/internal/trainings/domain/training/TestIsUserAllowedToSeeTraining/trainer",
+      "github.com/ThreeDotsLabs/wild-workouts-go-ddd-example/internal/trainings/domain/training/TestNewTraining",
+      "github.com/ThreeDotsLabs/wild-workouts-go-ddd-example/internal/trainings/domain/training/TestNewTraining_invalid",
+      "github.com/ThreeDotsLabs/wild-workouts-go-ddd-example/internal/trainings/domain/training/TestTraining_ApproveReschedule_not_proposed",
+      "github.com/ThreeDotsLabs/wild-workouts-go-ddd-example/internal/trainings/domain/training/TestTraining_Cancel",
+      "github.com/ThreeDotsLabs/wild-workouts-go-ddd-example/internal/trainings/domain/training/TestTraining_Cancel_already_canceled",
+      "github.com/ThreeDotsLabs/wild-workouts-go-ddd-example/internal/trainings/domain/training/TestTraining_MoreThanDayUntilTraining",
+      "github.com/ThreeDotsLabs/wild-workouts-go-ddd-example/internal/trainings/domain/training/TestTraining_ProposeReschedule_approve_by_proposer",
+      "github.com/ThreeDotsLabs/wild-workouts-go-ddd-example/internal/trainings/domain/training/TestTraining_ProposeReschedule_approve_by_proposer/attendee",
+      "github.com/ThreeDotsLabs/wild-workouts-go-ddd-example/internal/trainings/domain/training/TestTraining_ProposeReschedule_approve_by_proposer/trainer",
+      "github.com/ThreeDotsLabs/wild-workouts-go-ddd-example/internal/trainings/domain/training/TestTraining_ProposeReschedule_by_attendee",
+      "github.com/ThreeDotsLabs/wild-workouts-go-ddd-example/internal/trainings/domain/training/TestTraining_ProposeReschedule_by_attendee/proposed_by_attendee",
+      "github.com/ThreeDotsLabs/wild-workouts-go-ddd-example/internal/trainings/domain/training/TestTraining_ProposeReschedule_by_attendee/proposed_by_trainer",
+      "github.com/ThreeDotsLabs/wild-workouts-go-ddd-example/internal/trainings/domain/training/TestTraining_RejectRescheduleTraining",
+      "github.com/ThreeDotsLabs/wild-workouts-go-ddd-example/internal/trainings/domain/training/TestTraining_RescheduleTraining",
+      "github.com/ThreeDotsLabs/wild-workouts-go-ddd-example/internal/trainings/domain/training/TestTraining_RescheduleTraining_less_than_24h_before",
+      "github.com/ThreeDotsLabs/wild-workouts-go-ddd-example/internal/trainings/domain/training/TestTraining_UpdateNotes",
+      "github.com/ThreeDotsLabs/wild-workouts-go-ddd-example/internal/trainings/domain/training/TestTraining_UpdateNotes_too_long",
+      "github.com/ThreeDotsLabs/wild-workouts-go-ddd-example/internal/trainings/adapters/TestAdapterConnections",
+      "github.com/ThreeDotsLabs/wild-workouts-go-ddd-example/internal/trainings/adapters/TestCancellationPreconditions",
+      "github.com/ThreeDotsLabs/wild-workouts-go-ddd-example/internal/trainings/adapters/TestCancellationPreconditions/already-cancelled",
+      "github.com/ThreeDotsLabs/wild-workouts-go-ddd-example/internal/trainings/adapters/TestCancellationPreconditions/repository-error",
+      "github.com/ThreeDotsLabs/wild-workouts-go-ddd-example/internal/trainings/adapters/TestCancellationThroughRPC",
+      "github.com/ThreeDotsLabs/wild-workouts-go-ddd-example/internal/trainings/adapters/TestCancellationThroughRPC/attendee-free",
+      "github.com/ThreeDotsLabs/wild-workouts-go-ddd-example/internal/trainings/adapters/TestCancellationThroughRPC/attendee-no-balance",
+      "github.com/ThreeDotsLabs/wild-workouts-go-ddd-example/internal/trainings/adapters/TestCancellationThroughRPC/balance-error",
+      "github.com/ThreeDotsLabs/wild-workouts-go-ddd-example/internal/trainings/adapters/TestCancellationThroughRPC/trainer-error",
+      "github.com/ThreeDotsLabs/wild-workouts-go-ddd-example/internal/trainings/adapters/TestCancellationThroughRPC/trainer-free",
+      "github.com/ThreeDotsLabs/wild-workouts-go-ddd-example/internal/trainings/adapters/TestCancellationThroughRPC/trainer-penalty"
+    ],
+    "verifier": "rpcx-workouts-evidence-v1",
+    "host_materials_sha256": "02c5b8ce393b623cea3ece37238a1cbf36b89c8b43f8bc125c455ebf7b94e9ac",
+    "prerequisite_tests": {
+      "common": [
+        "github.com/ThreeDotsLabs/wild-workouts-go-ddd-example/internal/common/decorator/TestCommandDecorators",
+        "github.com/ThreeDotsLabs/wild-workouts-go-ddd-example/internal/common/decorator/TestCommandDecorators/error",
+        "github.com/ThreeDotsLabs/wild-workouts-go-ddd-example/internal/common/decorator/TestCommandDecorators/success"
+      ]
+    }
   }
 ]

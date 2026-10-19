@@ -12,6 +12,8 @@ ProfileT1T2 / ProfileT3 分别对应 rpcx-demo-orders-t1t2-v1 / rpcx-demo-orders
 
 新增 `ProfileTranslation` / `rpcx-translation-t3-v1`，绑定 v0.4.0、26 项基线测试、原生成 mock 和 default/rpcx_alternate 两种必需配置。`TargetFromTranslation(id, fixturesDir, specPath)` 构造一个 Target；不能只选择其中一种配置。生成前核对两配置的活动源文件/原 mock、构建和测试，结果按配置写入 baseline_check.configuration_tests。Agent 的一次 go_check 顺序检查两配置并共用期限，最终门禁独立重跑，见 [Translation 说明](../translation/README.md)。
 
+新增 `ProfileWorkouts` / `rpcx-workouts-t3-v1`，绑定 v0.5.0、trainings 的 37 项必需测试和只读 common 的 3 项必需测试。`TargetFromWorkouts(id, fixturesDir, specPath)` 构造一个 Target。生成前先独立构建/测试 common，缺事件或失败时模型调用为零；通过后再检查 trainings。最终门禁独立重查 common 和取消回调的语义，见 [Workouts 说明](../workouts/README.md)。
+
 显式 Target 先创建独立 Run，再读取和认证实际输入；文件消失、摘要漂移留下 Failed / Preparing 记录，failure_code=input_invalid。旧场景入口保留非法或变更输入在创建 Run 前拒绝的兼容行为；新的 T1/T2 Profile 也认证完整输入快照，不再让随意修改的基线借用旧探针。Task ID 与预算 Target ID 必须一致。
 
 ## 生成前基线检查
@@ -63,4 +65,4 @@ env GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly G
 
 `CampaignExecutor(trustedLocal)` 将显式 Target 接到 [internal/campaign](../../../internal/campaign/README.md)。共享账本、模型和有界 Executor 由 Campaign 注入；Runner 继续拥有输入认证、基线检查、实际 Run ID、生成前预算绑定、独立门禁和完整交付。Campaign 只索引原报告，不重新判定质量。
 
-批次取消会传到排队命令和在途命令；单任务失败不取消其他任务。真实 Docker 强杀对照仅杀所属执行容器，不代表 worker/Harness 中断恢复。当前通过 Go API 联调，没有新增付费 batch CLI，Goddd 与 Translation 可使用各自新 Profile；其余仓库仍须单独接入。
+批次取消会传到排队命令和在途命令；单任务失败不取消其他任务。真实 Docker 强杀对照仅杀所属执行容器，不代表 worker/Harness 中断恢复。当前通过 Go API 联调，没有新增付费 batch CLI，Goddd、Translation 与 Workouts 可使用各自新 Profile；其余仓库仍须单独接入。

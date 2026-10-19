@@ -18,6 +18,7 @@ import (
 	"github.com/secacy/agent-harness/scenarios/rpcx/goddd"
 	"github.com/secacy/agent-harness/scenarios/rpcx/l2"
 	"github.com/secacy/agent-harness/scenarios/rpcx/translation"
+	"github.com/secacy/agent-harness/scenarios/rpcx/workouts"
 )
 
 type runState struct {
@@ -132,6 +133,9 @@ func Run(parent context.Context, config Config) (record Record, err error) {
 	}
 	if r.profile.Verifier == translation.VerifierVersion {
 		evaluate = translation.Evaluate
+	}
+	if r.profile.Verifier == workouts.VerifierVersion {
+		evaluate = workouts.Evaluate
 	}
 	validation, err := evaluate(ctx, checks.EvaluationRequest{
 		BaselineDir: r.path("baseline/" + r.profile.RepositoryName), CandidateDir: r.path("workspace/" + r.profile.RepositoryName),
@@ -272,6 +276,9 @@ func (r *runState) prepare(ctx context.Context) error {
 		prepare := goddd.PrepareBackend
 		if r.profile.Verifier == translation.VerifierVersion {
 			prepare = translation.PrepareBackend
+		}
+		if r.profile.Verifier == workouts.VerifierVersion {
+			prepare = workouts.PrepareBackend
 		}
 		r.hostBackend, err = prepare(ctx, r.path("host-materials/rpcx-"+r.profile.RepositoryName+"-modules"), r.config.Backend)
 		if err != nil {

@@ -11,7 +11,7 @@
 | M0：离线验证基础 | 可复现的 rpcx T1/T2 场景与检查 | 夹具、规范、正确及错误候选、检查报告 | 已验收 |
 | M1：单仓库 Agent 最小闭环 | 自主修改、修复、验证与提交 | 一次真实模型完成的单仓库补丁与证据 | 已验收，限受控场景 |
 | M2：证据驱动的判定 | 有边界的完整性分析、语义检查、审核依据 | 增强的门禁、审核材料、L1 正反例与评测证据 | 已验收，限冻结场景及声明配置；真实 T3 自动成功未验收 |
-| M3：多仓库批量闭环 | 异构输入、故障隔离、有界并发、批次预算与预留 | 故障隔离且受预算约束的批量交付、已划分开发与留出样本的 L2、初步效果与成本数据 | 实现中，M3.1—M3.3 在声明范围验收；M3.4 Goddd 已接入；Translation 双配置门禁已接入，Workouts 基线通过，待其门禁及真实评测 |
+| M3：多仓库批量闭环 | 异构输入、故障隔离、有界并发、批次预算与预留 | 故障隔离且受预算约束的批量交付、已划分开发与留出样本的 L2、初步效果与成本数据 | 实现中，M3.1—M3.3 在声明范围验收；M3.4 三个开发场景门禁与确定性 Runner 已接入，待独立参考及真实评测 |
 | M4：运行可靠性与恢复 | 中断恢复、重试、资源清理、离线审计 | 可恢复、可审计的批量系统；冻结的正式评测协议 | 待设计 |
 | M5：独立评测与整体验收 | 按冻结协议完成一轮正式评测 | 可复核的效果、成本、失败分布与局限报告 | 待设计 |
 
@@ -104,7 +104,7 @@ M2.3 的[选型实验](experiments/2026-10-18-m2-analysis-study-01.md)已通过 
 
 当前支持两个已认证的 demo-orders 场景及 Goddd、Translation 半真实开发切片，尚未完成 M3.4 多样本开发评测。真实 Token 上界核实、付费 batch CLI 与独立留出保管仍待完成；L2 来源及划分必须先于迁移调试。[完整设计](worklog/2026-10-19-m3-batch-runtime.md)保留任务、隔离、预算与数据取舍，不因调度机制通过就宣布 M3 整体完成。
 
-[M3.4 样本选择](worklog/2026-10-19-m3-4-sample-selection.md)已完成：固定 Goddd 货运路线、go-clean-template 翻译、Wild Workouts 取消训练三个开发来源，记录版本、原测试、裁剪边界与接入条件。[Goddd 离线基线与共用 L2 SDK](worklog/2026-10-19-goddd-baseline.md)已在可信本地及断网 Docker 下复验，保留 15 个原业务测试，合计 37 项测试及子测试通过、输入不变；[新规范、宿主 Profile 与迁移门禁](worklog/2026-10-19-goddd-evidence-gate.md)已接入，完成手写候选校准与确定性 Runner 交付；这些不是实际模型效果数据。[Translation 双配置基线](worklog/2026-10-19-translation-baseline.md)也已在可信本地和禁网 Docker 复验，原测试、生成 mock、两个实际 RPC 实现与 tracing 保留；[双配置迁移 Profile、门禁与 Runner](worklog/2026-10-19-translation-evidence-gate.md)已接入。[Workouts 多模块基线](worklog/2026-10-19-workouts-baseline.md)已通过本地及禁网 Docker 复验，保留原回调/条件副作用及原测试，迁移门禁待接入；构建标签挑战明确标为植入。留出保留一个名额，按用户确认标为待独立准备，不计入已准备样本数。下一步设计并接入 Workouts 迁移规范、Profile 与门禁；独立参考与真实付费批次按原条件推进。
+[M3.4 样本选择](worklog/2026-10-19-m3-4-sample-selection.md)已完成：固定 Goddd 货运路线、go-clean-template 翻译、Wild Workouts 取消训练三个开发来源，记录版本、原测试、裁剪边界与接入条件。[Goddd 离线基线与共用 L2 SDK](worklog/2026-10-19-goddd-baseline.md)已在可信本地及断网 Docker 下复验，保留 15 个原业务测试，合计 37 项测试及子测试通过、输入不变；[新规范、宿主 Profile 与迁移门禁](worklog/2026-10-19-goddd-evidence-gate.md)已接入，完成手写候选校准与确定性 Runner 交付；这些不是实际模型效果数据。[Translation 双配置基线](worklog/2026-10-19-translation-baseline.md)也已在可信本地和禁网 Docker 复验，原测试、生成 mock、两个实际 RPC 实现与 tracing 保留；[双配置迁移 Profile、门禁与 Runner](worklog/2026-10-19-translation-evidence-gate.md)已接入。[Workouts 多模块基线](worklog/2026-10-19-workouts-baseline.md)已通过本地及禁网 Docker 复验，保留原回调/条件副作用及原测试，迁移门禁与本地、Docker 确定性 Runner 交付通过；构建标签挑战明确标为植入。留出保留一个名额，按用户确认标为待独立准备，不计入已准备样本数。下一步推进独立参考与异构开发批次；真实付费批次按原条件推进。
 
 **目标与范围：**把单仓库执行组织为 Campaign → Target → Run，提供隔离输入与产物、有界并发、单次及批次预算、持久化记录和结果汇总。准备 3—5 个有明确差异的仓库作为 L2 起点，覆盖封装方式、调用链、构建配置或生成代码差异；单独标识基线已红等故障样例。复制同一仓库多份只能检验调度，不能证明异构适用性。
 

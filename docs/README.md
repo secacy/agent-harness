@@ -19,7 +19,7 @@
 
 整体开发路线、阶段交付与验收边界以[里程碑](MILESTONES.md)为准；本轮阶段顺序及预算、判定、评测边界的取舍见[路线规划记录](worklog/2026-10-18-milestone-roadmap.md)。当前推进 [M3 具体设计](worklog/2026-10-19-m3-batch-runtime.md)，预算的长期约束见 [ADR-006](adr/006-campaign-budget-reservations.md)。任务输入与宿主验证配置的边界见 [ADR-007](adr/007-host-owned-task-profiles.md)。
 
-M3.4 已完成[样本设计与选择](worklog/2026-10-19-m3-4-sample-selection.md)及 [Goddd 离线基线与共用 L2 SDK](worklog/2026-10-19-goddd-baseline.md)。三个开发来源、当前准备状态与待独立准备的留出名额见 [L2 说明](../scenarios/rpcx/l2/README.md)；[Goddd 新规范、Profile、三类判定和 Runner 接入](worklog/2026-10-19-goddd-evidence-gate.md)已完成开发校准；[Translation 双配置离线基线](worklog/2026-10-19-translation-baseline.md)及[双配置迁移门禁/Runner](worklog/2026-10-19-translation-evidence-gate.md)已接入，[Workouts 多模块离线基线](worklog/2026-10-19-workouts-baseline.md)也已准备，待其迁移门禁；独立参考评测及真实模型批次仍待完成。
+M3.4 已完成[样本设计与选择](worklog/2026-10-19-m3-4-sample-selection.md)及 [Goddd 离线基线与共用 L2 SDK](worklog/2026-10-19-goddd-baseline.md)。三个开发来源、当前准备状态与待独立准备的留出名额见 [L2 说明](../scenarios/rpcx/l2/README.md)；[Goddd 新规范、Profile、三类判定和 Runner 接入](worklog/2026-10-19-goddd-evidence-gate.md)已完成开发校准；[Translation 双配置离线基线](worklog/2026-10-19-translation-baseline.md)及[双配置迁移门禁/Runner](worklog/2026-10-19-translation-evidence-gate.md)已接入，[Workouts 多模块离线基线](worklog/2026-10-19-workouts-baseline.md)也已准备，[Workouts 迁移规范、门禁和确定性 Docker Runner](worklog/2026-10-19-workouts-evidence-gate.md)已接入，独立参考评测及真实模型批次仍待完成。
 
 ## 记录原则
 

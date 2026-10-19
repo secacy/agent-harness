@@ -1,0 +1,169 @@
+{
+  "schema_version": 1,
+  "spec_version": "v0.5.0",
+  "baseline_data_version": "rpcx-l2-workouts-v1",
+  "cases": [
+    {
+      "id": "correct",
+      "patch": "patches/correct.patch",
+      "patch_sha256": "621e7e185f724293789595cb654b62e49840a7bb2b16e90b01d40269d31d12cd",
+      "verdict": "ReadyForReview",
+      "rule": "TIME-001",
+      "checks": {
+        "dependencies": "pass",
+        "local_modules": "pass",
+        "protected_paths": "pass",
+        "build": "pass",
+        "test_preservation": "pass",
+        "request_scope": "pass",
+        "baseline_tests": "pass",
+        "semantic_behavior": "pass",
+        "migration_completeness": "pass"
+      }
+    },
+    {
+      "id": "trainer-missing-timeout",
+      "patch": "patches/trainer-missing-timeout.patch",
+      "patch_sha256": "6841372f53373b5af6f8bc1aa33d1b7d8896310c594c8ff0bb6c7aa5588b1210",
+      "verdict": "Rejected",
+      "rule": "TIME-001",
+      "checks": {
+        "dependencies": "pass",
+        "local_modules": "pass",
+        "protected_paths": "pass",
+        "build": "pass",
+        "test_preservation": "pass",
+        "request_scope": "pass",
+        "baseline_tests": "fail",
+        "semantic_behavior": "fail",
+        "migration_completeness": "unknown"
+      }
+    },
+    {
+      "id": "background-fallback",
+      "patch": "patches/background-fallback.patch",
+      "patch_sha256": "ac8c0567f28a858c03c80e0da0b0749a51e86f3d90597646c2810f642d2f6e35",
+      "verdict": "Rejected",
+      "rule": "CTX-001",
+      "checks": {
+        "dependencies": "pass",
+        "local_modules": "pass",
+        "protected_paths": "pass",
+        "build": "pass",
+        "test_preservation": "pass",
+        "request_scope": "pass",
+        "baseline_tests": "pass",
+        "semantic_behavior": "fail",
+        "migration_completeness": "unknown"
+      }
+    },
+    {
+      "id": "outer-context",
+      "patch": "patches/outer-context.patch",
+      "patch_sha256": "5ad046dda16296dc7e0203cbd0ecac367b0770ff4215414e18168ff222097379",
+      "verdict": "Rejected",
+      "rule": "CTX-001",
+      "checks": {
+        "dependencies": "pass",
+        "local_modules": "pass",
+        "protected_paths": "pass",
+        "build": "pass",
+        "test_preservation": "pass",
+        "request_scope": "unknown",
+        "baseline_tests": "pass",
+        "semantic_behavior": "fail",
+        "migration_completeness": "pass"
+      }
+    },
+    {
+      "id": "zero-balance-call",
+      "patch": "patches/zero-balance-call.patch",
+      "patch_sha256": "7df4e96f370a8a7d6d05b739c764e25ea760f9a668f4680ff5d9261b168c3277",
+      "verdict": "Rejected",
+      "rule": "BEHAVIOR-001",
+      "checks": {
+        "dependencies": "pass",
+        "local_modules": "pass",
+        "protected_paths": "pass",
+        "build": "pass",
+        "test_preservation": "pass",
+        "request_scope": "unknown",
+        "baseline_tests": "fail",
+        "semantic_behavior": "fail",
+        "migration_completeness": "pass"
+      }
+    },
+    {
+      "id": "swallowed-error",
+      "patch": "patches/swallowed-error.patch",
+      "patch_sha256": "433cc45f2c1c420fd703911538b3e73ca9274b242fc1be39c793397d59b71638",
+      "verdict": "Rejected",
+      "rule": "BEHAVIOR-001",
+      "checks": {
+        "dependencies": "pass",
+        "local_modules": "pass",
+        "protected_paths": "pass",
+        "build": "pass",
+        "test_preservation": "pass",
+        "request_scope": "unknown",
+        "baseline_tests": "fail",
+        "semantic_behavior": "fail",
+        "migration_completeness": "pass"
+      }
+    },
+    {
+      "id": "mapping-helper",
+      "patch": "patches/mapping-helper.patch",
+      "patch_sha256": "22319e7760a0616715495f2fdc2cbeaa98290cd1f41bb1bd2511f9ff981e7c5e",
+      "verdict": "NeedsAttention",
+      "rule": "SCOPE-001",
+      "checks": {
+        "dependencies": "pass",
+        "local_modules": "pass",
+        "protected_paths": "pass",
+        "build": "pass",
+        "test_preservation": "pass",
+        "request_scope": "unknown",
+        "baseline_tests": "pass",
+        "semantic_behavior": "pass",
+        "migration_completeness": "unknown"
+      }
+    },
+    {
+      "id": "deleted-assertion",
+      "patch": "patches/deleted-assertion.patch",
+      "patch_sha256": "c1441f32328bb379eedbf75568da57a14fb0a3e777fb1b8f897e8760cc18b3e4",
+      "verdict": "Rejected",
+      "rule": "TEST-001",
+      "checks": {
+        "dependencies": "pass",
+        "local_modules": "pass",
+        "protected_paths": "pass",
+        "build": "pass",
+        "test_preservation": "fail",
+        "request_scope": "pass",
+        "baseline_tests": "pass",
+        "semantic_behavior": "pass",
+        "migration_completeness": "pass"
+      }
+    },
+    {
+      "id": "protected-license",
+      "patch": "patches/protected-license.patch",
+      "patch_sha256": "cd7f24bd86936035acfdbea03821a2f3cd5dd3d8faef5239732061d10d7e4ad9",
+      "verdict": "Rejected",
+      "rule": "PATH-001",
+      "checks": {
+        "dependencies": "pass",
+        "local_modules": "pass",
+        "protected_paths": "fail",
+        "build": "pass",
+        "test_preservation": "pass",
+        "request_scope": "unknown",
+        "baseline_tests": "pass",
+        "semantic_behavior": "pass",
+        "migration_completeness": "pass"
+      }
+    }
+  ]
+}

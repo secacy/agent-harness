@@ -1,0 +1,275 @@
+package adapters_test
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
+	"reflect"
+	"strings"
+	"testing"
+	"time"
+
+	"example.com/rpcx/v2"
+	"github.com/ThreeDotsLabs/wild-workouts-go-ddd-example/internal/common/metrics"
+	"github.com/ThreeDotsLabs/wild-workouts-go-ddd-example/internal/trainings/adapters"
+	"github.com/ThreeDotsLabs/wild-workouts-go-ddd-example/internal/trainings/app/command"
+	"github.com/ThreeDotsLabs/wild-workouts-go-ddd-example/internal/trainings/domain/training"
+	"github.com/sirupsen/logrus"
+)
+
+func workoutsFailure(t *testing.T, rule, detail string) {
+	t.Helper()
+	data, _ := json.Marshal(map[string]string{"rule": rule, "detail": detail})
+	t.Errorf("WORKOUTS_FINDING %s", data)
+}
+
+type probeKey struct{}
+
+// probeRepository 故意提供不同的回调 ctx；只模拟发布的成功提交契约。
+type probeRepository struct {
+	t        *testing.T
+	value    training.Training
+	callback context.Context
+	outer    context.Context
+	events   *[]string
+}
+
+func (*probeRepository) AddTraining(context.Context, *training.Training) error {
+	panic("unexpected AddTraining")
+}
+func (*probeRepository) GetTraining(context.Context, string, training.User) (*training.Training, error) {
+	panic("unexpected GetTraining")
+}
+func (r *probeRepository) UpdateTraining(ctx context.Context, id string, user training.User, update func(context.Context, *training.Training) (*training.Training, error)) error {
+	*r.events = append(*r.events, "load")
+	if ctx != r.outer || id != r.value.UUID() || user.UUID() != "requester" {
+		workoutsFailure(r.t, "CTX-001", "outer request/repository arguments changed")
+	}
+	copy := r.value
+	result, err := update(r.callback, &copy)
+	if err != nil {
+		return err
+	}
+	if result == nil {
+		workoutsFailure(r.t, "BEHAVIOR-001", "successful callback returned nil")
+		return errors.New("nil training")
+	}
+	r.value = *result
+	*r.events = append(*r.events, "commit")
+	return nil
+}
+
+func TestHarnessWorkoutsBoundary(t *testing.T) {
+	for _, mode := range []string{"default", "short-parent", "long-parent", "cancelled", "expired", "cancel-users", "cancel-trainer", "balance-error", "trainer-error", "zero-balance", "repeat"} {
+		t.Run(mode, func(t *testing.T) {
+			outer := context.WithValue(context.Background(), probeKey{}, "outer")
+			parent, cancel := context.WithCancel(context.WithValue(outer, probeKey{}, "callback"))
+			defer cancel()
+			var callback context.Context = parent
+			if mode == "short-parent" || mode == "long-parent" || mode == "expired" {
+				duration := 5 * time.Second
+				if mode == "long-parent" {
+					duration = time.Hour
+				}
+				if mode == "expired" {
+					duration = -time.Second
+				}
+				var release context.CancelFunc
+				callback, release = context.WithTimeout(parent, duration)
+				defer release()
+			}
+			if mode == "cancelled" {
+				cancel()
+			}
+			remote := errors.New("remote marker")
+			trainingTime := time.Now().Add(48 * time.Hour)
+			if mode == "zero-balance" {
+				trainingTime = time.Now().Add(12 * time.Hour)
+			}
+			events := []string{}
+			observed := []context.Context{}
+			balances := 0
+			var started time.Time
+			for _, endpoint := range []string{"users", "trainer"} {
+				t.Cleanup(rpcx.Register(t.Name()+"/"+endpoint, func(ctx context.Context, method string, request, response any) error {
+					event := "trainer"
+					if endpoint == "users" {
+						event = "balance"
+					}
+					events = append(events, event)
+					observed = append(observed, ctx)
+					if ctx.Value(probeKey{}) != "callback" {
+						workoutsFailure(t, "CTX-001", "RPC did not receive callback context value")
+					}
+					deadline, ok := ctx.Deadline()
+					if !ok {
+						workoutsFailure(t, "TIME-001", "RPC has no deadline")
+					} else if mode == "short-parent" {
+						want, _ := callback.Deadline()
+						if !deadline.Equal(want) {
+							workoutsFailure(t, "CTX-001", "short callback deadline was replaced")
+						}
+					} else if deadline.Before(started.Add(30*time.Second)) || deadline.After(time.Now().Add(30*time.Second)) {
+						workoutsFailure(t, "TIME-001", "RPC did not receive a fresh per-call 30 second deadline")
+					}
+					if mode == "cancelled" || mode == "expired" {
+						workoutsFailure(t, "CTX-001", "cancelled callback reached backend")
+					}
+					if endpoint == "users" {
+						if method != "update_training_balance" || request != (adapters.UpdateTrainingBalanceRequest{UserID: "owner", AmountChange: 1}) {
+							workoutsFailure(t, "BEHAVIOR-001", "balance mapping changed")
+						}
+					} else {
+						req, ok := request.(adapters.CancelTrainingRequest)
+						if !ok || method != "cancel_training" || !req.Time.Equal(trainingTime) {
+							workoutsFailure(t, "BEHAVIOR-001", "trainer mapping changed")
+						}
+						if len(observed) > 1 && observed[len(observed)-2].Err() == nil {
+							workoutsFailure(t, "TIME-002", "balance context not released before trainer call")
+						}
+					}
+					if _, ok := response.(*struct{}); !ok {
+						workoutsFailure(t, "BEHAVIOR-001", "confirmation mapping changed")
+					}
+					if mode == "cancel-"+endpoint {
+						cancel()
+						select {
+						case <-ctx.Done():
+						case <-time.After(time.Second):
+							workoutsFailure(t, "CTX-001", "callback cancellation did not reach backend")
+						}
+						return context.Canceled
+					}
+					if mode == "balance-error" && endpoint == "users" || mode == "trainer-error" && endpoint == "trainer" {
+						return remote
+					}
+					if endpoint == "users" {
+						balances++
+						time.Sleep(5 * time.Millisecond)
+						started = time.Now()
+					}
+					return nil
+				}))
+			}
+			users, err := adapters.NewUsersGrpc(t.Name() + "/users")
+			if err != nil {
+				t.Fatal(err)
+			}
+			trainer, err := adapters.NewTrainerGrpc(t.Name() + "/trainer")
+			if err != nil {
+				t.Fatal(err)
+			}
+			attempts := 1
+			if mode == "repeat" {
+				attempts = 2
+			}
+			for range attempts {
+				events = nil
+				observed = nil
+				balances = 0
+				tr, err := training.NewTraining("training-1", "owner", "Owner", trainingTime)
+				if err != nil {
+					t.Fatal(err)
+				}
+				repo := &probeRepository{t: t, value: *tr, outer: outer, callback: callback, events: &events}
+				logger := logrus.New()
+				logger.SetOutput(io.Discard)
+				handler := command.NewCancelTrainingHandler(repo, users, trainer, logrus.NewEntry(logger), metrics.NoOp{})
+				started = time.Now()
+				err = handler.Handle(outer, command.CancelTraining{TrainingUUID: "training-1", User: training.MustNewUser("requester", training.Attendee)})
+				expected := []string{"load", "balance", "trainer", "commit"}
+				var wanted error
+				prefix := ""
+				switch mode {
+				case "zero-balance":
+					expected = []string{"load", "trainer", "commit"}
+				case "cancelled":
+					expected = []string{"load"}
+					wanted = context.Canceled
+					prefix = "unable to change trainings balance"
+				case "expired":
+					expected = []string{"load"}
+					wanted = context.DeadlineExceeded
+					prefix = "unable to change trainings balance"
+				case "cancel-users":
+					expected = []string{"load", "balance"}
+					wanted = context.Canceled
+					prefix = "unable to change trainings balance"
+				case "cancel-trainer":
+					expected = []string{"load", "balance", "trainer"}
+					wanted = context.Canceled
+					prefix = "unable to cancel training"
+				case "balance-error":
+					expected = []string{"load", "balance"}
+					wanted = remote
+					prefix = "unable to change trainings balance"
+				case "trainer-error":
+					expected = []string{"load", "balance", "trainer"}
+					wanted = remote
+					prefix = "unable to cancel training"
+				}
+				if !reflect.DeepEqual(events, expected) {
+					workoutsFailure(t, "BEHAVIOR-001", fmt.Sprintf("events=%v want=%v", events, expected))
+				}
+				if wanted == nil {
+					if err != nil || !repo.value.IsCanceled() {
+						workoutsFailure(t, "BEHAVIOR-001", "success did not commit cancellation")
+					}
+				} else if !errors.Is(err, wanted) || !strings.Contains(fmt.Sprint(err), prefix) || repo.value.IsCanceled() {
+					workoutsFailure(t, "BEHAVIOR-001", "failure committed or lost wrapped error")
+				}
+				if mode == "trainer-error" && balances != 1 {
+					workoutsFailure(t, "BEHAVIOR-001", "prior successful remote effect was hidden")
+				}
+				for _, ctx := range observed {
+					if ctx.Err() == nil {
+						workoutsFailure(t, "TIME-002", "derived context not released on return")
+					}
+				}
+				if wanted == nil && callback.Err() != nil {
+					workoutsFailure(t, "TIME-002", "caller context was cancelled")
+				}
+			}
+		})
+	}
+}
+
+// 两个独立客户端并行观测真实到期；每个仍完整等待自己的 30 秒。
+func TestHarnessWorkoutsExpiry(t *testing.T) {
+	for _, endpoint := range []string{"users", "trainer"} {
+		t.Run(endpoint, func(t *testing.T) {
+			t.Parallel()
+			calls := 0
+			t.Cleanup(rpcx.Register(t.Name(), func(ctx context.Context, _ string, _, _ any) error {
+				calls++
+				select {
+				case <-ctx.Done():
+					return ctx.Err()
+				case <-time.After(35 * time.Second):
+					workoutsFailure(t, "TIME-001", "RPC failed to expire")
+					return errors.New("expiry failed")
+				}
+			}))
+			users, err := adapters.NewUsersGrpc(t.Name())
+			if err != nil {
+				t.Fatal(err)
+			}
+			trainer, err := adapters.NewTrainerGrpc(t.Name())
+			if err != nil {
+				t.Fatal(err)
+			}
+			started := time.Now()
+			if endpoint == "users" {
+				err = users.UpdateTrainingBalance(context.Background(), "owner", 1)
+			} else {
+				err = trainer.CancelTraining(context.Background(), time.Now())
+			}
+			elapsed := time.Since(started)
+			if !errors.Is(err, context.DeadlineExceeded) || calls != 1 || elapsed < 29*time.Second || elapsed > 36*time.Second {
+				workoutsFailure(t, "TIME-001", fmt.Sprintf("unexpected expiry: %v %v calls=%d", err, elapsed, calls))
+			}
+		})
+	}
+}
