@@ -6,7 +6,7 @@
 
 [T3 默认超时场景](scenarios/rpcx/t3/README.md)已完成冻结验收，证明候选可以通过原有测试却违反超时契约。运行时[组合质量门禁](scenarios/rpcx/checks/README.md)结合测试结构、有限类型分析与 40 项可信行为检查；[冻结 L1 独立交叉验收](scenarios/rpcx/l1/README.md)的 19 例均符合预期，保留参考检查发现的覆盖差异，M2.3 已在声明范围内验收。
 
-[单仓库 Runner](scenarios/rpcx/runner/README.md)现在可以显式选择 T3 规范，并从实际结构化结果生成 `artifacts/review.md`，将条款、修改、证据和缺口关联，单列 Agent 自述。M2.4 的离线与 Docker 联调结果见[工作记录](docs/worklog/2026-10-18-m2-evidence-gate.md#21-m24新规范-runner-与确定性审核交付)。[T3 真实实验 04](docs/experiments/2026-10-19-rpcx-real-model-04.md)以 28 次模型、55 次工具正常提交，原判定 NeedsAttention；独立参考通过，不计自动成功。后续已有限支持新增测试导入，公共 helper 仍保留未知，原实验结果不变。[M2 收尾评审](docs/worklog/2026-10-18-m2-evidence-gate.md#25-m2-收尾有限范围验收与-m3-移交)确认判定与审核交付在声明范围内验收；真实自动迁移效果与人工审核成本仍待后续验证。下一步设计 M3 的多仓库任务、预算预留及 L2 数据划分，整体进度见[里程碑](docs/MILESTONES.md)。
+[单仓库 Runner](scenarios/rpcx/runner/README.md)现在可以显式选择 T3 规范，并从实际结构化结果生成 `artifacts/review.md`，将条款、修改、证据和缺口关联，单列 Agent 自述。M2.4 的离线与 Docker 联调结果见[工作记录](docs/worklog/2026-10-18-m2-evidence-gate.md#21-m24新规范-runner-与确定性审核交付)。[T3 真实实验 04](docs/experiments/2026-10-19-rpcx-real-model-04.md)以 28 次模型、55 次工具正常提交，原判定 NeedsAttention；独立参考通过，不计自动成功。后续已有限支持新增测试导入，公共 helper 仍保留未知，原实验结果不变。[M2 收尾评审](docs/worklog/2026-10-18-m2-evidence-gate.md#25-m2-收尾有限范围验收与-m3-移交)确认判定与审核交付在声明范围内验收；真实自动迁移效果与人工审核成本仍待后续验证。[M3 具体设计](docs/worklog/2026-10-19-m3-batch-runtime.md)已记录多仓库任务、预算预留及 L2 数据划分方案，下一步先实现预算核心与单 Run 接入，整体进度见[里程碑](docs/MILESTONES.md)。
 
 需要本地 Go 1.23 或更新版本、Git 和 POSIX shell；已在 Go 1.26.5 / macOS arm64 验证。
 
