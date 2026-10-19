@@ -94,6 +94,15 @@ go run ./cmd/harness batch --config examples/rpcx-l2-batch.json --check
 
 `--check` 不读密钥、不访问网络、不创建运行目录。它检查 JSON 字段、Target 固定摘要与宿主 Profile 的匹配、路径边界和参数；不认证磁盘输入内容、模型是否可用、Token 上界或 Docker 环境。输入内容和实际基线在 Run 中检查。
 
+准备真实实验时，可先用已填写模型名、指定新输出目录的配置查询能力：
+
+```sh
+go build -o runs/harness ./cmd/harness
+runs/harness batch --config runs/l2-capability.json --probe-model
+```
+
+`--probe-model` 读取终端的 `DEEPSEEK_API_KEY`，只查询同源 Models API 并保存 `config.json/models.json/capabilities.json`；不执行仓库命令，不初始化 Docker，不创建 Campaign、Run 或预算账本，不调用生成接口。它允许正数但尚不足以预留 Q 的 Token 配置，以便先查容量再审查预算；实际生成仍要求两级额度足够。与 `--check` 互斥，旧输出目录仍拒绝复用。程序不自动加载 `.env`，探测材料不能替代正式实验协议；准备工作见[实验准备记录](worklog/2026-10-20-l2-experiment-preparation.md)。
+
 模板不是已冻结的实验协议。使用前将 `model.name` 的 `REPLACE_WITH_MODEL_ID` 替换为实际模型标识，审查预算、时间限制、并发及新输出目录；可复制到同样位于项目根下一层的 `runs/` 再修改。相对路径一律基于配置文件所在目录。字段含义：
 
 | 字段 | 含义 |

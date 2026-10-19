@@ -24,14 +24,15 @@ func runBatch(ctx context.Context, args []string, stdout, stderr io.Writer) int 
 	flags.SetOutput(stderr)
 	path := flags.String("config", "", "batch JSON configuration file")
 	check := flags.Bool("check", false, "check local configuration without credentials, network or execution")
+	probe := flags.Bool("probe-model", false, "query and save model capabilities without generation or repository execution")
 	if err := flags.Parse(args); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
 			return 0
 		}
 		return 2
 	}
-	if *path == "" || flags.NArg() != 0 {
-		fmt.Fprintln(stderr, "a config file and no positional arguments are required")
+	if *path == "" || flags.NArg() != 0 || (*check && *probe) {
+		fmt.Fprintln(stderr, "a config file, no positional arguments and mutually exclusive check/probe modes are required")
 		return 2
 	}
 	config, plan, err := loadBatchConfig(*path)
@@ -56,6 +57,15 @@ func runBatch(ctx context.Context, args []string, stdout, stderr io.Writer) int 
 		return batchError(err, stderr)
 	}
 	plan.Profile = capabilities.Profile
+	if *probe {
+		if err := saveBatchMaterials(config, capabilities, nil); err != nil {
+			return batchError(err, stderr)
+		}
+		fmt.Fprintln(stdout, "Capabilities:", config.Directory)
+		fmt.Fprintf(stdout, "Model: %s; context=%d; output=%d; reservation=%d tokens per request\n",
+			plan.Profile.Model, plan.Profile.ContextTokens, plan.Profile.MaxOutputTokens, plan.Profile.ContextTokens+plan.Profile.MaxOutputTokens)
+		return 0
+	}
 	q := plan.Profile.ContextTokens + plan.Profile.MaxOutputTokens
 	if plan.Budget.MaxTokens < q {
 		fmt.Fprintf(stderr, "campaign token budget %d cannot reserve one model request (%d tokens required)\n", plan.Budget.MaxTokens, q)
@@ -75,30 +85,10 @@ func runBatch(ctx context.Context, args []string, stdout, stderr io.Writer) int 
 			return batchError(err, stderr)
 		}
 	}
-	// 材料完整保存后才允许 Campaign 启动；失败目录保留，不复用或覆盖。
-	if err := os.Mkdir(config.Directory, 0700); err != nil {
+	if err := saveBatchMaterials(config, capabilities, backend); err != nil {
 		return batchError(err, stderr)
 	}
 	fmt.Fprintln(stdout, "Batch:", config.Directory)
-	if err := syncBatchDirectory(filepath.Dir(config.Directory)); err != nil {
-		return batchError(err, stderr)
-	}
-	materials := []struct {
-		name  string
-		value any
-	}{{"config.json", config}, {"capabilities.json", capabilities}, {"execution.json", backend.Info()}}
-	if err := writeBatchFile(filepath.Join(config.Directory, "models.json"), capabilities.Response); err != nil {
-		return batchError(err, stderr)
-	}
-	for _, material := range materials {
-		data, err := json.MarshalIndent(material.value, "", "  ")
-		if err != nil {
-			return batchError(err, stderr)
-		}
-		if err := writeBatchFile(filepath.Join(config.Directory, material.name), append(data, '\n')); err != nil {
-			return batchError(err, stderr)
-		}
-	}
 	clientConfig.BudgetProfile = &plan.Profile
 	record, summary, err := campaign.Run(ctx, campaign.Config{
 		Directory: filepath.Join(config.Directory, "campaign"), Plan: plan, Backend: backend,
@@ -121,6 +111,37 @@ func runBatch(ctx context.Context, args []string, stdout, stderr io.Writer) int 
 		return 1
 	}
 	return 0
+}
+
+// saveBatchMaterials 在任何生成调用前保存材料；探测不初始化执行后端。
+func saveBatchMaterials(config batchConfig, capabilities deepseek.Capabilities, backend execution.Executor) error {
+	if err := os.Mkdir(config.Directory, 0700); err != nil {
+		return err
+	}
+	if err := syncBatchDirectory(filepath.Dir(config.Directory)); err != nil {
+		return err
+	}
+	if err := writeBatchFile(filepath.Join(config.Directory, "models.json"), capabilities.Response); err != nil {
+		return err
+	}
+	type material struct {
+		name  string
+		value any
+	}
+	materials := []material{{"config.json", config}, {"capabilities.json", capabilities}}
+	if backend != nil {
+		materials = append(materials, material{"execution.json", backend.Info()})
+	}
+	for _, material := range materials {
+		data, err := json.MarshalIndent(material.value, "", "  ")
+		if err != nil {
+			return err
+		}
+		if err := writeBatchFile(filepath.Join(config.Directory, material.name), append(data, '\n')); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func batchError(err error, stderr io.Writer) int {

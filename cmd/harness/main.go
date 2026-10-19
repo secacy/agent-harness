@@ -32,7 +32,7 @@ func run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 	flags := flag.NewFlagSet("harness", flag.ContinueOnError)
 	flags.SetOutput(stderr)
 	flags.Usage = func() {
-		fmt.Fprintln(stderr, "Usage: harness [single-run flags]\n       harness batch --config <file.json> [--check]")
+		fmt.Fprintln(stderr, "Usage: harness [single-run flags]\n       harness batch --config <file.json> [--check | --probe-model]")
 		flags.PrintDefaults()
 	}
 	scenario := flags.String("scenario", "scenarios/rpcx", "scenario resource directory")
