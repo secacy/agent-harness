@@ -26,8 +26,15 @@ func main() {
 
 // run 将参数、密钥和具体模型的组装留在入口，Runner 只接收统一接口。
 func run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
+	if len(args) > 0 && args[0] == "batch" {
+		return runBatch(ctx, args[1:], stdout, stderr)
+	}
 	flags := flag.NewFlagSet("harness", flag.ContinueOnError)
 	flags.SetOutput(stderr)
+	flags.Usage = func() {
+		fmt.Fprintln(stderr, "Usage: harness [single-run flags]\n       harness batch --config <file.json> [--check]")
+		flags.PrintDefaults()
+	}
 	scenario := flags.String("scenario", "scenarios/rpcx", "scenario resource directory")
 	specVersion := flags.String("spec-version", "v0.1.0", "frozen specification version: v0.1.0 or v0.2.0 (T3)")
 	runs := flags.String("runs", "runs", "output parent directory")

@@ -98,13 +98,13 @@ M2.3 的[选型实验](experiments/2026-10-18-m2-analysis-study-01.md)已通过 
 
 ## M3：多仓库批量闭环
 
-状态：实现中（2026-10-19）。[M3.1 预算核心与单 Run 接入](worklog/2026-10-19-m3-batch-runtime.md#10-m31预算核心与已有单-run-接入)已在受控模型范围验收两级额度、持久化前置预留、保守结算与模型配置绑定；[M3.2](worklog/2026-10-19-m3-batch-runtime.md#11-m32显式-target宿主场景配置与生成前基线检查)已验收通用 Target、两个宿主 Profile、生成前实际构建/十个基线测试及失败诊断。
+状态：实现中（2026-10-20）。[M3.1 预算核心与单 Run 接入](worklog/2026-10-19-m3-batch-runtime.md#10-m31预算核心与已有单-run-接入)已在受控模型范围验收两级额度、持久化前置预留、保守结算与模型配置绑定；[M3.2](worklog/2026-10-19-m3-batch-runtime.md#11-m32显式-target宿主场景配置与生成前基线检查)已验收通用 Target、两个宿主 Profile、生成前实际构建/十个基线测试及失败诊断。
 
 [M3.3](worklog/2026-10-19-m3-batch-runtime.md#12-m33调度与汇总的实施选择)已实现 [Campaign Go API](../internal/campaign/README.md)：有界 Target 调度、共享命令槽位、两级预算接入、独立目录和混合结果汇总。受控模型的核心竞态、串并行真实 Runner 对照及自有 Docker 执行容器强杀/回收对照通过；不把构造任务的结果计为模型效果。批次 Completed 表示汇总交付完成，允许其中有执行失败或质量拒绝，须分别读取计数。
 
-当前支持两个已认证的 demo-orders 场景及 Goddd、Translation、Workouts 三个半真实开发切片；[确定性异构批次](worklog/2026-10-19-m3-4-heterogeneous-campaign.md)已通过，但尚未完成 M3.4 的真实生成效果评测。真实 Token 上界核实、付费 batch CLI 与独立留出保管仍待完成；L2 来源及划分必须先于迁移调试。[完整设计](worklog/2026-10-19-m3-batch-runtime.md)保留任务、隔离、预算与数据取舍，不因调度机制通过就宣布 M3 整体完成。
+当前支持两个已认证的 demo-orders 场景及 Goddd、Translation、Workouts 三个半真实开发切片；[确定性异构批次](worklog/2026-10-19-m3-4-heterogeneous-campaign.md)已通过，但尚未完成 M3.4 的真实生成效果评测。[预算批次 CLI](worklog/2026-10-20-budgeted-batch-cli.md)及生成前能力材料获取已在本机模拟服务验收；真实服务上界核实与付费批次、独立留出保管仍待完成；L2 来源及划分必须先于迁移调试。[完整设计](worklog/2026-10-19-m3-batch-runtime.md)保留任务、隔离、预算与数据取舍，不因调度机制通过就宣布 M3 整体完成。
 
-[首轮开发评测设计](worklog/2026-10-19-l2-development-evaluation.md)已明确三个 Target 各一次尝试、独立行为参考配合源码/交付复核、未知处理及指标分母。[Goddd、Translation 双配置及 Workouts 回调的自动参考与复核记录](../scenarios/rpcx/l2/evaluation/README.md)已接入；自动通过仍需实际源码与交付复核，不能算作完整参考通过。[轮次离线汇总](../scenarios/rpcx/l2/round/README.md)已完成原 Campaign/Run、参考与复核关联、未知区间及成本口径的机制和受控实测验收；不等于真实模型效果验收。接下来核实真实模型能力与预算配置、实现批次入口并发布完整实验协议，再运行真实开发批次。
+[首轮开发评测设计](worklog/2026-10-19-l2-development-evaluation.md)已明确三个 Target 各一次尝试、独立行为参考配合源码/交付复核、未知处理及指标分母。[Goddd、Translation 双配置及 Workouts 回调的自动参考与复核记录](../scenarios/rpcx/l2/evaluation/README.md)已接入；自动通过仍需实际源码与交付复核，不能算作完整参考通过。[轮次离线汇总](../scenarios/rpcx/l2/round/README.md)已完成原 Campaign/Run、参考与复核关联、未知区间及成本口径的机制和受控实测验收；不等于真实模型效果验收。[批次入口](worklog/2026-10-20-budgeted-batch-cli.md)已提供配置检查、能力查询和预算约束的组装链路；接下来实际核实供应商能力、确定真实预算并发布完整实验协议，再运行真实开发批次。
 
 [M3.4 样本选择](worklog/2026-10-19-m3-4-sample-selection.md)已完成：固定 Goddd 货运路线、go-clean-template 翻译、Wild Workouts 取消训练三个开发来源，记录版本、原测试、裁剪边界与接入条件。[Goddd 离线基线与共用 L2 SDK](worklog/2026-10-19-goddd-baseline.md)已在可信本地及断网 Docker 下复验，保留 15 个原业务测试，合计 37 项测试及子测试通过、输入不变；[新规范、宿主 Profile 与迁移门禁](worklog/2026-10-19-goddd-evidence-gate.md)已接入，完成手写候选校准与确定性 Runner 交付；这些不是实际模型效果数据。[Translation 双配置基线](worklog/2026-10-19-translation-baseline.md)也已在可信本地和禁网 Docker 复验，原测试、生成 mock、两个实际 RPC 实现与 tracing 保留；[双配置迁移 Profile、门禁与 Runner](worklog/2026-10-19-translation-evidence-gate.md)已接入。[Workouts 多模块基线](worklog/2026-10-19-workouts-baseline.md)已通过本地及禁网 Docker 复验，保留原回调/条件副作用及原测试，迁移门禁与本地、Docker 确定性 Runner 交付通过；构建标签挑战明确标为植入。[三仓确定性 Campaign](worklog/2026-10-19-m3-4-heterogeneous-campaign.md)已在本地及 Docker 通过，故障 Target 不污染其余判定。留出保留一个名额，按用户确认标为待独立准备，不计入已准备样本数。下一步推进独立参考和开发集真实生成评测；真实付费批次按预算能力及命令入口条件推进。
 

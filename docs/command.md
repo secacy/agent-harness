@@ -74,7 +74,7 @@ env GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly G
 
 检查两级调用/Token 额度、并发争抢、FIFO 等待/取消、未知/非法用量、重复结算、存储故障、HTTP 前持久化和重定向拒绝。使用进程内模型与 localhost 模拟服务，需要本机临时端口权限，不需要 API Key。
 
-Runner 接入另由 `go test ./scenarios/rpcx/runner -run '^TestRunBudgetBindingAndDenial$'` 验证完整交付与零准入拒绝；使用相同离线环境变量。当前只提供 Go API 预算接入，不提供 batch CLI 或已核实的真实付费模型 Profile。预算记录格式及宿主示例见[模块说明](../internal/budget/README.md)。
+Runner 接入另由 `go test ./scenarios/rpcx/runner -run '^TestRunBudgetBindingAndDenial$'` 验证完整交付与零准入拒绝；使用相同离线环境变量。Go API 之外现提供下文的受预算约束批次入口；没有随源码发布已经核实的真实模型上界常量。预算记录格式及宿主示例见[模块说明](../internal/budget/README.md)。
 
 ## 仓库工具测试
 
@@ -83,6 +83,48 @@ env GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly G
 ```
 
 检查文件访问边界、保护路径、替换约束、输出限制和 Go 命令生命周期。集成测试使用预设模型和真实工具，在临时 `demo-orders` 副本制造并修复编译错误，最后运行真实业务测试；不访问模型服务，不修改原始夹具。macOS/Linux 执行命令与进程组测试，其他平台仅执行文件工具测试。首次运行需编译隔离缓存中的标准库。
+
+## 受预算约束的批次入口
+
+先检查[三个 L2 开发 Target 的配置模板](../examples/rpcx-l2-batch.json)：
+
+```sh
+go run ./cmd/harness batch --config examples/rpcx-l2-batch.json --check
+```
+
+`--check` 不读密钥、不访问网络、不创建运行目录。它检查 JSON 字段、Target 固定摘要与宿主 Profile 的匹配、路径边界和参数；不认证磁盘输入内容、模型是否可用、Token 上界或 Docker 环境。输入内容和实际基线在 Run 中检查。
+
+模板不是已冻结的实验协议。使用前将 `model.name` 的 `REPLACE_WITH_MODEL_ID` 替换为实际模型标识，审查预算、时间限制、并发及新输出目录；可复制到同样位于项目根下一层的 `runs/` 再修改。相对路径一律基于配置文件所在目录。字段含义：
+
+| 字段 | 含义 |
+| --- | --- |
+| `schema_version`、`id`、`directory` | 当前格式为 1；批次身份；尚不存在的外层输出目录，父目录须已存在 |
+| `concurrency`、`execution_concurrency` | 活跃 Target 数和实际执行命令数的独立上限 |
+| `budget.max_calls/max_tokens` | 全批生成请求准入次数、累计输入输出 Token 限额；不是金额限额 |
+| `model.name/endpoint/max_tokens` | 固定模型、完整 chat URL（可省略为官方默认）和显式输出限制；不能配置 C |
+| `execution` | 默认 Docker，资源默认 2 CPU / 2048 MiB / 128 PIDs；仅可信夹具可显式设 `trusted_local: true` |
+| `targets[].input` | 既有 `task.Target`：版本、规范、依赖及仓库摘要；不包含 oracle/expected |
+| `targets[].budget` | 单 Target 生成次数与 Token 限额，同时受全批额度约束 |
+| `targets[].max_model_calls/max_tool_calls/timeout` | Agent 尝试/工具次数和整个 Run 时限（例如 `10m`） |
+
+实际运行形式如下，**会读取终端中已设置的 `DEEPSEEK_API_KEY` 并发送仓库代码与工具交互**；程序不自动加载 `.env`。先准备固定 Docker 镜像，并使用自己审核过的配置：
+
+```sh
+go build -o runs/harness ./cmd/harness
+runs/harness batch --config runs/l2-development.json
+```
+
+每批先鉴权 GET 同源 `/models`（保留 `/v1` 等部署前缀），不跟随重定向。仅接受唯一匹配且明确支持文本、具有正整数 `context_window` 和 `max_output_tokens` 的模型；缺字段不猜默认值。请求的输出上限必须在服务允许范围内。两级 Token 额度都至少能预留一次 `Q=C+O` 才继续；多个请求仍由账本原子准入，余额不足可以等待或拒绝，不保证所有 Target 能完成。元数据查询不计入生成请求预算。
+
+输出为 `directory/{config.json,models.json,capabilities.json,execution.json,campaign/}`。`models.json` 保留本次响应原始字节，能力记录及 Campaign 账本绑定其 SHA-256；能力材料完整落盘后才启动 Campaign。每个 Target 的基线、Agent、独立验证和交付仍由原 Runner 完成，审核入口为 `campaign/summary.md`。已有输出目录拒绝复用；没有自动重试或恢复。
+
+直接运行二进制时：所有 Target 完成交付返回 0（允许质量 Rejected/NeedsAttention）；局部执行失败、未启动任务或设施错误返回 1；配置非法返回 2；取消返回 130。必须同时查看执行计数与质量计数，退出 0 不代表全部迁移正确。服务遵守声明上界是预算承诺的前提；本机模拟服务验收不等于已认证真实服务或已完成 L2 效果评测。设计和实际证据见[工作记录](worklog/2026-10-20-budgeted-batch-cli.md)。
+
+机制验收（本机模拟 HTTP，需要 localhost 监听权限，不访问真实模型）：
+
+```sh
+env GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly GOCACHE="$PWD/runs/go-cache" go test -race ./internal/deepseek ./cmd/harness -run 'TestDiscover|TestModelsEndpoint|TestBatch'
+```
 
 ## DeepSeek 适配器测试
 

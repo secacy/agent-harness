@@ -55,6 +55,22 @@ func lookupProfile(id string) (profile, error) {
 	}
 	return profile{}, fmt.Errorf("unsupported rpcx profile: %s", id)
 }
+
+// ValidateTarget 校验宿主 Profile 和路径边界，不读取业务输入或执行基线。
+func ValidateTarget(t task.Target, output string) error {
+	if err := t.Validate(); err != nil {
+		return err
+	}
+	p, err := lookupProfile(t.ProfileID)
+	if err != nil {
+		return err
+	}
+	if err := p.validate(t); err != nil {
+		return err
+	}
+	_, err = normalizeTarget(t, output)
+	return err
+}
 func (p profile) hash() string {
 	data, _ := json.MarshalIndent(p, "", "  ")
 	return digest(append(data, '\n'))

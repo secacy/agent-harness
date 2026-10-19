@@ -2,7 +2,7 @@
 
 `Run(ctx, Config)` 独占创建一个新 Campaign，并为每个 Target 调用一次宿主提供的 `Execute`。包不导入 rpcx，不操作候选、不判定业务质量；rpcx 使用 [CampaignExecutor](../../scenarios/rpcx/runner/campaign.go) 连接现有 Runner。
 
-这是 Go API，目前没有 `harness batch` 命令。真实供应商的能力上界材料尚未认证，不能填入一个估计值后启用所谓严格预算。可运行的受控模型联调见 [campaign_test.go](../../scenarios/rpcx/runner/campaign_test.go)。
+这是通用 Go API；[harness batch](../../docs/command.md#受预算约束的批次入口)负责具体模型与 rpcx 宿主组装。该命令在生成前查询当前供应商模型上界、保存材料，再进入本模块；不能在配置中填入估计上界。命令机制已通过本机模拟 API 联调，真实供应商能力与付费批次尚未实测。受控模型联调另见 [campaign_test.go](../../scenarios/rpcx/runner/campaign_test.go)。
 
 ## 组装职责
 

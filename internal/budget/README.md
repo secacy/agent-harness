@@ -17,7 +17,7 @@
 
 模型必须实现 `ProfiledModel`，返回由宿主核实、与实际请求一致的 Profile。Profile 的格式检查及摘要匹配不能证明供应商声明真实；SourceSHA256 指向宿主保留的能力材料，VerifiedAt 记录核实时间。本包不自动请求供应商，不根据模型别名猜测上界，也不接受候选提供的预算依据。
 
-DeepSeek 的 `Config.BudgetProfile` 是显式宿主入口：校验 provider/endpoint/model/max_tokens 一致，固定 thinking disabled 和非流式，不自动重试，不跟随重定向；预算模式只接受标准 HTTP Transport。配置为空时不能被预算包装器接纳。当前命令行没有启用真实付费预算模式的参数，真实服务能力材料仍需后续核实；本轮验证使用进程内模型和 localhost 可控服务。
+DeepSeek 的 `Config.BudgetProfile` 是显式宿主入口：校验 provider/endpoint/model/max_tokens 一致，固定 thinking disabled 和非流式，不自动重试，不跟随重定向；预算模式只接受标准 HTTP Transport。配置为空时不能被预算包装器接纳。[harness batch](../../docs/command.md#受预算约束的批次入口)在每批生成前通过同源 Models API 获取能力材料，保存原始响应并按其摘要构造 Profile；用户配置不能覆盖上界。本机模拟服务已验证机制，真实服务能力仍待实际查询，未完成真实付费批次验收。
 
 宿主在独立输出目录中创建账本，父目录须已存在：
 
