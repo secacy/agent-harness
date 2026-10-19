@@ -1,0 +1,232 @@
+package server_test
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"net/http"
+	"net/http/httptest"
+	"reflect"
+	"testing"
+	"time"
+
+	"example.com/rpcx/v2"
+	"github.com/go-kit/kit/log"
+	"github.com/go-kit/kit/metrics/discard"
+	shipping "github.com/marcusolsson/goddd"
+	"github.com/marcusolsson/goddd/booking"
+	"github.com/marcusolsson/goddd/inmem"
+	"github.com/marcusolsson/goddd/routing"
+	"github.com/marcusolsson/goddd/server"
+)
+
+type referenceKey struct{}
+
+func referenceViolation(t *testing.T, rule, detail string) {
+	t.Helper()
+	data, _ := json.Marshal(map[string]string{"rule": rule, "detail": detail})
+	t.Log("L2_REFERENCE_FINDING " + string(data))
+	t.FailNow()
+}
+
+func referenceServer(t *testing.T, backend rpcx.Handler) (http.Handler, string) {
+	t.Helper()
+	t.Cleanup(rpcx.Register(t.Name(), backend))
+	// 构造期上下文故意与请求不同，用于发现长期保存的上下文被误用。
+	constructor, cancel := context.WithCancel(context.WithValue(context.Background(), referenceKey{}, "constructor"))
+	cancel()
+	remote := routing.NewProxyingMiddleware(constructor, t.Name())(nil)
+	svc := booking.NewService(inmem.NewCargoRepository(), inmem.NewLocationRepository(), inmem.NewHandlingEventRepository(), remote)
+	svc = booking.NewInstrumentingService(discard.NewCounter(), discard.NewHistogram(), booking.NewLoggingService(log.NewNopLogger(), svc))
+	id, err := svc.BookNewCargo(shipping.NLRTM, shipping.JNTKO, time.Date(2027, 4, 19, 0, 0, 0, 0, time.UTC))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return server.New(svc, log.NewNopLogger()), string(id)
+}
+
+func referenceRoutes(t *testing.T, h http.Handler, id string, ctx context.Context) []shipping.Itinerary {
+	t.Helper()
+	recorder := httptest.NewRecorder()
+	h.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/booking/v1/cargos/"+id+"/request_routes", nil).WithContext(ctx))
+	if recorder.Code != http.StatusOK {
+		referenceViolation(t, "BEHAVIOR-001", "route endpoint changed HTTP status")
+	}
+	var response struct {
+		Routes []shipping.Itinerary `json:"routes"`
+	}
+	if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
+		referenceViolation(t, "BEHAVIOR-001", "route endpoint did not return route JSON")
+	}
+	return response.Routes
+}
+
+func referenceContext(t *testing.T, rpc, parent context.Context, start time.Time) {
+	t.Helper()
+	if rpc.Value(referenceKey{}) != "request-ref-73" {
+		referenceViolation(t, "CTX-003", "request value did not reach RPC")
+	}
+	deadline, ok := rpc.Deadline()
+	if !ok {
+		referenceViolation(t, "TIME-001", "RPC has no deadline")
+	}
+	want := start.Add(30 * time.Second)
+	if d, ok := parent.Deadline(); ok && d.Before(want) {
+		want = d
+	}
+	// 超过窗口的启动延迟视为测量不足；不依据候选表现放宽容差。
+	if time.Since(start) > time.Second {
+		t.Skip("reference scheduling window exceeded")
+	}
+	if delta := deadline.Sub(want); delta < -250*time.Millisecond || delta > 250*time.Millisecond {
+		referenceViolation(t, "TIME-002", "RPC deadline differs from min(parent, call start + 30s)")
+	}
+}
+
+const referencePayload = `{"paths":[{"edges":[{"origin":"NLRTM","destination":"CNHKG","voyage":"REF-73","departure":"2027-03-01T03:04:05Z","arrival":"2027-03-04T06:07:08Z"},{"origin":"CNHKG","destination":"JNTKO","voyage":"REF-91","departure":"2027-03-05T09:10:11Z","arrival":"2027-03-06T12:13:14Z"}]},{"edges":[{"origin":"NLRTM","destination":"JNTKO","voyage":"REF-28","departure":"2027-03-02T03:04:05Z","arrival":"2027-03-08T06:07:08Z"}]}]}`
+
+func TestL2ReferenceRoutes(t *testing.T) {
+	for _, mode := range []string{"default", "short-parent", "long-parent", "cancelled", "expired", "remote-error", "unknown-cargo", "empty-response", "parent-cancel", "repeat"} {
+		t.Run(mode, func(t *testing.T) {
+			parent := context.WithValue(context.Background(), referenceKey{}, "request-ref-73")
+			parent, cancel := context.WithCancel(parent)
+			defer cancel()
+			if mode == "short-parent" || mode == "long-parent" || mode == "expired" {
+				duration := 4 * time.Second
+				if mode == "long-parent" {
+					duration = 2 * time.Minute
+				}
+				if mode == "expired" {
+					duration = -time.Second
+				}
+				var release context.CancelFunc
+				parent, release = context.WithTimeout(parent, duration)
+				defer release()
+			}
+			if mode == "cancelled" {
+				cancel()
+			}
+			var received []context.Context
+			var start time.Time
+			h, id := referenceServer(t, func(ctx context.Context, method string, request, response any) error {
+				received = append(received, ctx)
+				if method != "fetch_routes" || request != (routing.FetchRoutesRequest{From: "NLRTM", To: "JNTKO"}) {
+					referenceViolation(t, "BEHAVIOR-001", "RPC method or source/destination changed")
+				}
+				referenceContext(t, ctx, parent, start)
+				if ctx.Err() != nil {
+					referenceViolation(t, "TIME-003", "RPC context cancelled before backend work")
+				}
+				if mode == "parent-cancel" {
+					cancel()
+					select {
+					case <-ctx.Done():
+						return ctx.Err()
+					case <-time.After(time.Second):
+						referenceViolation(t, "CTX-003", "parent cancellation did not reach backend")
+					}
+				}
+				if mode == "remote-error" {
+					return errors.New("reference remote unavailable")
+				}
+				if mode == "empty-response" {
+					return nil
+				}
+				return json.Unmarshal([]byte(referencePayload), response)
+			})
+			if mode == "unknown-cargo" {
+				id = "reference-unbooked-73"
+			}
+			repetitions := 1
+			if mode == "repeat" {
+				repetitions = 2
+			}
+			for i := 0; i < repetitions; i++ {
+				start = time.Now()
+				routes := referenceRoutes(t, h, id, parent)
+				zeroCalls := mode == "unknown-cargo" || mode == "cancelled" || mode == "expired"
+				if zeroCalls {
+					if len(received) != 0 {
+						referenceViolation(t, "CTX-003", "cancelled/expired/unknown request entered backend")
+					}
+				} else if len(received) != i+1 {
+					referenceViolation(t, "BEHAVIOR-001", "unexpected RPC call count")
+				}
+				if mode == "default" || mode == "short-parent" || mode == "long-parent" || mode == "repeat" {
+					at := func(value string) time.Time {
+						v, err := time.Parse(time.RFC3339, value)
+						if err != nil {
+							t.Fatal(err)
+						}
+						return v
+					}
+					want := []shipping.Itinerary{{Legs: []shipping.Leg{
+						{VoyageNumber: "REF-73", LoadLocation: "NLRTM", UnloadLocation: "CNHKG", LoadTime: at("2027-03-01T03:04:05Z"), UnloadTime: at("2027-03-04T06:07:08Z")},
+						{VoyageNumber: "REF-91", LoadLocation: "CNHKG", UnloadLocation: "JNTKO", LoadTime: at("2027-03-05T09:10:11Z"), UnloadTime: at("2027-03-06T12:13:14Z")},
+					}}, {Legs: []shipping.Leg{{VoyageNumber: "REF-28", LoadLocation: "NLRTM", UnloadLocation: "JNTKO", LoadTime: at("2027-03-02T03:04:05Z"), UnloadTime: at("2027-03-08T06:07:08Z")}}}}
+					if !reflect.DeepEqual(routes, want) {
+						referenceViolation(t, "BEHAVIOR-001", "route fields or order differ")
+					}
+				} else if len(routes) != 0 {
+					referenceViolation(t, "BEHAVIOR-001", "unexpected routes on empty/error path")
+				}
+				if mode == "empty-response" && routes != nil {
+					referenceViolation(t, "BEHAVIOR-001", "empty success must retain nil routes")
+				}
+				if mode == "remote-error" && routes == nil {
+					referenceViolation(t, "BEHAVIOR-001", "remote failure must retain non-nil empty routes")
+				}
+				for _, ctx := range received {
+					if ctx.Err() == nil {
+						referenceViolation(t, "TIME-003", "derived context not released after return")
+					}
+				}
+				if mode != "parent-cancel" && !zeroCalls && parent.Err() != nil {
+					referenceViolation(t, "TIME-003", "callee cancelled parent")
+				}
+			}
+			if len(received) == 2 && received[0] == received[1] {
+				referenceViolation(t, "TIME-001", "successive calls reused context")
+			}
+		})
+	}
+}
+
+func TestL2ReferenceExpiry(t *testing.T) {
+	parent, cancel := context.WithCancel(context.WithValue(context.Background(), referenceKey{}, "request-ref-73"))
+	defer cancel()
+	var start time.Time
+	calls := 0
+	h, id := referenceServer(t, func(ctx context.Context, _ string, _, _ any) error {
+		calls++
+		referenceContext(t, ctx, parent, start)
+		stop := time.NewTimer(34 * time.Second)
+		defer stop.Stop()
+		select {
+		case <-ctx.Done():
+			if ctx.Err() != context.DeadlineExceeded {
+				referenceViolation(t, "TIME-003", "RPC ended before its deadline")
+			}
+			elapsed := time.Since(start)
+			t.Logf("reference elapsed=%s deadline_error=%v", elapsed, ctx.Err())
+			if elapsed < 29*time.Second {
+				referenceViolation(t, "TIME-001", "default deadline fired too early")
+			}
+			if elapsed > 33*time.Second {
+				t.Skip("reference expiry scheduling window exceeded")
+			}
+			return ctx.Err()
+		case <-stop.C:
+			t.Skip("reference expiry safety stop reached")
+			return errors.New("reference safety stop")
+		}
+	})
+	start = time.Now()
+	routes := referenceRoutes(t, h, id, parent)
+	if calls != 1 || routes == nil || len(routes) != 0 {
+		referenceViolation(t, "BEHAVIOR-001", "expiry changed error route behavior")
+	}
+	if parent.Err() != nil {
+		referenceViolation(t, "TIME-003", "expiry cancelled parent")
+	}
+}

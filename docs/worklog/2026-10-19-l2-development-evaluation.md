@@ -1,7 +1,7 @@
 # M3.4：开发评测协议与独立参考设计
 
 - 日期：2026-10-19。
-- 状态：设计完成，参考工具与协议发布待实现、校准；未运行真实评测。
+- 状态：Goddd 单候选自动参考与复核记录在声明范围内已验收，结果见第 10 节；另两场景、完整人工复核及协议发布待完成，未运行真实模型评测。
 - 对应里程碑：[M3](../MILESTONES.md#m3多仓库批量闭环)。
 - 代码基线：009d56a；前置：[三仓确定性 Campaign](2026-10-19-m3-4-heterogeneous-campaign.md)。
 - 本轮交付：确定首轮任务纳入、独立参考的边界、未知结果和指标口径，为实现提供验收条件。
@@ -118,3 +118,43 @@ N 为已纳入的 Target 数，R 为实际 Run 数，Q 为取得候选质量 ver
 已读取三份规范、场景门禁说明、L1/T3 参考接口、L2 材料装配和 M3 指标定义。确认旧 M3 worklog 的“尝试数”与里程碑的 Target 分母需要澄清，本记录以每 Target 一次及 N/R 分列落实；明确参考未知不能直接记错误放行。
 
 本轮仅完成设计与文档维护。102 个本地链接目标、16 个文档锚点、代码围栏及 git diff --check 通过；以一次性算例核对已知/未知、零分母及未完整交付不计潜在成功的公式。没有运行 Go 测试、Docker 或真实模型实验。参考实现、校准、真实模型配置和付费批次均未执行，模型预算数值仍待能力核实；没有读取 .env。
+
+## 10. Goddd 单候选参考实现与验收
+
+本单元基于 65da32b 实现[单候选参考 API](../../scenarios/rpcx/l2/evaluation/README.md)。本节是后续实现记录，第 9 节保留设计提交当时的事实。
+
+### 实现选择与报告边界
+
+新增 evaluation 包，先只接受认证的 Goddd 基线/SDK 和规范。Request 绑定 Target、Run、候选路径及全树摘要，不接受运行时质量结论。Go 的 `mod edit -json` 独立解析基线和候选模块声明，按规范变更 require/replace 后比较其余配置；不复用门禁的模块迁移规则。原生产/测试候选、剥离候选测试后安装独立参考的生产副本分别保存。源码与数据摘要分开，当前参考数据 v2 的 freeze 摘要为 `5cd44c1d8c00f147809d41545086ce1c32ae7cfcc0f6bb47b867c8a7601715c7`；早期校准数据 v1（freeze `25471d9a65936cf18af69416f141d9f975235e04ad629e4db5563d75e3f93abb`）保留。旧 fixtures/spec/cases/oracle 不修改。
+
+参考测试从公开 HTTP 入口经过真实 booking 与两个装饰器观察 RPC，用不同业务数据检查两条路线的航段/时间/顺序、空成功与远端错误；构造器 ctx 故意已经取消且与请求有不同值。新测试覆盖短/长父期限、取消/过期、父取消到后端、释放及重复调用；正常默认期限另实际等待约 30 秒。数据固定 250ms 的 deadline 测量容差、1s 的启动观察窗口及 29—33s 的实际到期窗口。默认期限以上达后端的时刻为观察依据；过早的期限仅在无法由请求发送到后端间的任何合法调用起点解释时确认违规，否则记测量不足。测量超窗或安全停止同样 inconclusive，不根据候选结果放宽容差。
+
+Automatic 由六项自动检查聚合；缺事件、参考测试自身编译失败和设施错误保持 inconclusive。新参考的源代码边界测试禁止直接复用场景验证、analysis、testintegrity、quality/checks 或 gate 的语义函数；允许共用文件、身份与离线模块/执行基础设施。实际共享源码随报告保存，ToolSHA256 表示这些列明材料，不声称是整个执行环境或全 Harness 的摘要。
+
+每次输出 review-template.json，测试保留、生产改动覆盖及交付依据全部待复核。Assess 校验原报告字节、Target/Run/候选身份、复核者/时间/理由/定位，输出新的 Assessment。未知项不抹掉稳定输入下的确定违规；输入绑定失效则保留未知。`development_calibration` 与真实 `candidate_review` 分列；工具没有冒充独立人员完成复核，也没有在没有交付材料的校准上预填 SCOPE 通过。
+
+### 失败与修正
+
+首轮真实校准日志 `runs/m3-4-goddd-reference/local-first.jsonl` 整体失败。参考工具把库工程的 `go build -o <directory> ./...` 返回“no main packages to build”误作候选构建失败。修正为丢弃构建输出，并增加认证基线的同参数构建：基线本身失败属于参考执行错误，不能作为候选 BUILD 违规。新故障注入分别覆盖基线失败和候选失败；原失败日志保留，不将其算作迁移结果。
+
+收尾新增的材料篡改对照在 `regression-race.jsonl` 捕获一个登记错误：materials 根被加到了 SDK 复制列表，遗漏在最终快照核对列表之外。已修正，最终回归实际覆盖材料与日志篡改后不得保留通过状态。
+
+参考源码审查还发现 v1 按 HTTP 发送前时刻推算期限，存在把 RPC 前合法延迟误判为 TIME-002 的风险。这是参考判据错误，不能通过改正确候选来消除。保留已使用的 v1，另发参考数据 v2，依据后端观测及可能调用起点区间区分确定违规与未知，并新增发送前 400ms 延迟的正确控制。v2 全部重新校准；此前报告留在原目录，不冒称已用新数据重验。
+
+### 实际校准与限制
+
+六份既有校准补丁仅供测试宿主构造输入，expected 不传入 Evaluate。正确与 mapping-helper 的自动参考通过；missing-timeout、background-fallback、protected-license 分别得到 TIME-001、CTX-003、PATH-001 的确定违规。deleted-assertion 的测试事件与行为自动通过，模板整体仍保持 inconclusive。助手进一步核对其 `cargo_test.go`，确认 TestConstruction 删除 RoutingStatus/NotRouted 原断言，记录 TEST-001 的开发源码发现并经 Assess 得到 fail；人员字段明确标注助手开发校准检查，其他复核项仍未知。该记录不代表独立人工复核或真实模型成绩。
+
+两个新增测试期变体再检查参考没有照搬结构模板：使用 WithDeadline 的等价迁移自动通过；把期限改为 5s、但保留 correct 运行名称的变体由实际 deadline 观测得到 TIME-002。名称和参考补丁字节均不是候选判据。
+
+| 验证 | 结果 | 证据 |
+| --- | --- | --- |
+| 当前 v2 本地校准 | 八个候选符合预期：自动 4 pass / 4 fail；正确、helper、WithDeadline 的完整结果均因复核未完成保持未知；删断言样本另有明确标注助手身份的开发源码发现 | `runs/m3-4-goddd-reference/v2-local.jsonl`、`v2-local/*/reference/reference.json` |
+| 当前 v2 Docker 主要对照 | correct、missing-timeout、mapping-helper 分别自动 pass / fail / pass；同一工具材料摘要，与本地一致；通过组含实际约 30 秒到期及发送前延迟控制 | `runs/m3-4-goddd-reference/v2-docker.jsonl`、`v2-docker/*/reference/reference.json` |
+| 当前工具及相关回归 | evaluation、L2 baseline、Goddd 三个有测试包的竞态回归：117 项测试及子测试通过、2 项显式验收跳过，无失败或竞态；包含身份、材料/日志漂移、未知事件、oracle 编译失败及复核绑定对照 | `runs/m3-4-goddd-reference/v2-regression-race.jsonl` |
+| 源码复核记录的实际消费 | deleted-assertion 的自动行为通过；助手检查发现 TestConstruction 原断言被删，绑定当前 v2 报告后 Assess 得到 fail，kind 为 development_calibration，其他复核项仍未知 | `v2-local/deleted-assertion-1693037896/reference/review-codex-calibration.json`、`assessment-codex-calibration.json` |
+| 容器回收 | 本轮七份 Docker 报告记录的 54 个容器 ID 均已不存在，Harness 标签容器清单为空；其中包括保留的早期 v1 校准 | `runs/m3-4-goddd-reference/docker-container-audit.json` |
+
+早期轮次与当前 v2 的结果分开保存，不累加重复测试数。最后的工具材料摘要为 `10008bad317540465060239199538d0523f9ff197b615ff0197075962815db22`；本地与 Docker v2 报告一致。go vet、Go 格式、106 个本地链接目标、17 个文档锚点、代码围栏及 git diff --check 通过，v1/v2 数据逐文件摘要与发布清单一致。没有读取 .env 或调用真实模型，运行材料不入 Git。
+
+本单元验收的是 Goddd 单候选自动参考、未知处理及复核记录接口；不能把待复核模板称为完整独立通过，或由手写对照计算真实模型效果。下一步扩展 Translation 双配置参考，再接 Workouts；轮次统计和真实模型能力/批次入口仍按第 8 节推进。

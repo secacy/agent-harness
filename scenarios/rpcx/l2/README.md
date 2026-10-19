@@ -14,7 +14,7 @@
 
 留出名额 l2-heldout-01 为 `awaiting_independent_preparer`：尚无来源、摘要或参考标准，不计入已准备数量和效果分母。独立准备者暂缺；所有已查阅来源记录在 surveyed_sources，不得静默改称严格未见留出。
 
-[首轮开发评测设计](../../../docs/worklog/2026-10-19-l2-development-evaluation.md)采用三个 Target 各一次尝试，独立行为参考结合源码/交付复核；参考未知与确认错误分列。本轮只完成设计，尚无参考工具、已发布协议或真实生成效果数据。
+[首轮开发评测工作](../../../docs/worklog/2026-10-19-l2-development-evaluation.md)采用三个 Target 各一次尝试，独立行为参考结合源码/交付复核；参考未知与确认错误分列。[Goddd 单候选参考](evaluation/README.md)已实现自动检查和待填写的复核记录；另外两场景、完整轮次协议和真实生成效果数据仍待完成。
 
 ## 清单边界
 

@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "version": "rpcx-l2-reference-goddd-data-v2",
+  "spec_sha256": "917575e0f4fc571f6f72c743ffded00771da838144371435ab0edfb61b578610",
+  "files": {
+    "review.md": "57d7ae4026355c0f8fb6f728c1ee052ce17402df74838394b9392411c09ef33d",
+    "routes_test.go.txt": "d1f19bed026f01c8e060ba6459ee633fc166229be85dff21763720d9dcbca8fe"
+  }
+}
