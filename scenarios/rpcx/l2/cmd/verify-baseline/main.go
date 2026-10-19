@@ -14,19 +14,20 @@ import (
 )
 
 func main() {
+	version := flag.String("dataset", baseline.Version, "published baseline dataset version")
 	trusted := flag.Bool("trusted-local", false, "run trusted fixture code locally instead of Docker")
 	flag.Parse()
 	if flag.NArg() != 0 {
-		fmt.Fprintln(os.Stderr, "usage: verify-baseline [-trusted-local]")
+		fmt.Fprintln(os.Stderr, "usage: verify-baseline [-trusted-local] [-dataset version]")
 		os.Exit(2)
 	}
-	if err := run(*trusted); err != nil {
+	if err := run(*trusted, *version); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 }
 
-func run(trusted bool) error {
+func run(trusted bool, version string) error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	root, err := os.Getwd()
@@ -47,7 +48,7 @@ func run(trusted bool) error {
 	if err != nil {
 		return err
 	}
-	report, err := baseline.Verify(ctx, root, directory, backend)
+	report, err := baseline.VerifyVersion(ctx, root, directory, version, backend)
 	fmt.Println("Report:", filepath.Join(directory, "report.json"))
 	if report != nil {
 		fmt.Printf("accepted=%v inputs_unchanged=%v\n", report.Accepted, report.InputsUnchanged)

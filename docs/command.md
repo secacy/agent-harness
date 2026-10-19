@@ -120,6 +120,14 @@ env GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly G
 
 可信本地复验显式添加 `-trusted-local`。机制测试为 `go test -race ./scenarios/rpcx/l2/...`，包含冻结/来源异常在执行前拒绝、归档边界、缺失/跳过事件、失败证据与输入变化，不执行完整 Docker 基线。数据范围和限制见 [L2 说明](../scenarios/rpcx/l2/README.md)。
 
+## M3.4 Translation 双配置基线复验
+
+```sh
+env GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly GOCACHE="$PWD/runs/go-cache" go run ./scenarios/rpcx/l2/cmd/verify-baseline -dataset rpcx-l2-translation-v1
+```
+
+默认固定 Docker、断网和只读输入；加 `-trusted-local` 只运行可信本地夹具。分别验证 default/rpcx_alternate 活动源文件、生成 mock、构建和 26 项测试及子测试，连同 SDK 共 67 项配置化执行。需要 Go 1.26.0 或更新工具链，不自动下载。accepted 只证明迁移前基线，尚无该样本的迁移门禁或模型效果结论，见 [Translation 工作记录](worklog/2026-10-19-translation-baseline.md)。
+
 ## Goddd 候选与 Runner 校准
 
 ```sh

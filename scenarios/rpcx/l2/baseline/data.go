@@ -84,12 +84,21 @@ func read(ctx context.Context, root string) (map[string][]byte, error) {
 	return files, err
 }
 
-func frozen(files map[string][]byte) error {
+func frozen(files map[string][]byte) error { return frozenVersion(files, Version) }
+
+func frozenVersion(files map[string][]byte, version string) error {
+	dataset, err := lookupDataset(version)
+	if err != nil {
+		return err
+	}
+	if digest(files["freeze.json"]) != dataset.FreezeSHA256 {
+		return errors.New("published dataset identity changed")
+	}
 	var m manifest
 	if err := decode(files["freeze.json"], &m); err != nil {
 		return fmt.Errorf("dataset manifest: %w", err)
 	}
-	if m.SchemaVersion != 1 || m.Version != Version || len(m.Files) == 0 {
+	if m.SchemaVersion != 1 || m.Version != version || len(m.Files) == 0 {
 		return errors.New("unsupported dataset manifest")
 	}
 	actual := map[string]string{}

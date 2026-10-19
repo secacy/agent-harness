@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "modules": {
+    "rpcx-v1": {
+      "packages": [
+        "example.com/rpcx"
+      ],
+      "packages_without_tests": [],
+      "original_tests": [],
+      "added_tests": [
+        "example.com/rpcx/TestDefaultDeadlineAndRelease",
+        "example.com/rpcx/TestNilHandler",
+        "example.com/rpcx/TestRegistration",
+        "example.com/rpcx/TestRequestResponseAndError",
+        "example.com/rpcx/TestUnknownAddress"
+      ]
+    },
+    "rpcx-v2": {
+      "packages": [
+        "example.com/rpcx/v2"
+      ],
+      "packages_without_tests": [],
+      "original_tests": [],
+      "added_tests": [
+        "example.com/rpcx/v2/TestCallerContext",
+        "example.com/rpcx/v2/TestCallerContext/long-deadline",
+        "example.com/rpcx/v2/TestCallerContext/no-deadline",
+        "example.com/rpcx/v2/TestCallerContext/short-deadline",
+        "example.com/rpcx/v2/TestCancellationInBackend",
+        "example.com/rpcx/v2/TestCancelledParent",
+        "example.com/rpcx/v2/TestNilHandler",
+        "example.com/rpcx/v2/TestRegistration",
+        "example.com/rpcx/v2/TestRequestResponseAndError",
+        "example.com/rpcx/v2/TestUnknownAddress"
+      ]
+    },
+    "translation": {
+      "packages": [
+        "github.com/evrone/go-clean-template/internal/entity",
+        "github.com/evrone/go-clean-template/internal/repo/webapi",
+        "github.com/evrone/go-clean-template/internal/usecase"
+      ],
+      "packages_without_tests": [
+        "github.com/evrone/go-clean-template/internal/repo",
+        "github.com/evrone/go-clean-template/internal/usecase/translation"
+      ],
+      "original_tests": [
+        "github.com/evrone/go-clean-template/internal/entity/TestTask_Transition",
+        "github.com/evrone/go-clean-template/internal/entity/TestTask_Transition/done_to_in_progress_(invalid)",
+        "github.com/evrone/go-clean-template/internal/entity/TestTask_Transition/done_to_todo_(invalid)",
+        "github.com/evrone/go-clean-template/internal/entity/TestTask_Transition/in_progress_to_done",
+        "github.com/evrone/go-clean-template/internal/entity/TestTask_Transition/in_progress_to_todo",
+        "github.com/evrone/go-clean-template/internal/entity/TestTask_Transition/todo_to_done_(invalid)",
+        "github.com/evrone/go-clean-template/internal/entity/TestTask_Transition/todo_to_in_progress",
+        "github.com/evrone/go-clean-template/internal/entity/TestTask_Transition/unknown_status_(invalid)",
+        "github.com/evrone/go-clean-template/internal/usecase/TestHistory",
+        "github.com/evrone/go-clean-template/internal/usecase/TestHistory/empty_result",
+        "github.com/evrone/go-clean-template/internal/usecase/TestHistory/result_with_error",
+        "github.com/evrone/go-clean-template/internal/usecase/TestTranslate",
+        "github.com/evrone/go-clean-template/internal/usecase/TestTranslate/empty_result",
+        "github.com/evrone/go-clean-template/internal/usecase/TestTranslate/repo_error",
+        "github.com/evrone/go-clean-template/internal/usecase/TestTranslate/web_API_error"
+      ],
+      "added_tests": [
+        "github.com/evrone/go-clean-template/internal/repo/webapi/TestSelectedAdapter",
+        "github.com/evrone/go-clean-template/internal/repo/webapi/TestTranslationErrors",
+        "github.com/evrone/go-clean-template/internal/repo/webapi/TestTranslationErrors/cancelled",
+        "github.com/evrone/go-clean-template/internal/repo/webapi/TestTranslationErrors/expired",
+        "github.com/evrone/go-clean-template/internal/repo/webapi/TestTranslationErrors/remote",
+        "github.com/evrone/go-clean-template/internal/repo/webapi/TestTranslationRoundTrip",
+        "github.com/evrone/go-clean-template/internal/repo/webapi/TestUseCaseThroughRPC",
+        "github.com/evrone/go-clean-template/internal/repo/webapi/TestUseCaseThroughRPC/cancelled",
+        "github.com/evrone/go-clean-template/internal/repo/webapi/TestUseCaseThroughRPC/remote-error",
+        "github.com/evrone/go-clean-template/internal/repo/webapi/TestUseCaseThroughRPC/store-error",
+        "github.com/evrone/go-clean-template/internal/repo/webapi/TestUseCaseThroughRPC/success"
+      ]
+    }
+  }
+}

@@ -370,3 +370,10 @@ Completed 结果须匹配磁盘 `run.json`、目标独占目录、合法判定�
 六份手写候选在可信本地按逐检查预期校准，三类主候选在真实 Docker 下分别得到 ReadyForReview、Rejected、NeedsAttention。Docker Runner 使用确定性编辑和真实构建/测试/独立门禁，补丁重放与审核材料通过。具体材料 pin、方案代价、失败轮次与验证记录以该工作记录为准。
 
 本步不计真实模型迁移效果、错误放行率或独立 oracle 验收，未改变留出名额状态、旧数据或选择清单。M3.4 尚需其余两个开发切片、独立参考和按协议的真实批次实验；付费能力材料与 batch 命令仍是独立依赖。
+
+
+### Translation 准备进展
+
+[双配置离线基线工作](2026-10-19-translation-baseline.md)发布 rpcx-l2-translation-v1，保留原用例测试、生成 mock 和两层 tracing，加入两份互斥的实际 RPC 实现。两种配置各有 go list、构建与测试证据，可信本地和禁网 Docker 均完成 14 条命令、67 项配置化测试/子测试，发布输入未变。原选择清单与 Goddd 数据不改写。
+
+这只是第二个开发切片的环境与保真验收；共用 baseline 准备工具新增静态配置列表，不代表 Runtime/Runner 已支持该构建矩阵。接下来设计并实现 Translation 新规范/Profile 和双配置质量门禁，随后准备 Workouts；真实批次和独立评测按原依赖推进。

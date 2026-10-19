@@ -1,0 +1,336 @@
+{
+  "schema_version": 1,
+  "dataset_version": "rpcx-l2-translation-v1",
+  "selection_version": "rpcx-l2-selection-v0.1.0",
+  "sample_id": "l2-clean-translation",
+  "split": "development",
+  "upstream": {
+    "repository": "https://github.com/evrone/go-clean-template",
+    "commit": "d1f46523e9a8435713aabb70222c6189564d4501",
+    "git_tree": "d1f46523e9a8435713aabb70222c6189564d4501",
+    "license": "MIT",
+    "license_path": "fixtures/translation/LICENSE"
+  },
+  "sdk_version": "rpcx-l2-sdk-v1",
+  "files": [
+    {
+      "source": "LICENSE",
+      "source_git_blob": "4104120ccc817da1f4ac14fbb1334203d5c5c46c",
+      "source_sha256": "1518f1edbbdd2983f2df311e2dcb90edd48c71c34d7a2851dbf5c6c683dd815c",
+      "source_url": "https://raw.githubusercontent.com/evrone/go-clean-template/d1f46523e9a8435713aabb70222c6189564d4501/LICENSE",
+      "action": "kept",
+      "target": "fixtures/translation/LICENSE",
+      "target_sha256": "1518f1edbbdd2983f2df311e2dcb90edd48c71c34d7a2851dbf5c6c683dd815c",
+      "reason": "保留上游原始源码、原测试或生成 mock"
+    },
+    {
+      "source": "go.mod",
+      "source_git_blob": "2d8099069f2b418e2f53b093429551a14b749251",
+      "source_sha256": "0fc6308388c724747ad13b2064efe4273c3715256f9ea9c3124d3f7e389d7b2d",
+      "source_url": "https://raw.githubusercontent.com/evrone/go-clean-template/d1f46523e9a8435713aabb70222c6189564d4501/go.mod",
+      "action": "modified",
+      "target": "fixtures/translation/go.mod",
+      "target_sha256": "2bb5f1520094128a874acb62237b0dfab160ebefb4085146a7db0120977478f2",
+      "reason": "仅保留切片依赖与上游版本、Go 1.26.0，增加 SDK replace；不纳入整仓工具依赖"
+    },
+    {
+      "source": "go.sum",
+      "source_git_blob": "7d1e3c023059ad04c8fc3adc9b0e4c7dce7e82f9",
+      "source_sha256": "aefee338d310f58d538c33e0a63ac10ec1427a21e38aa80e0fb35911a23dd750",
+      "source_url": "https://raw.githubusercontent.com/evrone/go-clean-template/d1f46523e9a8435713aabb70222c6189564d4501/go.sum",
+      "action": "modified",
+      "target": "fixtures/translation/go.sum",
+      "target_sha256": "8b8600b2e9cc08a52073d43fa61f284bada5b74c14b56299a7d40e659c2c7ea4",
+      "reason": "整理切片模块图校验和；完整原件单独保留"
+    },
+    {
+      "source": "internal/entity/errors.go",
+      "source_git_blob": "7f8ccaeb681b8576789a820a592737e2c1a60492",
+      "source_sha256": "fdaa3258fb8691fa3f9975eca46d68ab35de10d7fc9d6ade66ee2feaef6a27b6",
+      "source_url": "https://raw.githubusercontent.com/evrone/go-clean-template/d1f46523e9a8435713aabb70222c6189564d4501/internal/entity/errors.go",
+      "action": "kept",
+      "target": "fixtures/translation/internal/entity/errors.go",
+      "target_sha256": "fdaa3258fb8691fa3f9975eca46d68ab35de10d7fc9d6ade66ee2feaef6a27b6",
+      "reason": "保留上游原始源码、原测试或生成 mock"
+    },
+    {
+      "source": "internal/entity/task.go",
+      "source_git_blob": "cfeabb85404827870593ff2a4d22219a2636b1b2",
+      "source_sha256": "70a60e77f5fcee78ed0f460635327789057a6f5477a1379f51dfc3f4318129a9",
+      "source_url": "https://raw.githubusercontent.com/evrone/go-clean-template/d1f46523e9a8435713aabb70222c6189564d4501/internal/entity/task.go",
+      "action": "kept",
+      "target": "fixtures/translation/internal/entity/task.go",
+      "target_sha256": "70a60e77f5fcee78ed0f460635327789057a6f5477a1379f51dfc3f4318129a9",
+      "reason": "保留上游原始源码、原测试或生成 mock"
+    },
+    {
+      "source": "internal/entity/task_test.go",
+      "source_git_blob": "a5310f4a740a23fe6e418ef36b77b46f8889e9fe",
+      "source_sha256": "fa6cffb7dc937d11f824ccac04804c064970d18ad62e9cf089f5b1db2d273792",
+      "source_url": "https://raw.githubusercontent.com/evrone/go-clean-template/d1f46523e9a8435713aabb70222c6189564d4501/internal/entity/task_test.go",
+      "action": "kept",
+      "target": "fixtures/translation/internal/entity/task_test.go",
+      "target_sha256": "fa6cffb7dc937d11f824ccac04804c064970d18ad62e9cf089f5b1db2d273792",
+      "reason": "保留上游原始源码、原测试或生成 mock"
+    },
+    {
+      "source": "internal/entity/translation.go",
+      "source_git_blob": "e10aa494d7c09275baf43f96e3b224fcbd5d9839",
+      "source_sha256": "1e674220c1c42644540c7bbfa7646023b845109f4052dd464ec809688ea87e8e",
+      "source_url": "https://raw.githubusercontent.com/evrone/go-clean-template/d1f46523e9a8435713aabb70222c6189564d4501/internal/entity/translation.go",
+      "action": "kept",
+      "target": "fixtures/translation/internal/entity/translation.go",
+      "target_sha256": "1e674220c1c42644540c7bbfa7646023b845109f4052dd464ec809688ea87e8e",
+      "reason": "保留上游原始源码、原测试或生成 mock"
+    },
+    {
+      "source": "internal/entity/translation.history.go",
+      "source_git_blob": "4383a25bf91dcdf9dfe34ca560eb5d7f1f082df8",
+      "source_sha256": "af54de257774ca6bd63be0a8a09e7378745cc3fa59b0de0dea6efbb5ee22b5eb",
+      "source_url": "https://raw.githubusercontent.com/evrone/go-clean-template/d1f46523e9a8435713aabb70222c6189564d4501/internal/entity/translation.history.go",
+      "action": "kept",
+      "target": "fixtures/translation/internal/entity/translation.history.go",
+      "target_sha256": "af54de257774ca6bd63be0a8a09e7378745cc3fa59b0de0dea6efbb5ee22b5eb",
+      "reason": "保留上游原始源码、原测试或生成 mock"
+    },
+    {
+      "source": "internal/entity/user.go",
+      "source_git_blob": "9429162a0e793fc27c1f1902d873b79abfe190ff",
+      "source_sha256": "f89ed626c0d3c8a121bd295ce26c4a26ecd47f15fd175c10c2a58f1ae7878368",
+      "source_url": "https://raw.githubusercontent.com/evrone/go-clean-template/d1f46523e9a8435713aabb70222c6189564d4501/internal/entity/user.go",
+      "action": "kept",
+      "target": "fixtures/translation/internal/entity/user.go",
+      "target_sha256": "f89ed626c0d3c8a121bd295ce26c4a26ecd47f15fd175c10c2a58f1ae7878368",
+      "reason": "保留上游原始源码、原测试或生成 mock"
+    },
+    {
+      "source": "internal/repo/contracts.go",
+      "source_git_blob": "62fdd22a561b85eb0d13cbd898c266156474b10c",
+      "source_sha256": "a88381327e4fce0ad1da503d723cea98387a4b2f6886c3784ebbeb8569714e96",
+      "source_url": "https://raw.githubusercontent.com/evrone/go-clean-template/d1f46523e9a8435713aabb70222c6189564d4501/internal/repo/contracts.go",
+      "action": "kept",
+      "target": "fixtures/translation/internal/repo/contracts.go",
+      "target_sha256": "a88381327e4fce0ad1da503d723cea98387a4b2f6886c3784ebbeb8569714e96",
+      "reason": "保留上游原始源码、原测试或生成 mock"
+    },
+    {
+      "source": "internal/repo/webapi/tracing.go",
+      "source_git_blob": "8d219384c5739dc219c28576af859fd0b64eb14c",
+      "source_sha256": "baa48b5cdd6198c34e089628baf2112d0fbedbff816dac41b7f06ec75afd6088",
+      "source_url": "https://raw.githubusercontent.com/evrone/go-clean-template/d1f46523e9a8435713aabb70222c6189564d4501/internal/repo/webapi/tracing.go",
+      "action": "kept",
+      "target": "fixtures/translation/internal/repo/webapi/tracing.go",
+      "target_sha256": "baa48b5cdd6198c34e089628baf2112d0fbedbff816dac41b7f06ec75afd6088",
+      "reason": "保留上游原始源码、原测试或生成 mock"
+    },
+    {
+      "source": "internal/repo/webapi/translation_google.go",
+      "source_git_blob": "59b41afb8074ff89e28673dc8d14c6ef454dcd36",
+      "source_sha256": "4ef0eb66f726fdd4a0786c103149b1177db0f3577dbade9a2aebae42293c508c",
+      "source_url": "https://raw.githubusercontent.com/evrone/go-clean-template/d1f46523e9a8435713aabb70222c6189564d4501/internal/repo/webapi/translation_google.go",
+      "action": "modified",
+      "target": "fixtures/translation/internal/repo/webapi/translation_google.go",
+      "target_sha256": "460bd6d6152cf5a173f024b0e2c576d3d54a1fd3d50166da8cb2a0e05db31475",
+      "reason": "用 rpcx-v1 替换远端翻译传输，保留 ctx 预检查/映射/错误链与 tracing；加入默认互斥标签"
+    },
+    {
+      "source": "internal/usecase/contracts.go",
+      "source_git_blob": "4e51574ec9a2ab6d232e1cacabc0cbd0052b1a04",
+      "source_sha256": "8643d8731efd5dd598a8e94ddeef3aaa37618d2e6dab7302eda61ce8c682d462",
+      "source_url": "https://raw.githubusercontent.com/evrone/go-clean-template/d1f46523e9a8435713aabb70222c6189564d4501/internal/usecase/contracts.go",
+      "action": "kept",
+      "target": "fixtures/translation/internal/usecase/contracts.go",
+      "target_sha256": "8643d8731efd5dd598a8e94ddeef3aaa37618d2e6dab7302eda61ce8c682d462",
+      "reason": "保留上游原始源码、原测试或生成 mock"
+    },
+    {
+      "source": "internal/usecase/mocks_repo_test.go",
+      "source_git_blob": "07728455678e9e0b54fc3e50c4cb8914c442c9ec",
+      "source_sha256": "a4dc547678a7c7a1803a75e02a69b8f98907b0b3122c641bdf65663b8c07007e",
+      "source_url": "https://raw.githubusercontent.com/evrone/go-clean-template/d1f46523e9a8435713aabb70222c6189564d4501/internal/usecase/mocks_repo_test.go",
+      "action": "kept",
+      "target": "fixtures/translation/internal/usecase/mocks_repo_test.go",
+      "target_sha256": "a4dc547678a7c7a1803a75e02a69b8f98907b0b3122c641bdf65663b8c07007e",
+      "reason": "保留上游原始源码、原测试或生成 mock"
+    },
+    {
+      "source": "internal/usecase/translation/tracing.go",
+      "source_git_blob": "a48af25956a2f8850f79f7e069e6f2318652ff5f",
+      "source_sha256": "645c944cae91a08b6e603fcf077cf5f3c7588e1ecf464f8dc75e39019e52fee8",
+      "source_url": "https://raw.githubusercontent.com/evrone/go-clean-template/d1f46523e9a8435713aabb70222c6189564d4501/internal/usecase/translation/tracing.go",
+      "action": "kept",
+      "target": "fixtures/translation/internal/usecase/translation/tracing.go",
+      "target_sha256": "645c944cae91a08b6e603fcf077cf5f3c7588e1ecf464f8dc75e39019e52fee8",
+      "reason": "保留上游原始源码、原测试或生成 mock"
+    },
+    {
+      "source": "internal/usecase/translation/translation.go",
+      "source_git_blob": "6fee1883bb5d047db3150c9e670dcdebdf551c34",
+      "source_sha256": "1948525e7d1766a44d4a0a4ab9fda79d782b519bd56ed07c50b7ec6e14d574fc",
+      "source_url": "https://raw.githubusercontent.com/evrone/go-clean-template/d1f46523e9a8435713aabb70222c6189564d4501/internal/usecase/translation/translation.go",
+      "action": "kept",
+      "target": "fixtures/translation/internal/usecase/translation/translation.go",
+      "target_sha256": "1948525e7d1766a44d4a0a4ab9fda79d782b519bd56ed07c50b7ec6e14d574fc",
+      "reason": "保留上游原始源码、原测试或生成 mock"
+    },
+    {
+      "source": "internal/usecase/translation_test.go",
+      "source_git_blob": "d750e190692b6480adb080ca065c182f49c335b0",
+      "source_sha256": "3c99343bf4276379c8cd9f0858a4dd4f558f5663093c6f782ebab51cee1fb02b",
+      "source_url": "https://raw.githubusercontent.com/evrone/go-clean-template/d1f46523e9a8435713aabb70222c6189564d4501/internal/usecase/translation_test.go",
+      "action": "kept",
+      "target": "fixtures/translation/internal/usecase/translation_test.go",
+      "target_sha256": "3c99343bf4276379c8cd9f0858a4dd4f558f5663093c6f782ebab51cee1fb02b",
+      "reason": "保留上游原始源码、原测试或生成 mock"
+    },
+    {
+      "source": "pkg/tracing/tracing.go",
+      "source_git_blob": "c68b72c3fc7e42d058df6998bd5fec145041dee4",
+      "source_sha256": "8c6bacb109eeb437a17a2e35040e8c9350d79f07bf871103529d67329f3aba8e",
+      "source_url": "https://raw.githubusercontent.com/evrone/go-clean-template/d1f46523e9a8435713aabb70222c6189564d4501/pkg/tracing/tracing.go",
+      "action": "excluded",
+      "target": null,
+      "target_sha256": null,
+      "reason": "OTLP exporter 启动器未被保留的 tracing 包装调用，不属于离线切片"
+    },
+    {
+      "source": null,
+      "source_sha256": null,
+      "action": "added",
+      "target": "fixtures/translation/internal/repo/webapi/translation_rpcx_alternate.go",
+      "target_sha256": "56f6b7a44a4817ae3e90ce504a77d4cd6496ffb783c1027bc94b4204d6bdd726",
+      "reason": "植入独立互斥的第二 RPC 实现"
+    },
+    {
+      "source": null,
+      "source_sha256": null,
+      "action": "added",
+      "target": "fixtures/translation/internal/repo/webapi/translation_rpcx_test.go",
+      "target_sha256": "1574c645028d437461f04baf4fa4608c86c73c56784b765ec1377a3a919710db",
+      "reason": "新增真实 RPC 路径与用例副作用顺序测试"
+    },
+    {
+      "source": null,
+      "source_sha256": null,
+      "action": "added",
+      "target": "fixtures/translation/internal/repo/webapi/translation_types.go",
+      "target_sha256": "f6cf5db92f1eb572e06ea3f5c929fe049100fa20add97b9ebbce89d8cc7ffc5e",
+      "reason": "共用请求/响应类型"
+    },
+    {
+      "source": null,
+      "source_sha256": null,
+      "action": "added",
+      "target": "fixtures/rpcx-v1/client.go",
+      "target_sha256": "d64ed95ffe5300f74e69c353676efed97c83b2fbf7d7044adc62206b6649e485",
+      "reason": "复制已经发布的共用 rpcx-l2-sdk-v1，字节不变"
+    },
+    {
+      "source": null,
+      "source_sha256": null,
+      "action": "added",
+      "target": "fixtures/rpcx-v1/client_test.go",
+      "target_sha256": "6e02aa503e1d5063e68accf38db84811aebf227a0b10a9618eeaf2e603ad4612",
+      "reason": "复制已经发布的共用 rpcx-l2-sdk-v1，字节不变"
+    },
+    {
+      "source": null,
+      "source_sha256": null,
+      "action": "added",
+      "target": "fixtures/rpcx-v1/deadline_test.go",
+      "target_sha256": "780940038c3a0f290acf029eeaf095b393b08d7519429352de5d26074c899e5f",
+      "reason": "复制已经发布的共用 rpcx-l2-sdk-v1，字节不变"
+    },
+    {
+      "source": null,
+      "source_sha256": null,
+      "action": "added",
+      "target": "fixtures/rpcx-v1/go.mod",
+      "target_sha256": "698fe8774eaf0f9106bd19fd322b9f6abb82acd8739c8ed3919ddf4ea4eb6b44",
+      "reason": "复制已经发布的共用 rpcx-l2-sdk-v1，字节不变"
+    },
+    {
+      "source": null,
+      "source_sha256": null,
+      "action": "added",
+      "target": "fixtures/rpcx-v2/client.go",
+      "target_sha256": "62b8f98d3986c47d856deccd3c89499fba0195530ffde3105e1eb8f67e51da73",
+      "reason": "复制已经发布的共用 rpcx-l2-sdk-v1，字节不变"
+    },
+    {
+      "source": null,
+      "source_sha256": null,
+      "action": "added",
+      "target": "fixtures/rpcx-v2/client_test.go",
+      "target_sha256": "b469c0d91e2cf5c971faeba412c0b2f6df80204c049b945a86d21dafb2c0f0ca",
+      "reason": "复制已经发布的共用 rpcx-l2-sdk-v1，字节不变"
+    },
+    {
+      "source": null,
+      "source_sha256": null,
+      "action": "added",
+      "target": "fixtures/rpcx-v2/deadline_test.go",
+      "target_sha256": "6e005b264b088753aa8f68dad105d62540ebfb37d072f86061985a69f4ce338c",
+      "reason": "复制已经发布的共用 rpcx-l2-sdk-v1，字节不变"
+    },
+    {
+      "source": null,
+      "source_sha256": null,
+      "action": "added",
+      "target": "fixtures/rpcx-v2/go.mod",
+      "target_sha256": "b5c281563f355cf0cd376479fef44323561958bf6f012e67159b3714fb42582f",
+      "reason": "复制已经发布的共用 rpcx-l2-sdk-v1，字节不变"
+    }
+  ],
+  "protected_paths": [
+    "LICENSE",
+    "go.sum",
+    "internal/usecase/mocks_repo_test.go"
+  ],
+  "build_configurations": [
+    {
+      "id": "default",
+      "tags": [],
+      "active_file": "internal/repo/webapi/translation_google.go",
+      "ignored_file": "internal/repo/webapi/translation_rpcx_alternate.go",
+      "origin": "prepared_variant"
+    },
+    {
+      "id": "rpcx_alternate",
+      "tags": [
+        "rpcx_alternate"
+      ],
+      "active_file": "internal/repo/webapi/translation_rpcx_alternate.go",
+      "ignored_file": "internal/repo/webapi/translation_google.go",
+      "origin": "injected"
+    }
+  ],
+  "excluded_groups": [
+    {
+      "prefix": "cmd/,internal/app/,internal/controller/",
+      "reason": "不纳入 HTTP/认证/消息/进程启动"
+    },
+    {
+      "prefix": "internal/repo/persistent/",
+      "reason": "不纳入数据库实现及其环境"
+    },
+    {
+      "prefix": "internal/usecase/task/,internal/usecase/user/",
+      "reason": "仅保留原生成 mock 编译所需的接口/实体，不保留服务实现及服务测试"
+    },
+    {
+      "prefix": "pkg/tracing/",
+      "reason": "不启动 OTLP exporter；保留用例和 WebAPI 的原 tracing 包装"
+    },
+    {
+      "prefix": "tool,CI,deployment,docs",
+      "reason": "不作为离线业务输入；完整来源以固定 git_tree 识别"
+    }
+  ],
+  "injected_differences": [
+    "本地 rpcx-v1 出站替代 Google Translate；不检验原网络或翻译服务",
+    "30 秒默认超时属于共用 SDK 植入契约",
+    "两个互斥 RPC 实现为配置挑战，仅计一个开发样本",
+    "新增边界与用例路径测试不属于原测试或迁移 oracle"
+  ]
+}
