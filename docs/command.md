@@ -314,3 +314,17 @@ env GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly G
 ```
 
 包含发布身份/来源和准备补丁重放、common 构建失败/缺测试事件/取消/输入漂移、旧默认入口与 Translation 配置矩阵机制。真实业务及隔离复验使用上面的基线入口，不使用替身结果冒充业务运行。范围及裁剪损失见 [Workouts 说明](../scenarios/rpcx/l2/data/rpcx-l2-workouts-v1/README.md)和[工作记录](worklog/2026-10-19-workouts-baseline.md)。
+
+## L2 轮次离线汇总
+
+```sh
+go run ./scenarios/rpcx/l2/cmd/summarize -config /absolute/path/request.json
+```
+
+读取已发布 Campaign/Run、独立参考与可选复核，不运行模型或候选命令。Request 固定纳入清单、原 Campaign、全新输出目录和带摘要的参考/复核路径；配置字段与示例见[轮次说明](../scenarios/rpcx/l2/round/README.md)。所有路径为绝对路径，已有输出拒绝覆盖。缺材料保留未知；身份/摘要冲突返回非零且不发布指标。退出 0 表示汇总有效，不表示全部迁移成功或复核完成。开发校准使用独立 kind，不计真实模型效果。
+
+```sh
+go test -race ./scenarios/rpcx/l2/round
+```
+
+覆盖零分母、未知区间、缺文件、跨 Run/候选/规范、重复引用、原失败/未启动任务、费用只计一次及输入/归档漂移。可选的已有三仓受控 Campaign 校准会对既有候选运行参考，需显式设置环境变量，见轮次说明；不读取 .env 或调用模型 API。
