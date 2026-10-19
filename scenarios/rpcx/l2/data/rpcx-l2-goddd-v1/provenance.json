@@ -1,0 +1,484 @@
+{
+  "schema_version": 1,
+  "dataset_version": "rpcx-l2-goddd-v1",
+  "selection_version": "rpcx-l2-selection-v0.1.0",
+  "sample_id": "l2-goddd-booking",
+  "split": "development",
+  "status": "baseline_prepared",
+  "upstream": {
+    "repository": "https://github.com/marcusolsson/goddd",
+    "commit": "7c414addc7a127df0b4ea38653be6a7c6380a37a",
+    "git_tree": "7c414addc7a127df0b4ea38653be6a7c6380a37a",
+    "license": "MIT",
+    "license_path": "fixtures/goddd/LICENSE"
+  },
+  "sdk_version": "rpcx-l2-sdk-v1",
+  "files": [
+    {
+      "source": "LICENSE",
+      "source_sha256": "f70acd35757afe41a7910d12e9c71277e95474dbde038d626ce87a26002b4763",
+      "source_url": "https://raw.githubusercontent.com/marcusolsson/goddd/7c414addc7a127df0b4ea38653be6a7c6380a37a/LICENSE",
+      "action": "kept",
+      "target": "fixtures/goddd/LICENSE",
+      "target_sha256": "f70acd35757afe41a7910d12e9c71277e95474dbde038d626ce87a26002b4763",
+      "reason": "保留上游业务/测试字节"
+    },
+    {
+      "source": "README.md",
+      "source_sha256": "ba4294ba0541c3f2b599f84d34c454965cb6130de362190a3c013b6058e48676",
+      "source_url": "https://raw.githubusercontent.com/marcusolsson/goddd/7c414addc7a127df0b4ea38653be6a7c6380a37a/README.md",
+      "action": "excluded",
+      "target": null,
+      "target_sha256": null,
+      "reason": "不属于 booking 路线切片：其他服务、部署入口或原整仓说明"
+    },
+    {
+      "source": "booking/instrumenting.go",
+      "source_sha256": "9f6c4fb86673da6382d35e1259dd3ed0f4f302c38a51a201c093938daf193ebc",
+      "source_url": "https://raw.githubusercontent.com/marcusolsson/goddd/7c414addc7a127df0b4ea38653be6a7c6380a37a/booking/instrumenting.go",
+      "action": "kept",
+      "target": "fixtures/goddd/booking/instrumenting.go",
+      "target_sha256": "9f6c4fb86673da6382d35e1259dd3ed0f4f302c38a51a201c093938daf193ebc",
+      "reason": "保留上游业务/测试字节"
+    },
+    {
+      "source": "booking/logging.go",
+      "source_sha256": "7828c13b670490b125ec0a4375c163df4c156d2824966dd7b59b7250daa693dd",
+      "source_url": "https://raw.githubusercontent.com/marcusolsson/goddd/7c414addc7a127df0b4ea38653be6a7c6380a37a/booking/logging.go",
+      "action": "kept",
+      "target": "fixtures/goddd/booking/logging.go",
+      "target_sha256": "7828c13b670490b125ec0a4375c163df4c156d2824966dd7b59b7250daa693dd",
+      "reason": "保留上游业务/测试字节"
+    },
+    {
+      "source": "booking/service.go",
+      "source_sha256": "20513027d821885bd6b5e9d409deed6dcfb63e011756a25c5271b587f5cf4a31",
+      "source_url": "https://raw.githubusercontent.com/marcusolsson/goddd/7c414addc7a127df0b4ea38653be6a7c6380a37a/booking/service.go",
+      "action": "kept",
+      "target": "fixtures/goddd/booking/service.go",
+      "target_sha256": "20513027d821885bd6b5e9d409deed6dcfb63e011756a25c5271b587f5cf4a31",
+      "reason": "保留上游业务/测试字节"
+    },
+    {
+      "source": "booking/service_test.go",
+      "source_sha256": "9245f7270411adc70ad7acd262b944ed80702539dcafa4bd9b29a02950a53b39",
+      "source_url": "https://raw.githubusercontent.com/marcusolsson/goddd/7c414addc7a127df0b4ea38653be6a7c6380a37a/booking/service_test.go",
+      "action": "kept",
+      "target": "fixtures/goddd/booking/service_test.go",
+      "target_sha256": "9245f7270411adc70ad7acd262b944ed80702539dcafa4bd9b29a02950a53b39",
+      "reason": "保留上游业务/测试字节"
+    },
+    {
+      "source": "cargo.go",
+      "source_sha256": "f928f08f89e4299bbd4bf5adb0384b0dbcc7acfe60ebc31211db96a0764b3207",
+      "source_url": "https://raw.githubusercontent.com/marcusolsson/goddd/7c414addc7a127df0b4ea38653be6a7c6380a37a/cargo.go",
+      "action": "kept",
+      "target": "fixtures/goddd/cargo.go",
+      "target_sha256": "f928f08f89e4299bbd4bf5adb0384b0dbcc7acfe60ebc31211db96a0764b3207",
+      "reason": "保留上游业务/测试字节"
+    },
+    {
+      "source": "cargo_test.go",
+      "source_sha256": "6533e2a67f5b08e067291b9ec4a82ec6bccbdc295120f53f6b24f4d2006cafd4",
+      "source_url": "https://raw.githubusercontent.com/marcusolsson/goddd/7c414addc7a127df0b4ea38653be6a7c6380a37a/cargo_test.go",
+      "action": "kept",
+      "target": "fixtures/goddd/cargo_test.go",
+      "target_sha256": "6533e2a67f5b08e067291b9ec4a82ec6bccbdc295120f53f6b24f4d2006cafd4",
+      "reason": "保留上游业务/测试字节"
+    },
+    {
+      "source": "cmd/shippingsvc/main.go",
+      "source_sha256": "b08b3e4341d671cb4fccb11e1427b49a7b75b2beccf5ad1acc37eff938555ec2",
+      "source_url": "https://raw.githubusercontent.com/marcusolsson/goddd/7c414addc7a127df0b4ea38653be6a7c6380a37a/cmd/shippingsvc/main.go",
+      "action": "excluded",
+      "target": null,
+      "target_sha256": null,
+      "reason": "不属于 booking 路线切片：其他服务、部署入口或原整仓说明"
+    },
+    {
+      "source": "cmd/shippingsvc/main_test.go",
+      "source_sha256": "353aa70baaf02b47206ddc9ac68fb19492c8c2556df3c516806d5f130eae1070",
+      "source_url": "https://raw.githubusercontent.com/marcusolsson/goddd/7c414addc7a127df0b4ea38653be6a7c6380a37a/cmd/shippingsvc/main_test.go",
+      "action": "excluded",
+      "target": null,
+      "target_sha256": null,
+      "reason": "不属于 booking 路线切片：其他服务、部署入口或原整仓说明"
+    },
+    {
+      "source": "delivery.go",
+      "source_sha256": "1bb479b4744c64c6a0c59a2dcd000489c3595d349ff60178c9b973d404294b87",
+      "source_url": "https://raw.githubusercontent.com/marcusolsson/goddd/7c414addc7a127df0b4ea38653be6a7c6380a37a/delivery.go",
+      "action": "kept",
+      "target": "fixtures/goddd/delivery.go",
+      "target_sha256": "1bb479b4744c64c6a0c59a2dcd000489c3595d349ff60178c9b973d404294b87",
+      "reason": "保留上游业务/测试字节"
+    },
+    {
+      "source": "go.mod",
+      "source_sha256": "6b31d451203a7ddef8354550e73143694bb42683426612284978928474f796f0",
+      "source_url": "https://raw.githubusercontent.com/marcusolsson/goddd/7c414addc7a127df0b4ea38653be6a7c6380a37a/go.mod",
+      "action": "modified",
+      "target": "fixtures/goddd/go.mod",
+      "target_sha256": "3c6a8f9f6d07cee7bbb4ae8e685996f776384f337f79f3968bdf92940321b9c6",
+      "reason": "保留切片所需依赖及上游版本，补 go 指令与本地 SDK replace"
+    },
+    {
+      "source": "go.sum",
+      "source_sha256": "3177550aa97501ac0f3ecc44c9fd7ec4d452ba9f7e5f640dcf0e939735f0a386",
+      "source_url": "https://raw.githubusercontent.com/marcusolsson/goddd/7c414addc7a127df0b4ea38653be6a7c6380a37a/go.sum",
+      "action": "modified",
+      "target": "fixtures/goddd/go.sum",
+      "target_sha256": "2e832782049e911fd6822486023f03109b1c90a4708dde3729309f33043d88dd",
+      "reason": "仅保留切片的固定依赖校验和"
+    },
+    {
+      "source": "handling/instrumenting.go",
+      "source_sha256": "d8f1c117410ba035727e04581070cfa7e176c430c2fb4ccb9c07514cc45f4f7e",
+      "source_url": "https://raw.githubusercontent.com/marcusolsson/goddd/7c414addc7a127df0b4ea38653be6a7c6380a37a/handling/instrumenting.go",
+      "action": "excluded",
+      "target": null,
+      "target_sha256": null,
+      "reason": "不属于 booking 路线切片：其他服务、部署入口或原整仓说明"
+    },
+    {
+      "source": "handling/logging.go",
+      "source_sha256": "7d9d6413f1d5fc7f8d58e2ee150656e1bf6b4d880084665c155daed100a97b3f",
+      "source_url": "https://raw.githubusercontent.com/marcusolsson/goddd/7c414addc7a127df0b4ea38653be6a7c6380a37a/handling/logging.go",
+      "action": "excluded",
+      "target": null,
+      "target_sha256": null,
+      "reason": "不属于 booking 路线切片：其他服务、部署入口或原整仓说明"
+    },
+    {
+      "source": "handling/service.go",
+      "source_sha256": "2a6740be1e449d504a9a743ee69d0eacd1cecfb31ab13ccf02e1d422f92a24d4",
+      "source_url": "https://raw.githubusercontent.com/marcusolsson/goddd/7c414addc7a127df0b4ea38653be6a7c6380a37a/handling/service.go",
+      "action": "excluded",
+      "target": null,
+      "target_sha256": null,
+      "reason": "不属于 booking 路线切片：其他服务、部署入口或原整仓说明"
+    },
+    {
+      "source": "handling/service_test.go",
+      "source_sha256": "83dd2f6a29236378f8e9424cd7cec37a7654aa1d9de8a0686ac0feef7cb3817a",
+      "source_url": "https://raw.githubusercontent.com/marcusolsson/goddd/7c414addc7a127df0b4ea38653be6a7c6380a37a/handling/service_test.go",
+      "action": "excluded",
+      "target": null,
+      "target_sha256": null,
+      "reason": "不属于 booking 路线切片：其他服务、部署入口或原整仓说明"
+    },
+    {
+      "source": "handling.go",
+      "source_sha256": "e040c5eea86c3031b758defadc08188169dbabcb94873d561065e272a4286785",
+      "source_url": "https://raw.githubusercontent.com/marcusolsson/goddd/7c414addc7a127df0b4ea38653be6a7c6380a37a/handling.go",
+      "action": "kept",
+      "target": "fixtures/goddd/handling.go",
+      "target_sha256": "e040c5eea86c3031b758defadc08188169dbabcb94873d561065e272a4286785",
+      "reason": "保留上游业务/测试字节"
+    },
+    {
+      "source": "inmem/inmem.go",
+      "source_sha256": "d15534513fc4840d3f0ce14e9943caa8431a2f611ec4adb51ed287bacb3bedda",
+      "source_url": "https://raw.githubusercontent.com/marcusolsson/goddd/7c414addc7a127df0b4ea38653be6a7c6380a37a/inmem/inmem.go",
+      "action": "kept",
+      "target": "fixtures/goddd/inmem/inmem.go",
+      "target_sha256": "d15534513fc4840d3f0ce14e9943caa8431a2f611ec4adb51ed287bacb3bedda",
+      "reason": "保留上游业务/测试字节"
+    },
+    {
+      "source": "inspection/inspection.go",
+      "source_sha256": "b686b1fdde119aeb6fb3248363862cfcffdc2971b0f5cb87e95480f903191ae8",
+      "source_url": "https://raw.githubusercontent.com/marcusolsson/goddd/7c414addc7a127df0b4ea38653be6a7c6380a37a/inspection/inspection.go",
+      "action": "excluded",
+      "target": null,
+      "target_sha256": null,
+      "reason": "不属于 booking 路线切片：其他服务、部署入口或原整仓说明"
+    },
+    {
+      "source": "inspection/inspection_test.go",
+      "source_sha256": "ad3f7970d1d94ab174204c3cf42e4b434833450eb3f6a421061df2b1d01a647c",
+      "source_url": "https://raw.githubusercontent.com/marcusolsson/goddd/7c414addc7a127df0b4ea38653be6a7c6380a37a/inspection/inspection_test.go",
+      "action": "excluded",
+      "target": null,
+      "target_sha256": null,
+      "reason": "不属于 booking 路线切片：其他服务、部署入口或原整仓说明"
+    },
+    {
+      "source": "itinerary.go",
+      "source_sha256": "3a54cb16a3510ce2d9b7ce642e1bc57c8243311122a1229c44712fc2f175db4a",
+      "source_url": "https://raw.githubusercontent.com/marcusolsson/goddd/7c414addc7a127df0b4ea38653be6a7c6380a37a/itinerary.go",
+      "action": "kept",
+      "target": "fixtures/goddd/itinerary.go",
+      "target_sha256": "3a54cb16a3510ce2d9b7ce642e1bc57c8243311122a1229c44712fc2f175db4a",
+      "reason": "保留上游业务/测试字节"
+    },
+    {
+      "source": "itinerary_test.go",
+      "source_sha256": "92a3a8a3a8a6c4524225bb6554fee32809dacbc5e50f125ce57ac77fa85b910d",
+      "source_url": "https://raw.githubusercontent.com/marcusolsson/goddd/7c414addc7a127df0b4ea38653be6a7c6380a37a/itinerary_test.go",
+      "action": "kept",
+      "target": "fixtures/goddd/itinerary_test.go",
+      "target_sha256": "92a3a8a3a8a6c4524225bb6554fee32809dacbc5e50f125ce57ac77fa85b910d",
+      "reason": "保留上游业务/测试字节"
+    },
+    {
+      "source": "location.go",
+      "source_sha256": "29e999bf09fed92c2a499a31d04906a275ab1299c52b39f5fbb05cf7e2723adc",
+      "source_url": "https://raw.githubusercontent.com/marcusolsson/goddd/7c414addc7a127df0b4ea38653be6a7c6380a37a/location.go",
+      "action": "kept",
+      "target": "fixtures/goddd/location.go",
+      "target_sha256": "29e999bf09fed92c2a499a31d04906a275ab1299c52b39f5fbb05cf7e2723adc",
+      "reason": "保留上游业务/测试字节"
+    },
+    {
+      "source": "mock/mock.go",
+      "source_sha256": "9b8f0e3edfed43a7472e8562d36cf3add49ebe2dd07a2daa8100e5c4df2dfee2",
+      "source_url": "https://raw.githubusercontent.com/marcusolsson/goddd/7c414addc7a127df0b4ea38653be6a7c6380a37a/mock/mock.go",
+      "action": "kept",
+      "target": "fixtures/goddd/mock/mock.go",
+      "target_sha256": "9b8f0e3edfed43a7472e8562d36cf3add49ebe2dd07a2daa8100e5c4df2dfee2",
+      "reason": "保留上游业务/测试字节"
+    },
+    {
+      "source": "mongo/mongo.go",
+      "source_sha256": "e93ef91c9d66ee01e13e217d81201751df157741f4c8578e6bf37bd4f1fc847d",
+      "source_url": "https://raw.githubusercontent.com/marcusolsson/goddd/7c414addc7a127df0b4ea38653be6a7c6380a37a/mongo/mongo.go",
+      "action": "excluded",
+      "target": null,
+      "target_sha256": null,
+      "reason": "不属于 booking 路线切片：其他服务、部署入口或原整仓说明"
+    },
+    {
+      "source": "routing/proxying.go",
+      "source_sha256": "dfa3f99f7b0a8373591a8795c0f224db9a4f89f47d6d01c53bbb606105914b4a",
+      "source_url": "https://raw.githubusercontent.com/marcusolsson/goddd/7c414addc7a127df0b4ea38653be6a7c6380a37a/routing/proxying.go",
+      "action": "modified",
+      "target": "fixtures/goddd/routing/proxying.go",
+      "target_sha256": "c8f84c7a334ac386ab7dabcc9378a925872549d4ff2d606b808fb10ceb7866cc",
+      "reason": "替换 HTTP/Hystrix 出站传输为 rpcx-v1；保留映射与失败返回，导出 DTO 供内存后端使用"
+    },
+    {
+      "source": "routing.go",
+      "source_sha256": "e0b259107f7944c06d34de0c45fbd5cdd434ea0246325de2c4f31b7c9ba58998",
+      "source_url": "https://raw.githubusercontent.com/marcusolsson/goddd/7c414addc7a127df0b4ea38653be6a7c6380a37a/routing.go",
+      "action": "kept",
+      "target": "fixtures/goddd/routing.go",
+      "target_sha256": "e0b259107f7944c06d34de0c45fbd5cdd434ea0246325de2c4f31b7c9ba58998",
+      "reason": "保留上游业务/测试字节"
+    },
+    {
+      "source": "sample_locations.go",
+      "source_sha256": "be685e8b584aea0ae75dfa002cca89bd54245aa7b14e50b224ca6637910039f7",
+      "source_url": "https://raw.githubusercontent.com/marcusolsson/goddd/7c414addc7a127df0b4ea38653be6a7c6380a37a/sample_locations.go",
+      "action": "kept",
+      "target": "fixtures/goddd/sample_locations.go",
+      "target_sha256": "be685e8b584aea0ae75dfa002cca89bd54245aa7b14e50b224ca6637910039f7",
+      "reason": "保留上游业务/测试字节"
+    },
+    {
+      "source": "sample_voyages.go",
+      "source_sha256": "91af79327b428cca00fc0d94fe47d708406b80e3a5f2962d0caf6cab1edc38ce",
+      "source_url": "https://raw.githubusercontent.com/marcusolsson/goddd/7c414addc7a127df0b4ea38653be6a7c6380a37a/sample_voyages.go",
+      "action": "kept",
+      "target": "fixtures/goddd/sample_voyages.go",
+      "target_sha256": "91af79327b428cca00fc0d94fe47d708406b80e3a5f2962d0caf6cab1edc38ce",
+      "reason": "保留上游业务/测试字节"
+    },
+    {
+      "source": "server/booking.go",
+      "source_sha256": "4f864231577f6d670c8f8c186f20c618a1ec9a07ec5b77b36292c52ea90c3ffa",
+      "source_url": "https://raw.githubusercontent.com/marcusolsson/goddd/7c414addc7a127df0b4ea38653be6a7c6380a37a/server/booking.go",
+      "action": "modified",
+      "target": "fixtures/goddd/server/booking.go",
+      "target_sha256": "5646216c4c988856d13d70e42bf4af03d70af0a4a805d9e28df90265410271c2",
+      "reason": "去掉未分发的静态文档路由；业务处理函数不改"
+    },
+    {
+      "source": "server/handling.go",
+      "source_sha256": "6023a1ab9f16536fa598f5ffc6315f6688a165a1446caa4e6ba0aaf9016d7efa",
+      "source_url": "https://raw.githubusercontent.com/marcusolsson/goddd/7c414addc7a127df0b4ea38653be6a7c6380a37a/server/handling.go",
+      "action": "excluded",
+      "target": null,
+      "target_sha256": null,
+      "reason": "不属于 booking 路线切片：其他服务、部署入口或原整仓说明"
+    },
+    {
+      "source": "server/server.go",
+      "source_sha256": "853443f5e2366ce33356f9d337488ed926590807ebe249e67e915c4e10f1a87a",
+      "source_url": "https://raw.githubusercontent.com/marcusolsson/goddd/7c414addc7a127df0b4ea38653be6a7c6380a37a/server/server.go",
+      "action": "modified",
+      "target": "fixtures/goddd/server/server.go",
+      "target_sha256": "af1b22d27d66343ddd07b8eca0cdec9c063b38d73083414e63371e1ee3998ef3",
+      "reason": "仅装配 booking；移除 tracking/handling/Prometheus 及不可达的 tracking 错误分支"
+    },
+    {
+      "source": "server/tracking.go",
+      "source_sha256": "577ea9e4592e54aed6927fce8327c8a250e12e5eb30cf41228611bcb5936ab16",
+      "source_url": "https://raw.githubusercontent.com/marcusolsson/goddd/7c414addc7a127df0b4ea38653be6a7c6380a37a/server/tracking.go",
+      "action": "excluded",
+      "target": null,
+      "target_sha256": null,
+      "reason": "不属于 booking 路线切片：其他服务、部署入口或原整仓说明"
+    },
+    {
+      "source": "server/tracking_test.go",
+      "source_sha256": "e2e79ac24b618e8b03789b7008133dfac2f3ee3cd988d736dbc6b8a30fc1827d",
+      "source_url": "https://raw.githubusercontent.com/marcusolsson/goddd/7c414addc7a127df0b4ea38653be6a7c6380a37a/server/tracking_test.go",
+      "action": "excluded",
+      "target": null,
+      "target_sha256": null,
+      "reason": "不属于 booking 路线切片：其他服务、部署入口或原整仓说明"
+    },
+    {
+      "source": "tracking/instrumenting.go",
+      "source_sha256": "6db444d2f971af4943ec09ac4c61f1a87aa1df8e28477b542cea928d3aa6f0bc",
+      "source_url": "https://raw.githubusercontent.com/marcusolsson/goddd/7c414addc7a127df0b4ea38653be6a7c6380a37a/tracking/instrumenting.go",
+      "action": "excluded",
+      "target": null,
+      "target_sha256": null,
+      "reason": "不属于 booking 路线切片：其他服务、部署入口或原整仓说明"
+    },
+    {
+      "source": "tracking/logging.go",
+      "source_sha256": "65b5e93937037df5db72b032106f0b5a63a481d0f7706c03074882ee58ad1d63",
+      "source_url": "https://raw.githubusercontent.com/marcusolsson/goddd/7c414addc7a127df0b4ea38653be6a7c6380a37a/tracking/logging.go",
+      "action": "excluded",
+      "target": null,
+      "target_sha256": null,
+      "reason": "不属于 booking 路线切片：其他服务、部署入口或原整仓说明"
+    },
+    {
+      "source": "tracking/service.go",
+      "source_sha256": "ce9a5d5be163e6a6465cec269a4146417bc664bd1881ec707a67cb82f6b828f3",
+      "source_url": "https://raw.githubusercontent.com/marcusolsson/goddd/7c414addc7a127df0b4ea38653be6a7c6380a37a/tracking/service.go",
+      "action": "excluded",
+      "target": null,
+      "target_sha256": null,
+      "reason": "不属于 booking 路线切片：其他服务、部署入口或原整仓说明"
+    },
+    {
+      "source": "tracking/service_test.go",
+      "source_sha256": "0a557ccf90f4adfc127a2f89c8619dfdc08b1e4a6c0178d432f622ca7cde8dee",
+      "source_url": "https://raw.githubusercontent.com/marcusolsson/goddd/7c414addc7a127df0b4ea38653be6a7c6380a37a/tracking/service_test.go",
+      "action": "excluded",
+      "target": null,
+      "target_sha256": null,
+      "reason": "不属于 booking 路线切片：其他服务、部署入口或原整仓说明"
+    },
+    {
+      "source": "voyage.go",
+      "source_sha256": "6471d7b41f15788e846d5faa49abd947a6217f691f897d4c4345203dd6482d19",
+      "source_url": "https://raw.githubusercontent.com/marcusolsson/goddd/7c414addc7a127df0b4ea38653be6a7c6380a37a/voyage.go",
+      "action": "kept",
+      "target": "fixtures/goddd/voyage.go",
+      "target_sha256": "6471d7b41f15788e846d5faa49abd947a6217f691f897d4c4345203dd6482d19",
+      "reason": "保留上游业务/测试字节"
+    },
+    {
+      "source": null,
+      "source_sha256": null,
+      "source_url": null,
+      "action": "added",
+      "target": "fixtures/goddd/routing/proxying_test.go",
+      "target_sha256": "a5f59d56f62264cd4fc4cd6b06a2f5cf62d3c1f613a83eae2d2cf8eaf4a9c436",
+      "reason": "新增的本地 RPC 路径与业务保真测试"
+    },
+    {
+      "source": null,
+      "source_sha256": null,
+      "source_url": null,
+      "action": "added",
+      "target": "fixtures/goddd/server/booking_test.go",
+      "target_sha256": "acf7afb78ff906300543c13bc893237c6f9f0b4514978048dc3e7bb858f3de0b",
+      "reason": "新增的本地 RPC 路径与业务保真测试"
+    },
+    {
+      "source": null,
+      "source_sha256": null,
+      "source_url": null,
+      "action": "added",
+      "target": "fixtures/rpcx-v1/client.go",
+      "target_sha256": "d64ed95ffe5300f74e69c353676efed97c83b2fbf7d7044adc62206b6649e485",
+      "reason": "共用 L2 内存 SDK 契约与自测；非上游业务源码"
+    },
+    {
+      "source": null,
+      "source_sha256": null,
+      "source_url": null,
+      "action": "added",
+      "target": "fixtures/rpcx-v1/client_test.go",
+      "target_sha256": "6e02aa503e1d5063e68accf38db84811aebf227a0b10a9618eeaf2e603ad4612",
+      "reason": "共用 L2 内存 SDK 契约与自测；非上游业务源码"
+    },
+    {
+      "source": null,
+      "source_sha256": null,
+      "source_url": null,
+      "action": "added",
+      "target": "fixtures/rpcx-v1/deadline_test.go",
+      "target_sha256": "780940038c3a0f290acf029eeaf095b393b08d7519429352de5d26074c899e5f",
+      "reason": "共用 L2 内存 SDK 契约与自测；非上游业务源码"
+    },
+    {
+      "source": null,
+      "source_sha256": null,
+      "source_url": null,
+      "action": "added",
+      "target": "fixtures/rpcx-v1/go.mod",
+      "target_sha256": "698fe8774eaf0f9106bd19fd322b9f6abb82acd8739c8ed3919ddf4ea4eb6b44",
+      "reason": "共用 L2 内存 SDK 契约与自测；非上游业务源码"
+    },
+    {
+      "source": null,
+      "source_sha256": null,
+      "source_url": null,
+      "action": "added",
+      "target": "fixtures/rpcx-v2/client.go",
+      "target_sha256": "62b8f98d3986c47d856deccd3c89499fba0195530ffde3105e1eb8f67e51da73",
+      "reason": "共用 L2 内存 SDK 契约与自测；非上游业务源码"
+    },
+    {
+      "source": null,
+      "source_sha256": null,
+      "source_url": null,
+      "action": "added",
+      "target": "fixtures/rpcx-v2/client_test.go",
+      "target_sha256": "b469c0d91e2cf5c971faeba412c0b2f6df80204c049b945a86d21dafb2c0f0ca",
+      "reason": "共用 L2 内存 SDK 契约与自测；非上游业务源码"
+    },
+    {
+      "source": null,
+      "source_sha256": null,
+      "source_url": null,
+      "action": "added",
+      "target": "fixtures/rpcx-v2/deadline_test.go",
+      "target_sha256": "6e005b264b088753aa8f68dad105d62540ebfb37d072f86061985a69f4ce338c",
+      "reason": "共用 L2 内存 SDK 契约与自测；非上游业务源码"
+    },
+    {
+      "source": null,
+      "source_sha256": null,
+      "source_url": null,
+      "action": "added",
+      "target": "fixtures/rpcx-v2/go.mod",
+      "target_sha256": "b5c281563f355cf0cd376479fef44323561958bf6f012e67159b3714fb42582f",
+      "reason": "共用 L2 内存 SDK 契约与自测；非上游业务源码"
+    }
+  ],
+  "excluded_groups": [
+    {
+      "prefix": "vendor/",
+      "reason": "改由单独冻结的 7 个模块提供，保留其上游版本与许可"
+    },
+    {
+      "prefix": "non-Go assets and configuration",
+      "reason": "UI、API 静态文档、CI 与部署不属于本业务切片；完整上游目录由固定 git_tree 标识"
+    }
+  ],
+  "injected_differences": [
+    "本地内存 RPC 传输替代 HTTP 与熔断，不检验原网络/Hystrix 行为",
+    "rpcx-v1 的 30 秒超时是植入条件，不是上游原有契约",
+    "保留无 ctx 的服务接口，v1 的调用不传递 HTTP 请求上下文",
+    "新增 SDK、适配器/HTTP 路径测试；它们不是上游原测试或迁移 oracle"
+  ]
+}

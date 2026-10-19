@@ -1,6 +1,6 @@
 # rpcx L2 样本准备
 
-当前完成的是样本设计与选择，尚无可执行 L2 夹具。详细取舍、裁剪范围、业务保真要求和准入标准见[工作记录](../../../docs/worklog/2026-10-19-m3-4-sample-selection.md)。
+已完成样本选择和 [Goddd 迁移前离线基线](data/rpcx-l2-goddd-v1/README.md)，另两个开发样本待准备。Goddd 的可信本地与断网 Docker 复验均通过，仍未注册迁移 Profile。来源取舍见[样本选择记录](../../../docs/worklog/2026-10-19-m3-4-sample-selection.md)，实际准备与验证见[基线工作记录](../../../docs/worklog/2026-10-19-goddd-baseline.md)。
 
 [选择清单 v0.1.0](selection-v0.1.0.json)固定三个开发来源及其 commit：
 
@@ -16,10 +16,12 @@
 
 ## 清单边界
 
-- `selected_for_preparation` 表示选定来源，**不表示构建测试已通过**。`prepared_dataset` 与 `runtime_profile_id` 为空是有意保留的未完成状态。
+- `selected_for_preparation` 表示当时选定来源，**不表示构建测试已通过**。旧选择清单的 `prepared_dataset` 与 `runtime_profile_id` 保留为空；后续准备结果另存，不回写历史选择。
 - `reviewed_files` 是实际读取的来源文件及摘要，用来复核选择依据；不是完整源快照，也不是裁剪后的基线摘要。可以从其中固定 commit 的公开 URL 重新获取并校验。
 - `planned_build_configurations` 是准备要求，不是当前 Runner 已支持的配置。translation 两配置是同一仓库任务，只计一个样本。
 - 这份文件不由 Harness 读取，不是运行清单；它及后续 oracle/预期不得加入 Agent 的可见仓库根。运行时仅接收认证的任务输入、SDK、规范与宿主选择的验证材料。
 - 清单提交后保留选择版本；准备证据另存。换来源或改划分时新增选择版本并解释原因，不按迁移成功与否覆盖原选择。
 
-下一步先准备 Goddd 的离线 v1 基线与共用 L2 SDK，记录上游到切片的逐文件映射、原测试保留情况及依赖材料。基线验收和数据冻结后，再制作候选对照、注册新宿主 Profile；旧 T3 数据及两个 demo-orders Profile 保持原身份。
+Goddd 数据版本为 rpcx-l2-goddd-v1，包含共用 SDK 契约 rpcx-l2-sdk-v1、15 个原业务测试、离线依赖及来源映射。复验入口为 `go run ./scenarios/rpcx/l2/cmd/verify-baseline`，默认使用已有固定 Docker 镜像；显式 `-trusted-local` 运行可信本地夹具。工具核对 37 项测试及子测试、包终态和执行前后材料；不调用模型。
+
+下一步为该冻结基线准备迁移规范、新宿主 Profile、可信检查和正确/错误/未知候选对照，再进入 Agent 迁移验收；其余样本按原选择逐个准备。

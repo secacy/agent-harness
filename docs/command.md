@@ -110,6 +110,16 @@ env GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly G
 
 验证新增基线阶段的 Docker 路径：使用相同离线环境变量，加 `HARNESS_DOCKER_TEST=1` 执行 `go test ./scenarios/rpcx/runner -run '^TestExplicitTargetDockerBaselineBeforeModel$'`。该对照只进行构建与十个原测试，随后使用立即报错的进程内模型替身，不调用真实服务。需已准备固定镜像，沿用下文 Docker 准备步骤。
 
+## M3.4 Goddd 离线基线复验
+
+```sh
+env GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly GOCACHE="$PWD/runs/go-cache" go run ./scenarios/rpcx/l2/cmd/verify-baseline
+```
+
+默认使用已有固定 Docker 镜像，断网并只读挂载冻结输入；为每条命令创建新容器和空构建缓存。重新装配独立的固定模块材料，构建并测试 Goddd 和共用 SDK v1/v2，核对 37 项测试及子测试、必需包终态、来源映射及输入前后摘要。报告写入新的 `runs/rpcx-l2-baseline-*/report.json`；不调用模型，accepted 仅表示该迁移前基线可复跑。
+
+可信本地复验显式添加 `-trusted-local`。机制测试为 `go test -race ./scenarios/rpcx/l2/...`，包含冻结/来源异常在执行前拒绝、归档边界、缺失/跳过事件、失败证据与输入变化，不执行完整 Docker 基线。数据范围和限制见 [L2 说明](../scenarios/rpcx/l2/README.md)。
+
 ## 单仓库任务入口
 
 ```sh

@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "modules": {
+    "goddd": {
+      "packages": [
+        "github.com/marcusolsson/goddd",
+        "github.com/marcusolsson/goddd/booking",
+        "github.com/marcusolsson/goddd/routing",
+        "github.com/marcusolsson/goddd/server"
+      ],
+      "packages_without_tests": [
+        "github.com/marcusolsson/goddd/inmem",
+        "github.com/marcusolsson/goddd/mock"
+      ],
+      "original_tests": [
+        "github.com/marcusolsson/goddd/TestConstruction",
+        "github.com/marcusolsson/goddd/TestItinerary_CreateEmpty",
+        "github.com/marcusolsson/goddd/TestItinerary_IsExpected",
+        "github.com/marcusolsson/goddd/TestItinerary_IsExpected_EmptyItinerary",
+        "github.com/marcusolsson/goddd/TestLastKnownLocation_WhenClaimed",
+        "github.com/marcusolsson/goddd/TestLastKnownLocation_WhenNoEvents",
+        "github.com/marcusolsson/goddd/TestLastKnownLocation_WhenReceived",
+        "github.com/marcusolsson/goddd/TestRoutingStatus",
+        "github.com/marcusolsson/goddd/TestRoutingStatus_Stringer",
+        "github.com/marcusolsson/goddd/TestTransportStatus_Stringer",
+        "github.com/marcusolsson/goddd/booking/TestAssignCargoToRoute",
+        "github.com/marcusolsson/goddd/booking/TestBookNewCargo",
+        "github.com/marcusolsson/goddd/booking/TestChangeCargoDestination",
+        "github.com/marcusolsson/goddd/booking/TestLoadCargo",
+        "github.com/marcusolsson/goddd/booking/TestRequestPossibleRoutesForCargo"
+      ],
+      "added_tests": [
+        "github.com/marcusolsson/goddd/routing/TestEmptyRemoteResponse",
+        "github.com/marcusolsson/goddd/routing/TestRemoteFailureReturnsEmptyRoutes",
+        "github.com/marcusolsson/goddd/routing/TestRouteMapping",
+        "github.com/marcusolsson/goddd/server/TestBookingRoutesThroughRPC",
+        "github.com/marcusolsson/goddd/server/TestBookingRoutesThroughRPC/remote-failure",
+        "github.com/marcusolsson/goddd/server/TestBookingRoutesThroughRPC/success",
+        "github.com/marcusolsson/goddd/server/TestBookingRoutesThroughRPC/unknown-cargo"
+      ]
+    },
+    "rpcx-v1": {
+      "packages": [
+        "example.com/rpcx"
+      ],
+      "packages_without_tests": [],
+      "original_tests": [],
+      "added_tests": [
+        "example.com/rpcx/TestDefaultDeadlineAndRelease",
+        "example.com/rpcx/TestNilHandler",
+        "example.com/rpcx/TestRegistration",
+        "example.com/rpcx/TestRequestResponseAndError",
+        "example.com/rpcx/TestUnknownAddress"
+      ]
+    },
+    "rpcx-v2": {
+      "packages": [
+        "example.com/rpcx/v2"
+      ],
+      "packages_without_tests": [],
+      "original_tests": [],
+      "added_tests": [
+        "example.com/rpcx/v2/TestCallerContext",
+        "example.com/rpcx/v2/TestCallerContext/long-deadline",
+        "example.com/rpcx/v2/TestCallerContext/no-deadline",
+        "example.com/rpcx/v2/TestCallerContext/short-deadline",
+        "example.com/rpcx/v2/TestCancellationInBackend",
+        "example.com/rpcx/v2/TestCancelledParent",
+        "example.com/rpcx/v2/TestNilHandler",
+        "example.com/rpcx/v2/TestRegistration",
+        "example.com/rpcx/v2/TestRequestResponseAndError",
+        "example.com/rpcx/v2/TestUnknownAddress"
+      ]
+    }
+  }
+}
