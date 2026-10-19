@@ -18,9 +18,38 @@ const GodddFreezeSHA256 = "3b00ca14b81d7de45fc8d72fe4dd7c01f3a83ff9d31722373782e
 //go:embed data/rpcx-l2-goddd-v1/freeze.json data/rpcx-l2-goddd-v1/tests.json data/rpcx-l2-goddd-v1/dependencies
 var material embed.FS
 
+//go:embed data/rpcx-l2-translation-v1/freeze.json data/rpcx-l2-translation-v1/tests.json data/rpcx-l2-translation-v1/dependencies
+var translationMaterial embed.FS
+
+//go:embed modules.go materials.go baseline/data.go
+var executionMaterial embed.FS
+
+// ExecutionMaterials 保存实际装配与解包实现，供门禁绑定工具身份。
+func ExecutionMaterials() (map[string][]byte, error) {
+	files := map[string][]byte{}
+	err := fs.WalkDir(executionMaterial, ".", func(name string, entry fs.DirEntry, err error) error {
+		if err != nil || entry.IsDir() {
+			return err
+		}
+		data, err := executionMaterial.ReadFile(name)
+		files[name] = data
+		return err
+	})
+	return files, err
+}
+
+const TranslationFreezeSHA256 = "d1e0e20608fed9e45212a6fb5010834028ab82228573a391c78a1500f7be8bdd"
+
+func TranslationMaterials() (map[string][]byte, error) {
+	return loadMaterials(translationMaterial, "data/rpcx-l2-translation-v1", TranslationFreezeSHA256)
+}
+
 // GodddMaterials 返回经过发布身份认证的依赖、测试身份和完整冻结清单。
 func GodddMaterials() (map[string][]byte, error) {
-	const root = "data/rpcx-l2-goddd-v1"
+	return loadMaterials(material, "data/rpcx-l2-goddd-v1", GodddFreezeSHA256)
+}
+
+func loadMaterials(material embed.FS, root, freeze string) (map[string][]byte, error) {
 	files := map[string][]byte{}
 	err := fs.WalkDir(material, root, func(name string, e fs.DirEntry, err error) error {
 		if err != nil || e.IsDir() {
@@ -36,8 +65,8 @@ func GodddMaterials() (map[string][]byte, error) {
 		return nil, err
 	}
 	hash := func(data []byte) string { return fmt.Sprintf("%x", sha256.Sum256(data)) }
-	if hash(files["freeze.json"]) != GodddFreezeSHA256 {
-		return nil, errors.New("embedded Goddd release identity changed")
+	if hash(files["freeze.json"]) != freeze {
+		return nil, errors.New("embedded release identity changed")
 	}
 	var release struct {
 		Files map[string]string `json:"files"`

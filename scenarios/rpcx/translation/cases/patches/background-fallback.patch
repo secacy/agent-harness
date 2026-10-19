@@ -1,0 +1,102 @@
+--- a/go.mod
++++ b/go.mod
+@@ -3,7 +3,7 @@
+ go 1.26.0
+ 
+ require (
+-	example.com/rpcx v1.0.0
++	example.com/rpcx/v2 v2.0.0
+ 	github.com/stretchr/testify v1.12.1
+ 	go.opentelemetry.io/otel v1.45.0
+ 	go.opentelemetry.io/otel/trace v1.45.0
+@@ -19,6 +19,5 @@
+ 	go.yaml.in/yaml/v3 v3.0.5 // indirect
+ )
+ 
+-replace example.com/rpcx => ../rpcx-v1
+ 
+ replace example.com/rpcx/v2 => ../rpcx-v2
+--- a/internal/repo/webapi/translation_google.go
++++ b/internal/repo/webapi/translation_google.go
+@@ -4,10 +4,11 @@
+ 
+ import (
+ 	"context"
+-	"example.com/rpcx"
++	"example.com/rpcx/v2"
+ 	"fmt"
+ 	"github.com/evrone/go-clean-template/internal/entity"
+ 	"github.com/evrone/go-clean-template/internal/repo"
++	"time"
+ )
+ 
+ // TranslationWebAPI 保留翻译出站边界，传输替换为本地 rpcx-v1。
+@@ -18,7 +19,7 @@
+ 
+ // New 连接宿主准备的本地后端，并保留原 tracing 包装。
+ func New(addr string) (repo.TranslationWebAPI, error) {
+-	client, err := rpcx.NewClient(addr)
++	client, err := rpcx.Dial(addr)
+ 	if err != nil {
+ 		return nil, fmt.Errorf("TranslationWebAPI - New: %w", err)
+ 	}
+@@ -30,8 +31,10 @@
+ 	if err := ctx.Err(); err != nil {
+ 		return entity.Translation{}, fmt.Errorf("TranslationWebAPI - Translate - ctx: %w", err)
+ 	}
++	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
++	defer cancel()
+ 	var result translateResponse
+-	err := t.client.Call("translate", translateRequest{Text: translation.Original, Source: translation.Source, Destination: translation.Destination}, &result)
++	err := t.client.Call(ctx, "translate", translateRequest{Text: translation.Original, Source: translation.Source, Destination: translation.Destination}, &result)
+ 	if err != nil {
+ 		return entity.Translation{}, fmt.Errorf("TranslationWebAPI - Translate - trans.Translate: %w", err)
+ 	}
+--- a/internal/repo/webapi/translation_rpcx_alternate.go
++++ b/internal/repo/webapi/translation_rpcx_alternate.go
+@@ -4,10 +4,11 @@
+ 
+ import (
+ 	"context"
+-	"example.com/rpcx"
++	"example.com/rpcx/v2"
+ 	"fmt"
+ 	"github.com/evrone/go-clean-template/internal/entity"
+ 	"github.com/evrone/go-clean-template/internal/repo"
++	"time"
+ )
+ 
+ // TranslationWebAPI 保留翻译出站边界，传输替换为本地 rpcx-v1。
+@@ -18,7 +19,7 @@
+ 
+ // New 连接宿主准备的本地后端，并保留原 tracing 包装。
+ func New(addr string) (repo.TranslationWebAPI, error) {
+-	client, err := rpcx.NewClient(addr)
++	client, err := rpcx.Dial(addr)
+ 	if err != nil {
+ 		return nil, fmt.Errorf("TranslationWebAPI - New: %w", err)
+ 	}
+@@ -30,9 +31,11 @@
+ 	if err := ctx.Err(); err != nil {
+ 		return entity.Translation{}, fmt.Errorf("TranslationWebAPI - Translate - ctx: %w", err)
+ 	}
++	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
++	defer cancel()
+ 	request := translateRequest{Text: translation.Original, Source: translation.Source, Destination: translation.Destination}
+ 	response := new(translateResponse)
+-	if err := t.client.Call("translate", request, response); err != nil {
++	if err := t.client.Call(ctx, "translate", request, response); err != nil {
+ 		return entity.Translation{}, fmt.Errorf("TranslationWebAPI - Translate - trans.Translate: %w", err)
+ 	}
+ 	translation.Translation = response.Text
+--- a/internal/repo/webapi/translation_rpcx_test.go
++++ b/internal/repo/webapi/translation_rpcx_test.go
+@@ -7,7 +7,7 @@
+ 	"testing"
+ 	"time"
+ 
+-	"example.com/rpcx"
++	"example.com/rpcx/v2"
+ 	"github.com/evrone/go-clean-template/internal/entity"
+ 	"github.com/evrone/go-clean-template/internal/usecase/translation"
+ )

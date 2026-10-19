@@ -16,6 +16,8 @@ import (
 	"github.com/secacy/agent-harness/internal/quality"
 	"github.com/secacy/agent-harness/scenarios/rpcx/analysis"
 	"github.com/secacy/agent-harness/scenarios/rpcx/checks"
+	"github.com/secacy/agent-harness/scenarios/rpcx/gate"
+	"github.com/secacy/agent-harness/scenarios/rpcx/l2"
 	"github.com/secacy/agent-harness/scenarios/rpcx/testintegrity"
 )
 
@@ -169,6 +171,20 @@ func Evaluate(ctx context.Context, req checks.EvaluationRequest) (out checks.Eva
 	}
 	for name, data := range shared {
 		material["testintegrity/"+name] = data
+	}
+	common, err := gate.Materials()
+	if err != nil {
+		return out, err
+	}
+	for name, data := range common {
+		material["gate/"+name] = data
+	}
+	hostImplementation, err := l2.ExecutionMaterials()
+	if err != nil {
+		return out, err
+	}
+	for name, data := range hostImplementation {
+		material["l2/"+name] = data
 	}
 	e.result.MaterialsSHA256 = treeHash(material)
 	if err := copyFiles(filepath.Join(e.req.EvidenceDir, "tool"), material); err != nil {

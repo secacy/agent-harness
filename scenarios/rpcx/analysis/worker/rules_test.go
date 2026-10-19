@@ -19,7 +19,7 @@ func TestResponseBoundaryProof(t *testing.T) {
 	imports := boundaryImports{}
 	cp := types.NewPackage("context", "context")
 	imports["context"] = cp
-	contextType := types.NewNamed(types.NewTypeName(0, cp, "Context", nil), types.NewInterfaceType(nil, nil).Complete(), nil)
+	contextType := types.NewNamed(types.NewTypeName(0, cp, "Context", nil), types.NewInterfaceType([]*types.Func{types.NewFunc(0, cp, "Err", types.NewSignatureType(nil, nil, nil, nil, types.NewTuple(types.NewVar(0, cp, "", types.Universe.Lookup("error").Type())), false))}, nil).Complete(), nil)
 	cp.Scope().Insert(contextType.Obj())
 	cancelType := types.NewNamed(types.NewTypeName(0, cp, "CancelFunc", nil), types.NewSignatureType(nil, nil, nil, nil, nil, false), nil)
 	cp.Scope().Insert(cancelType.Obj())
@@ -47,6 +47,12 @@ func TestResponseBoundaryProof(t *testing.T) {
  }`
 	cases := []struct{ name, old, new, status string }{
 		{"response", "", "", "covered"},
+		{"ctx-precheck", "ctx,cancel:=context.WithTimeout(ctx,30*time.Second)", "if err:=ctx.Err();err!=nil{return 0};ctx,cancel:=context.WithTimeout(ctx,30*time.Second)", "covered"},
+		{"unsafe-precheck", "ctx,cancel:=context.WithTimeout(ctx,30*time.Second)", "if err:=ctx.Err();err!=nil{helper();return 0};ctx,cancel:=context.WithTimeout(ctx,30*time.Second)", "unknown"},
+		{"request-pointer", "var response int\n err:=c.Call(ctx,\"fetch_routes\",int(1),&response)", "request:=int(1);response:=new(int)\n err:=c.Call(ctx,\"fetch_routes\",request,response)", "covered"},
+		{"side-effect-request", "var response int", "request:=helper();_ = request;var response int", "unknown"},
+		{"blocking-request", "var response int", "var response = <-(chan int)(nil)", "unknown"},
+
 		{"wrong-duration", "30*time.Second", "31*time.Second", "violation"},
 		{"argument-call", "int(1)", "helper()", "unknown"},
 		{"early-cancel", "var response int", "cancel();var response int", "unknown"},
@@ -61,6 +67,9 @@ func TestResponseBoundaryProof(t *testing.T) {
 			text := source
 			if c.old != "" {
 				text = strings.Replace(text, c.old, c.new, 1)
+				if c.name == "request-pointer" {
+					text = strings.Replace(text, "return response", "return *response", 1)
+				}
 			}
 			fs := token.NewFileSet()
 			file, err := parser.ParseFile(fs, "boundary.go", text, 0)

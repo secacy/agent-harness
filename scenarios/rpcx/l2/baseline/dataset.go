@@ -70,3 +70,14 @@ func configurationFiles(data []byte, config buildConfiguration) error {
 	}
 	return nil
 }
+
+// ValidateTranslationConfiguration 复用已发布双配置的实际源文件与 mock 选择检查。
+func ValidateTranslationConfiguration(data []byte, id string) error {
+	ds, _ := lookupDataset(TranslationVersion)
+	for _, config := range ds.Configurations {
+		if config.ID == id {
+			return configurationFiles(data, config)
+		}
+	}
+	return fmt.Errorf("unsupported Translation configuration: %s", id)
+}

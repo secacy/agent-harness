@@ -16,6 +16,8 @@ import (
 	"github.com/secacy/agent-harness/internal/task"
 	"github.com/secacy/agent-harness/scenarios/rpcx/checks"
 	"github.com/secacy/agent-harness/scenarios/rpcx/goddd"
+	"github.com/secacy/agent-harness/scenarios/rpcx/l2"
+	"github.com/secacy/agent-harness/scenarios/rpcx/translation"
 )
 
 type runState struct {
@@ -29,7 +31,7 @@ type runState struct {
 	prepared    bool
 	agent       *agent.Result
 	validation  *checks.Evaluation
-	hostBackend *goddd.ModuleBackend
+	hostBackend *l2.ModuleBackend
 }
 
 func (r *runState) backend() execution.Executor {
@@ -127,6 +129,9 @@ func Run(parent context.Context, config Config) (record Record, err error) {
 	evaluate := checks.Evaluate
 	if r.profile.Verifier == goddd.VerifierVersion {
 		evaluate = goddd.Evaluate
+	}
+	if r.profile.Verifier == translation.VerifierVersion {
+		evaluate = translation.Evaluate
 	}
 	validation, err := evaluate(ctx, checks.EvaluationRequest{
 		BaselineDir: r.path("baseline/" + r.profile.RepositoryName), CandidateDir: r.path("workspace/" + r.profile.RepositoryName),
@@ -264,7 +269,11 @@ func (r *runState) prepare(ctx context.Context) error {
 	}
 	r.prepared = true
 	if r.profile.HostMaterialsSHA256 != "" {
-		r.hostBackend, err = goddd.PrepareBackend(ctx, r.path("host-materials/rpcx-goddd-modules"), r.config.Backend)
+		prepare := goddd.PrepareBackend
+		if r.profile.Verifier == translation.VerifierVersion {
+			prepare = translation.PrepareBackend
+		}
+		r.hostBackend, err = prepare(ctx, r.path("host-materials/rpcx-"+r.profile.RepositoryName+"-modules"), r.config.Backend)
 		if err != nil {
 			return fmt.Errorf("prepare host materials: %w", err)
 		}
@@ -298,7 +307,7 @@ func (r *runState) generate(ctx context.Context) error {
 	}
 	executor, err := repotools.New(repotools.Config{
 		Workspace: r.path("workspace/" + r.profile.RepositoryName), ReadOnlyRoots: roots, ProtectedPaths: r.profile.ProtectedPaths,
-		GoCheck: &repotools.GoCheckConfig{CacheDir: r.path("cache/agent"), Backend: r.backend(), ReadOnlyDirs: mounts},
+		GoCheck: &repotools.GoCheckConfig{CacheDir: r.path("cache/agent"), Backend: r.backend(), ReadOnlyDirs: mounts, BuildConfigurations: r.profile.configurations()},
 	})
 	if err != nil {
 		return err

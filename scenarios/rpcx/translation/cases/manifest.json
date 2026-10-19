@@ -1,0 +1,214 @@
+{
+  "schema_version": 1,
+  "spec_version": "v0.4.0",
+  "cases": [
+    {
+      "id": "correct",
+      "patch": "patches/correct.patch",
+      "patch_sha256": "4355d2debe6208f9683d466ceef7daeb659fc637662398c8fc02f120a311feb7",
+      "verdict": "ReadyForReview",
+      "rule": "TIME-001",
+      "checks": {
+        "dependencies": "pass",
+        "protected_paths": "pass",
+        "test_preservation": "pass",
+        "request_scope": "pass"
+      },
+      "configuration_checks": {
+        "default": {
+          "build_configurations": "pass",
+          "build": "pass",
+          "baseline_tests": "pass",
+          "migration_completeness": "pass",
+          "semantic_behavior": "pass"
+        },
+        "rpcx_alternate": {
+          "build_configurations": "pass",
+          "build": "pass",
+          "baseline_tests": "pass",
+          "migration_completeness": "pass",
+          "semantic_behavior": "pass"
+        }
+      }
+    },
+    {
+      "id": "alternate-missing-timeout",
+      "patch": "patches/alternate-missing-timeout.patch",
+      "patch_sha256": "7c634b6eeb69279d5bee4f9f41fbd7818991361d4201d3393ed1d9b4afb5bb08",
+      "verdict": "Rejected",
+      "rule": "TIME-001",
+      "checks": {
+        "dependencies": "pass",
+        "protected_paths": "pass",
+        "test_preservation": "pass",
+        "request_scope": "pass"
+      },
+      "configuration_checks": {
+        "default": {
+          "build_configurations": "pass",
+          "build": "pass",
+          "baseline_tests": "pass",
+          "migration_completeness": "pass",
+          "semantic_behavior": "pass"
+        },
+        "rpcx_alternate": {
+          "build_configurations": "pass",
+          "build": "pass",
+          "baseline_tests": "fail",
+          "migration_completeness": "unknown",
+          "semantic_behavior": "fail"
+        }
+      }
+    },
+    {
+      "id": "default-only-api",
+      "patch": "patches/default-only-api.patch",
+      "patch_sha256": "11c7ce12ddd81c4cf1b62baafc46c56ac39b57d86e3766ad59949557ce89a0e8",
+      "verdict": "Rejected",
+      "rule": "BUILD-001",
+      "checks": {
+        "dependencies": "pass",
+        "protected_paths": "pass",
+        "test_preservation": "pass",
+        "request_scope": "unknown"
+      },
+      "configuration_checks": {
+        "default": {
+          "build_configurations": "pass",
+          "build": "pass",
+          "baseline_tests": "pass",
+          "migration_completeness": "pass",
+          "semantic_behavior": "pass"
+        },
+        "rpcx_alternate": {
+          "build_configurations": "unknown",
+          "build": "fail",
+          "baseline_tests": "blocked",
+          "migration_completeness": "blocked",
+          "semantic_behavior": "blocked"
+        }
+      }
+    },
+    {
+      "id": "mapping-helper",
+      "patch": "patches/mapping-helper.patch",
+      "patch_sha256": "439e716019f7e80b0323d39988f6c98af9f6d8eb36a32973b52520b7d1873c7a",
+      "verdict": "NeedsAttention",
+      "rule": "SCOPE-001",
+      "checks": {
+        "dependencies": "pass",
+        "protected_paths": "pass",
+        "test_preservation": "pass",
+        "request_scope": "unknown"
+      },
+      "configuration_checks": {
+        "default": {
+          "build_configurations": "pass",
+          "build": "pass",
+          "baseline_tests": "pass",
+          "migration_completeness": "pass",
+          "semantic_behavior": "pass"
+        },
+        "rpcx_alternate": {
+          "build_configurations": "pass",
+          "build": "pass",
+          "baseline_tests": "pass",
+          "migration_completeness": "pass",
+          "semantic_behavior": "pass"
+        }
+      }
+    },
+    {
+      "id": "background-fallback",
+      "patch": "patches/background-fallback.patch",
+      "patch_sha256": "1e2209d14dd807edc2d9f473df5bfc92a2e2d5172d8c92355f2da3579d07320f",
+      "verdict": "Rejected",
+      "rule": "CTX-001",
+      "checks": {
+        "dependencies": "pass",
+        "protected_paths": "pass",
+        "test_preservation": "pass",
+        "request_scope": "pass"
+      },
+      "configuration_checks": {
+        "default": {
+          "build_configurations": "pass",
+          "build": "pass",
+          "baseline_tests": "pass",
+          "migration_completeness": "unknown",
+          "semantic_behavior": "fail"
+        },
+        "rpcx_alternate": {
+          "build_configurations": "pass",
+          "build": "pass",
+          "baseline_tests": "pass",
+          "migration_completeness": "unknown",
+          "semantic_behavior": "fail"
+        }
+      }
+    },
+    {
+      "id": "protected-mock",
+      "patch": "patches/protected-mock.patch",
+      "patch_sha256": "b8eeb74f705d1940bdcfa7dbdf4ed9db865f54b9365eab98cc5a868889f701db",
+      "verdict": "Rejected",
+      "rule": "PATH-001",
+      "checks": {
+        "dependencies": "pass",
+        "protected_paths": "fail",
+        "test_preservation": "pass",
+        "request_scope": "pass"
+      },
+      "configuration_checks": {
+        "default": {
+          "build_configurations": "pass",
+          "build": "pass",
+          "baseline_tests": "pass",
+          "migration_completeness": "pass",
+          "semantic_behavior": "pass"
+        },
+        "rpcx_alternate": {
+          "build_configurations": "pass",
+          "build": "pass",
+          "baseline_tests": "pass",
+          "migration_completeness": "pass",
+          "semantic_behavior": "pass"
+        }
+      }
+    },
+    {
+      "id": "deleted-assertion",
+      "patch": "patches/deleted-assertion.patch",
+      "patch_sha256": "e14bf45586cbbd938b27724637973601d80821ef101dce37fb9b8617b222a5a7",
+      "verdict": "Rejected",
+      "rule": "TEST-001",
+      "checks": {
+        "dependencies": "pass",
+        "protected_paths": "pass",
+        "test_preservation": "fail",
+        "request_scope": "pass"
+      },
+      "configuration_checks": {
+        "default": {
+          "build_configurations": "pass",
+          "build": "pass",
+          "baseline_tests": "pass",
+          "migration_completeness": "pass",
+          "semantic_behavior": "pass"
+        },
+        "rpcx_alternate": {
+          "build_configurations": "pass",
+          "build": "pass",
+          "baseline_tests": "pass",
+          "migration_completeness": "pass",
+          "semantic_behavior": "pass"
+        }
+      }
+    }
+  ],
+  "baseline_data_version": "rpcx-l2-translation-v1",
+  "configurations": [
+    "default",
+    "rpcx_alternate"
+  ]
+}

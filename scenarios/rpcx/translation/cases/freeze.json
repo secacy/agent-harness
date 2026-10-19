@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "baseline_data_version": "rpcx-l2-translation-v1",
+  "baseline_freeze_sha256": "d1e0e20608fed9e45212a6fb5010834028ab82228573a391c78a1500f7be8bdd",
+  "spec_sha256": "d45937d461cf056a82aba50741a27ba3c991c73967047e0d4e723cc70feb5e5f",
+  "files": {
+    "manifest.json": "a54d2b4e238507836b066c58f195ad0d069af7a6c8220ea2bd73866da8ad6825",
+    "patches/alternate-missing-timeout.patch": "7c634b6eeb69279d5bee4f9f41fbd7818991361d4201d3393ed1d9b4afb5bb08",
+    "patches/background-fallback.patch": "1e2209d14dd807edc2d9f473df5bfc92a2e2d5172d8c92355f2da3579d07320f",
+    "patches/correct.patch": "4355d2debe6208f9683d466ceef7daeb659fc637662398c8fc02f120a311feb7",
+    "patches/default-only-api.patch": "11c7ce12ddd81c4cf1b62baafc46c56ac39b57d86e3766ad59949557ce89a0e8",
+    "patches/deleted-assertion.patch": "e14bf45586cbbd938b27724637973601d80821ef101dce37fb9b8617b222a5a7",
+    "patches/mapping-helper.patch": "439e716019f7e80b0323d39988f6c98af9f6d8eb36a32973b52520b7d1873c7a",
+    "patches/protected-mock.patch": "b8eeb74f705d1940bdcfa7dbdf4ed9db865f54b9365eab98cc5a868889f701db"
+  }
+}

@@ -91,6 +91,9 @@ func inspectCalls(root, pkg string, fset *token.FileSet, file *ast.File, info *t
 func boundary(fn *ast.FuncDecl, call *ast.CallExpr, info *types.Info) (string, string, *int64) {
 	unknown := func(reason string) (string, string, *int64) { return "unknown", reason, nil }
 	body := fn.Body.List
+	if len(body) > 0 && cancellationGuard(fn, body[0], info) {
+		body = body[1:]
+	}
 	if len(body) < 3 {
 		return unknown("unsupported_timeout_shape")
 	}
@@ -215,33 +218,71 @@ func isNil(expr ast.Expr, info *types.Info) bool {
 	return ok && info.Uses[id] == types.Universe.Lookup("nil")
 }
 
-// responsePrefix 只扩展无初始化的响应声明和紧随其后的 RPC；后续业务由范围检查证明。
+// responsePrefix 只扩展局部请求/响应构造和紧随其后的 RPC；后续业务由范围检查证明。
 func responsePrefix(body []ast.Stmt, call *ast.CallExpr, info *types.Info, cancel types.Object) bool {
-	if len(body) < 2 {
+	if len(body) < 2 || len(call.Args) != 4 {
 		return false
 	}
-	declaration, ok := body[0].(*ast.DeclStmt)
-	if !ok {
+	response := call.Args[3]
+	if address, ok := response.(*ast.UnaryExpr); ok && address.Op == token.AND {
+		response = address.X
+	}
+	id, ok := response.(*ast.Ident)
+	if !ok || info.ObjectOf(id) == nil {
 		return false
 	}
-	variables, ok := declaration.Decl.(*ast.GenDecl)
-	if !ok || variables.Tok != token.VAR || len(variables.Specs) != 1 {
-		return false
-	}
-	value, ok := variables.Specs[0].(*ast.ValueSpec)
-	if !ok || len(value.Names) != 1 || len(value.Values) != 0 {
-		return false
-	}
-	if len(call.Args) != 4 {
-		return false
-	}
-	response, ok := call.Args[3].(*ast.UnaryExpr)
-	if !ok || response.Op != token.AND || !sameObject(response.X, info.Defs[value.Names[0]], info) {
-		return false
-	}
-	assignment, ok := body[1].(*ast.AssignStmt)
-	if !ok || assignment.Tok != token.DEFINE || len(assignment.Lhs) != 1 || len(assignment.Rhs) != 1 || assignment.Rhs[0] != call {
-		return false
+	target := info.ObjectOf(id)
+	declared := false
+	rpcFound := false
+	for _, statement := range body {
+		if rpcFound {
+			break
+		}
+		if assignment, ok := statement.(*ast.AssignStmt); ok && len(assignment.Rhs) == 1 && assignment.Rhs[0] == call {
+			rpcFound = assignment.Tok == token.DEFINE && len(assignment.Lhs) == 1
+			break
+		}
+		if guard, ok := statement.(*ast.IfStmt); ok {
+			if assignment, ok := guard.Init.(*ast.AssignStmt); ok && len(assignment.Rhs) == 1 && assignment.Rhs[0] == call {
+				rpcFound = assignment.Tok == token.DEFINE && len(assignment.Lhs) == 1
+				break
+			}
+		}
+		var names []*ast.Ident
+		var values []ast.Expr
+		switch n := statement.(type) {
+		case *ast.DeclStmt:
+			d, ok := n.Decl.(*ast.GenDecl)
+			if !ok || d.Tok != token.VAR || len(d.Specs) != 1 {
+				return false
+			}
+			v, ok := d.Specs[0].(*ast.ValueSpec)
+			if !ok || len(v.Names) != 1 {
+				return false
+			}
+			names, values = v.Names, v.Values
+		case *ast.AssignStmt:
+			if n.Tok != token.DEFINE || len(n.Lhs) != 1 || len(n.Rhs) != 1 {
+				return false
+			}
+			name, ok := n.Lhs[0].(*ast.Ident)
+			if !ok {
+				return false
+			}
+			names, values = []*ast.Ident{name}, n.Rhs
+		default:
+			return false
+		}
+		for _, v := range values {
+			if !pureLocal(v, info) {
+				return false
+			}
+		}
+		for _, name := range names {
+			if info.Defs[name] == target {
+				declared = true
+			}
+		}
 	}
 	stable := true
 	for _, statement := range body {
@@ -252,5 +293,76 @@ func responsePrefix(body []ast.Stmt, call *ast.CallExpr, info *types.Info, cance
 			return true
 		})
 	}
-	return stable
+	return declared && rpcFound && stable
+}
+
+// 仅跳过原 ctx.Err 非空即返回的前置检查，不接受任意条件/副作用。
+func cancellationGuard(fn *ast.FuncDecl, statement ast.Stmt, info *types.Info) bool {
+	guard, ok := statement.(*ast.IfStmt)
+	if !ok || guard.Else != nil || len(guard.Body.List) != 1 {
+		return false
+	}
+	assignment, ok := guard.Init.(*ast.AssignStmt)
+	if !ok || assignment.Tok != token.DEFINE || len(assignment.Lhs) != 1 || len(assignment.Rhs) != 1 {
+		return false
+	}
+	call, ok := assignment.Rhs[0].(*ast.CallExpr)
+	if !ok || len(call.Args) != 0 {
+		return false
+	}
+	sel, ok := call.Fun.(*ast.SelectorExpr)
+	if !ok || sel.Sel.Name != "Err" {
+		return false
+	}
+	parent, ok := sel.X.(*ast.Ident)
+	if !ok || !contextParameter(fn, parent, info) {
+		return false
+	}
+	selection := info.Selections[sel]
+	if selection == nil || selection.Obj().Pkg() == nil || selection.Obj().Pkg().Path() != "context" {
+		return false
+	}
+	errName, ok := assignment.Lhs[0].(*ast.Ident)
+	if !ok {
+		return false
+	}
+	condition, ok := guard.Cond.(*ast.BinaryExpr)
+	if !ok || condition.Op != token.NEQ || !sameObject(condition.X, info.Defs[errName], info) || !isNil(condition.Y, info) {
+		return false
+	}
+	ret, ok := guard.Body.List[0].(*ast.ReturnStmt)
+	if !ok {
+		return false
+	}
+	safe := true
+	ast.Inspect(ret, func(n ast.Node) bool {
+		if c, ok := n.(*ast.CallExpr); ok && !info.Types[c.Fun].IsType() {
+			if !packageFunction(c.Fun, info, "fmt", "Errorf") {
+				safe = false
+			}
+		}
+		return true
+	})
+	return safe
+}
+
+// 局部构造只允许常量、字段读取、类型转换和内建 new；不接受用户函数。
+func pureLocal(expr ast.Expr, info *types.Info) bool {
+	safe := true
+	ast.Inspect(expr, func(n ast.Node) bool {
+		if call, ok := n.(*ast.CallExpr); ok && !info.Types[call.Fun].IsType() {
+			id, ok := call.Fun.(*ast.Ident)
+			if !ok || info.Uses[id] != types.Universe.Lookup("new") {
+				safe = false
+			}
+		}
+		if _, ok := n.(*ast.FuncLit); ok {
+			safe = false
+		}
+		if unary, ok := n.(*ast.UnaryExpr); ok && unary.Op == token.ARROW {
+			safe = false
+		}
+		return true
+	})
+	return safe
 }

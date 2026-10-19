@@ -37,3 +37,29 @@ func TestHostPlanPreservesSharedTestData(t *testing.T) {
 		t.Fatal("unbound host baseline accepted")
 	}
 }
+
+func TestHostPlanSeparatesMockReceiverMethods(t *testing.T) {
+	source := `package p
+ import "testing"
+ type A struct{}
+ type B struct{}
+ func(*A) EXPECT(){}
+ func(*B) EXPECT(){}
+ func TestOriginal(t *testing.T){}
+ `
+	base := map[string][]byte{"mock_test.go": []byte(source)}
+	binding, err := bind(base)
+	if err != nil {
+		t.Fatal(err)
+	}
+	plan := Plan{Version: "receivers", SpecSHA256: strings.Repeat("a", 64), MaterialSHA256: strings.Repeat("b", 64), BaselineFiles: binding.Files}
+	r, err := CompareAdapted(base, base, base, plan)
+	if err != nil || r.Status != "preserved" || len(r.Declarations) != 3 {
+		t.Fatalf("receiver identity: %+v %v", r, err)
+	}
+	changed := map[string][]byte{"mock_test.go": []byte(strings.Replace(source, "func(*A) EXPECT(){}", "func(*A) EXPECT(){ panic(1) }", 1))}
+	r, err = CompareAdapted(base, base, changed, plan)
+	if err != nil || r.Status != "unknown" {
+		t.Fatalf("modified receiver method accepted: %+v %v", r, err)
+	}
+}

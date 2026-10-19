@@ -286,3 +286,17 @@ env GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly G
 ```
 
 开发子集仅核对选中样例，`-quick` 只省略参考慢检查，不改变运行时门禁。完整数据、冻结规则及原始产物见 [L1 说明](../scenarios/rpcx/l1/README.md)。命令输出新建的 runs/rpcx-l1-* 路径及 matched/accepted；开发、子集或省略慢检查永不 accepted。每项有 gate.json、参考日志及补丁重放，最终 report.json 记录条款/原因差异、参考适用范围和产物摘要。
+
+## M3.4 Translation 双配置迁移校准
+
+```sh
+env HARNESS_TRANSLATION_ACCEPTANCE=1 HARNESS_TRANSLATION_BACKEND=docker HARNESS_TRANSLATION_CASES=correct,alternate-missing-timeout,mapping-helper HARNESS_TRANSLATION_OUTPUT="$PWD/runs/translation-calibration" GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly GOCACHE="$PWD/runs/go-cache" go test -json -count=1 -timeout=25m ./scenarios/rpcx/translation -run '^TestTranslationAcceptance$'
+```
+
+固定镜像、禁网执行，在同一候选的 default/rpcx_alternate 下分别构建、测试、类型分析和行为验证。省略 CASES 运行全部七组校准；正例与等价 helper 组各包含两配置真实约 30 秒到期。省略 BACKEND 只适用于可信本地开发夹具。报告与逐配置证据保留在 OUTPUT 下的新目录；不访问模型、不读取 .env，也不代表独立参考评测。
+
+```sh
+env HARNESS_TRANSLATION_ACCEPTANCE=1 HARNESS_TRANSLATION_BACKEND=docker HARNESS_TRANSLATION_OUTPUT="$PWD/runs/translation-runner" GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly GOCACHE="$PWD/runs/go-cache" go test -json -count=1 -timeout=15m ./scenarios/rpcx/runner -run '^TestRunTranslationDelivery$'
+```
+
+使用确定性模型重放编辑，验证双配置基线先于模型、go_check 反馈、独立质量判定、补丁重放和审核链接。Translation 需本地/容器 Go 1.26.0 或更新；离线依赖已随固定数据发布，仍需提前准备固定工具链镜像。规范与校准边界见 [Translation 说明](../scenarios/rpcx/translation/README.md)。

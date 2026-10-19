@@ -23,7 +23,7 @@ type Report struct {
 }
 
 type Declaration struct {
-	ID             string `json:"id"` // 相对包目录＋函数名；模块身份由外层依赖检查确认。
+	ID             string `json:"id"` // 相对包目录＋接收者类型摘要（方法）＋名称；模块身份由外层确认。
 	Kind           string `json:"kind"`
 	ExpectedSHA256 string `json:"expected_sha256"`
 	ActualSHA256   string `json:"actual_sha256,omitempty"`

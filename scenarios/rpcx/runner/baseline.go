@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/secacy/agent-harness/internal/execution"
+	"github.com/secacy/agent-harness/scenarios/rpcx/translation"
 )
 
 type BaselineCommand struct {
@@ -29,16 +30,17 @@ type BaselineCommand struct {
 
 // BaselineReport 只证明生成前的基线检查，不是候选的质量证据。
 type BaselineReport struct {
-	SchemaVersion  int               `json:"schema_version"`
-	Status         string            `json:"status"`
-	ProfileSHA256  string            `json:"profile_sha256"`
-	BaselineSHA256 string            `json:"baseline_sha256"`
-	LayoutSHA256   string            `json:"layout_sha256"`
-	SpecSHA256     string            `json:"spec_sha256"`
-	BuildConfig    string            `json:"build_config"`
-	Commands       []BaselineCommand `json:"commands"`
-	Tests          map[string]string `json:"tests"`
-	Error          string            `json:"error,omitempty"`
+	SchemaVersion      int                          `json:"schema_version"`
+	Status             string                       `json:"status"`
+	ProfileSHA256      string                       `json:"profile_sha256"`
+	BaselineSHA256     string                       `json:"baseline_sha256"`
+	LayoutSHA256       string                       `json:"layout_sha256"`
+	SpecSHA256         string                       `json:"spec_sha256"`
+	BuildConfig        string                       `json:"build_config"`
+	Commands           []BaselineCommand            `json:"commands"`
+	Tests              map[string]string            `json:"tests"`
+	Error              string                       `json:"error,omitempty"`
+	ConfigurationTests map[string]map[string]string `json:"configuration_tests,omitempty"`
 }
 
 func (r *runState) checkBaseline(ctx context.Context) (err error) {
@@ -84,16 +86,40 @@ func (r *runState) checkBaseline(ctx context.Context) (err error) {
 			return err
 		}
 	}
-	if _, err = r.baselineCommand(ctx, "build", []string{binary, "build", "-o", "/dev/null", "./..."}); err != nil {
-		return err
-	}
-	data, err := r.baselineCommand(ctx, "test", []string{binary, "test", "-json", "-count=1", "-timeout=30s", "./..."})
-	if err != nil {
-		return err
-	}
-	report.Tests, err = baselineEvents(data, r.profile.RequiredTests)
-	if err != nil {
-		return err
+
+	for _, config := range r.profile.configurations() {
+		prefix := ""
+		if len(r.profile.BuildConfigurations) > 0 {
+			prefix = config.ID + "-"
+		}
+		if r.profile.Verifier == translation.VerifierVersion {
+			data, runErr := r.baselineCommand(ctx, prefix+"list", config.Arguments([]string{binary, "list", "-json", "./..."}))
+			if runErr != nil {
+				return runErr
+			}
+			if err = translation.ValidateConfiguration(data, config.ID); err != nil {
+				return err
+			}
+		}
+		if _, err = r.baselineCommand(ctx, prefix+"build", config.Arguments([]string{binary, "build", "-o", "/dev/null", "./..."})); err != nil {
+			return err
+		}
+		data, runErr := r.baselineCommand(ctx, prefix+"test", config.Arguments([]string{binary, "test", "-json", "-count=1", "-timeout=30s", "./..."}))
+		if runErr != nil {
+			return runErr
+		}
+		states, runErr := baselineEvents(data, r.profile.RequiredTests)
+		if runErr != nil {
+			return runErr
+		}
+		if len(r.profile.BuildConfigurations) > 0 {
+			if report.ConfigurationTests == nil {
+				report.ConfigurationTests = map[string]map[string]string{}
+			}
+			report.ConfigurationTests[config.ID] = states
+		} else {
+			report.Tests = states
+		}
 	}
 	if err = r.checkInputs(ctx); err != nil {
 		return err

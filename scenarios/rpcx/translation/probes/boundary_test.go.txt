@@ -1,0 +1,207 @@
+package webapi
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"slices"
+	"testing"
+	"time"
+
+	"example.com/rpcx/v2"
+	"github.com/evrone/go-clean-template/internal/entity"
+	"github.com/evrone/go-clean-template/internal/usecase/translation"
+)
+
+func translationFailure(t *testing.T, rule, detail string) {
+	t.Helper()
+	data, _ := json.Marshal(map[string]string{"rule": rule, "detail": detail})
+	t.Errorf("TRANSLATION_FINDING %s", data)
+}
+
+type harnessRepo struct {
+	events *[]string
+	value  entity.Translation
+	user   string
+	err    error
+}
+
+func (r *harnessRepo) Store(_ context.Context, user string, value entity.Translation) error {
+	*r.events = append(*r.events, "store")
+	r.value = value
+	r.user = user
+	return r.err
+}
+func (*harnessRepo) GetHistory(context.Context, string) ([]entity.Translation, error) {
+	return nil, nil
+}
+func TestHarnessTranslationBoundary(t *testing.T) {
+	for _, mode := range []string{"default", "short-parent", "long-parent", "cancelled", "expired", "cancel-in-backend", "remote-error", "store-error", "repeat"} {
+		t.Run(mode, func(t *testing.T) {
+			type key struct{}
+			parent, cancel := context.WithCancel(context.WithValue(context.Background(), key{}, "request-value"))
+			defer cancel()
+			var request context.Context = parent
+			if mode == "short-parent" || mode == "long-parent" || mode == "expired" {
+				duration := 5 * time.Second
+				if mode == "long-parent" {
+					duration = time.Hour
+				}
+				if mode == "expired" {
+					duration = -time.Second
+				}
+				var release context.CancelFunc
+				request, release = context.WithTimeout(parent, duration)
+				defer release()
+			}
+			if mode == "cancelled" {
+				cancel()
+			}
+			remote := errors.New("remote failure")
+			storage := errors.New("storage failure")
+			events := []string{}
+			var observed []context.Context
+			var started time.Time
+			t.Cleanup(rpcx.Register(t.Name(), func(ctx context.Context, method string, req, response any) error {
+				events = append(events, "rpc")
+				observed = append(observed, ctx)
+				if ctx.Value(key{}) != "request-value" {
+					translationFailure(t, "CTX-001", "request value did not reach backend")
+				}
+				if method != "translate" || req != (translateRequest{Text: "hello", Source: "en", Destination: "de"}) {
+					translationFailure(t, "BEHAVIOR-001", "request mapping changed")
+				}
+				deadline, ok := ctx.Deadline()
+				if !ok {
+					translationFailure(t, "TIME-001", "RPC has no deadline")
+				} else if mode == "short-parent" {
+					want, _ := request.Deadline()
+					if !deadline.Equal(want) {
+						translationFailure(t, "TIME-001", "shorter parent deadline changed")
+					}
+				} else if deadline.Before(started.Add(30*time.Second)) || deadline.After(time.Now().Add(30*time.Second)) {
+					translationFailure(t, "TIME-001", "RPC deadline differs from per-call 30 second cap")
+				}
+				if mode == "cancelled" || mode == "expired" {
+					translationFailure(t, "CTX-001", "cancelled request reached backend")
+					return remote
+				}
+				if mode == "cancel-in-backend" {
+					cancel()
+					select {
+					case <-ctx.Done():
+					case <-time.After(time.Second):
+						translationFailure(t, "CTX-001", "parent cancellation did not reach RPC")
+					}
+					return ctx.Err()
+				}
+				if mode == "remote-error" {
+					return remote
+				}
+				if err := json.Unmarshal([]byte(`{"Text":"hallo"}`), response); err != nil {
+					translationFailure(t, "BEHAVIOR-001", "response type changed")
+					return err
+				}
+				return nil
+			}))
+			api, err := New(t.Name())
+			if err != nil {
+				t.Fatal(err)
+			}
+			repo := &harnessRepo{events: &events}
+			if mode == "store-error" {
+				repo.err = storage
+			}
+			uc := translation.New(repo, api)
+			input := entity.Translation{Source: "en", Destination: "de", Original: "hello", Translation: "previous"}
+			want := input
+			want.Translation = "hallo"
+			attempts := 1
+			if mode == "repeat" {
+				attempts = 2
+			}
+			for range attempts {
+				before := len(events)
+				started = time.Now()
+				got, err := uc.Translate(request, "user-1", input)
+				expected := []string{"rpc", "store"}
+				var expectedError error
+				switch mode {
+				case "cancelled":
+					expected = nil
+					expectedError = context.Canceled
+				case "expired":
+					expected = nil
+					expectedError = context.DeadlineExceeded
+				case "remote-error":
+					expected = []string{"rpc"}
+					expectedError = remote
+				case "cancel-in-backend":
+					expected = []string{"rpc"}
+					expectedError = context.Canceled
+				case "store-error":
+					expectedError = storage
+				}
+				if expectedError == nil {
+					if err != nil || got != want || repo.value != want || repo.user != "user-1" {
+						translationFailure(t, "BEHAVIOR-001", "successful translated value/user not stored unchanged")
+					}
+				} else if !errors.Is(err, expectedError) || got != (entity.Translation{}) {
+					translationFailure(t, "BEHAVIOR-001", fmt.Sprintf("error chain or zero result changed: %v", err))
+				}
+				actual := events[before:]
+				if !slices.Equal(actual, expected) {
+					translationFailure(t, "BEHAVIOR-001", fmt.Sprintf("RPC/store order changed: %v", actual))
+				}
+				for _, ctx := range observed {
+					if ctx.Err() == nil {
+						translationFailure(t, "TIME-002", "derived RPC context not released on return")
+					}
+				}
+				if mode != "cancelled" && mode != "expired" && mode != "cancel-in-backend" && request.Err() != nil {
+					translationFailure(t, "TIME-002", "RPC cancelled parent context")
+				}
+			}
+			wantCalls := attempts
+			if mode == "cancelled" || mode == "expired" {
+				wantCalls = 0
+			}
+			if len(observed) != wantCalls {
+				translationFailure(t, "BEHAVIOR-001", "backend call count changed")
+			}
+		})
+	}
+}
+func TestHarnessTranslationExpiry(t *testing.T) {
+	calls := 0
+	t.Cleanup(rpcx.Register(t.Name(), func(ctx context.Context, _ string, _, _ any) error {
+		calls++
+		select {
+		case <-ctx.Done():
+			if !errors.Is(ctx.Err(), context.DeadlineExceeded) {
+				translationFailure(t, "TIME-001", "RPC did not expire by deadline")
+			}
+			return ctx.Err()
+		case <-time.After(35 * time.Second):
+			translationFailure(t, "TIME-001", "RPC ignored 30 second expiry")
+			return errors.New("missing expiry")
+		}
+	}))
+	api, err := New(t.Name())
+	if err != nil {
+		t.Fatal(err)
+	}
+	events := []string{}
+	repo := &harnessRepo{events: &events}
+	uc := translation.New(repo, api)
+	started := time.Now()
+	result, err := uc.Translate(context.Background(), "user-1", entity.Translation{Original: "hello"})
+	elapsed := time.Since(started)
+	if elapsed < 29*time.Second || elapsed > 36*time.Second || calls != 1 || !errors.Is(err, context.DeadlineExceeded) {
+		translationFailure(t, "TIME-001", fmt.Sprintf("unexpected expiry: %v, calls=%d, error=%v", elapsed, calls, err))
+	}
+	if len(events) != 0 || result != (entity.Translation{}) {
+		translationFailure(t, "BEHAVIOR-001", "expired translation stored or returned a value")
+	}
+}

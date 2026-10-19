@@ -52,6 +52,10 @@ func parseSources(files map[string][]byte) (map[string]*sourceFile, map[string][
 		for _, decl := range source.file.Decls {
 			if fn, ok := decl.(*ast.FuncDecl); ok {
 				id := filepath.ToSlash(filepath.Dir(path)) + "." + fn.Name.Name
+				if fn.Recv != nil && len(fn.Recv.List) == 1 {
+					id = filepath.ToSlash(filepath.Dir(path)) + "." + digest([]byte(canonical(fn.Recv.List[0].Type))) + "." + fn.Name.Name
+				}
+
 				functions[id] = append(functions[id], function{source: source, node: fn})
 			} else if gen, ok := decl.(*ast.GenDecl); !ok || gen.Tok != token.IMPORT {
 				source.other = append(source.other, decl)

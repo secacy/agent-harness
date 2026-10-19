@@ -52,3 +52,5 @@ AST 摘要是当前 Go 工具链下去掉位置后的结构打印摘要；跨工
 可信生产副本及独立 T3 探针已在 [behavior](../behavior/README.md) 实现，调用本包 AdaptBaseline；它的通过不能覆盖本包的 unknown 或 violated。质量组合见 [checks](../checks/README.md)，完整冻结独立交叉验收见 [L1](../l1/README.md)。
 
 机制测试及四组 Docker 对照见[命令说明](../../../docs/command.md#m23-测试结构完整性)，方案取舍与实际结果见 [M2 工作记录](../../../docs/worklog/2026-10-18-m2-evidence-gate.md#17-m23测试结构完整性与适配对照)。
+
+`CompareAdapted` 的宿主计划也用于 Goddd/Translation。方法声明身份包含接收者类型的结构摘要，避免原生成 mock 中不同类型的同名方法混淆；接收者变量改名不改变身份，接收者类型或方法体变化仍由结构比较保留缺口。普通函数与测试的既有身份不变。

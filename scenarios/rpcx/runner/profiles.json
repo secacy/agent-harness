@@ -96,5 +96,64 @@
     ],
     "verifier": "rpcx-goddd-evidence-v1",
     "host_materials_sha256": "ac9ad1d04b631f76385db6291daebe7ff22398676545739cb8f309e9cbadebc6"
+  },
+  {
+    "id": "rpcx-translation-t3-v1",
+    "repository_name": "translation",
+    "spec_version": "v0.4.0",
+    "spec_sha256": "d45937d461cf056a82aba50741a27ba3c991c73967047e0d4e723cc70feb5e5f",
+    "repository_sha256": "e520d248568e98e6a91556041a27ed23e916198436678e561c590d2756b57784",
+    "dependencies": {
+      "rpcx-v1": "3494436826b66504e9d1f28fa22fa22db4f927d0ee43309ab92b2868e5c6d24b",
+      "rpcx-v2": "c8b687c6964c5659391144f0c74934e36a5c0462c438bc8ed886bcdeafb5357c"
+    },
+    "protected_paths": [
+      "LICENSE",
+      "go.sum",
+      "internal/usecase/mocks_repo_test.go"
+    ],
+    "build_config": "all-required",
+    "required_tests": [
+      "github.com/evrone/go-clean-template/internal/entity/TestTask_Transition",
+      "github.com/evrone/go-clean-template/internal/entity/TestTask_Transition/done_to_in_progress_(invalid)",
+      "github.com/evrone/go-clean-template/internal/entity/TestTask_Transition/done_to_todo_(invalid)",
+      "github.com/evrone/go-clean-template/internal/entity/TestTask_Transition/in_progress_to_done",
+      "github.com/evrone/go-clean-template/internal/entity/TestTask_Transition/in_progress_to_todo",
+      "github.com/evrone/go-clean-template/internal/entity/TestTask_Transition/todo_to_done_(invalid)",
+      "github.com/evrone/go-clean-template/internal/entity/TestTask_Transition/todo_to_in_progress",
+      "github.com/evrone/go-clean-template/internal/entity/TestTask_Transition/unknown_status_(invalid)",
+      "github.com/evrone/go-clean-template/internal/usecase/TestHistory",
+      "github.com/evrone/go-clean-template/internal/usecase/TestHistory/empty_result",
+      "github.com/evrone/go-clean-template/internal/usecase/TestHistory/result_with_error",
+      "github.com/evrone/go-clean-template/internal/usecase/TestTranslate",
+      "github.com/evrone/go-clean-template/internal/usecase/TestTranslate/empty_result",
+      "github.com/evrone/go-clean-template/internal/usecase/TestTranslate/repo_error",
+      "github.com/evrone/go-clean-template/internal/usecase/TestTranslate/web_API_error",
+      "github.com/evrone/go-clean-template/internal/repo/webapi/TestSelectedAdapter",
+      "github.com/evrone/go-clean-template/internal/repo/webapi/TestTranslationErrors",
+      "github.com/evrone/go-clean-template/internal/repo/webapi/TestTranslationErrors/cancelled",
+      "github.com/evrone/go-clean-template/internal/repo/webapi/TestTranslationErrors/expired",
+      "github.com/evrone/go-clean-template/internal/repo/webapi/TestTranslationErrors/remote",
+      "github.com/evrone/go-clean-template/internal/repo/webapi/TestTranslationRoundTrip",
+      "github.com/evrone/go-clean-template/internal/repo/webapi/TestUseCaseThroughRPC",
+      "github.com/evrone/go-clean-template/internal/repo/webapi/TestUseCaseThroughRPC/cancelled",
+      "github.com/evrone/go-clean-template/internal/repo/webapi/TestUseCaseThroughRPC/remote-error",
+      "github.com/evrone/go-clean-template/internal/repo/webapi/TestUseCaseThroughRPC/store-error",
+      "github.com/evrone/go-clean-template/internal/repo/webapi/TestUseCaseThroughRPC/success"
+    ],
+    "verifier": "rpcx-translation-evidence-v1",
+    "host_materials_sha256": "7e826168c74368e33099b09e6a0c183b9578c46d9ea43e8ac3e513ee5e2ffdbc",
+    "build_configurations": [
+      {
+        "id": "default",
+        "tags": []
+      },
+      {
+        "id": "rpcx_alternate",
+        "tags": [
+          "rpcx_alternate"
+        ]
+      }
+    ]
   }
 ]

@@ -6,3 +6,4 @@ scenarios/rpcx/l1/patches/*.patch -whitespace
 scenarios/rpcx/l2/data/*/provenance/*.patch -whitespace
 scenarios/rpcx/_archive/rpcx-t3-v0.2.0/cases/patches/*.patch -whitespace
 scenarios/rpcx/goddd/cases/patches/*.patch -whitespace
+scenarios/rpcx/translation/cases/patches/*.patch -whitespace
