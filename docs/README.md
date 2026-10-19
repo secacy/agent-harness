@@ -21,7 +21,7 @@
 
 M3.4 已完成[样本设计与选择](worklog/2026-10-19-m3-4-sample-selection.md)及 [Goddd 离线基线与共用 L2 SDK](worklog/2026-10-19-goddd-baseline.md)。三个开发来源、当前准备状态与待独立准备的留出名额见 [L2 说明](../scenarios/rpcx/l2/README.md)；[Goddd 新规范、Profile、三类判定和 Runner 接入](worklog/2026-10-19-goddd-evidence-gate.md)已完成开发校准；[Translation 双配置离线基线](worklog/2026-10-19-translation-baseline.md)及[双配置迁移门禁/Runner](worklog/2026-10-19-translation-evidence-gate.md)已接入，[Workouts 多模块离线基线](worklog/2026-10-19-workouts-baseline.md)也已准备，[Workouts 迁移规范、门禁和确定性 Docker Runner](worklog/2026-10-19-workouts-evidence-gate.md)已接入。[三个异构 Target 的确定性 Campaign](worklog/2026-10-19-m3-4-heterogeneous-campaign.md)已通过，独立参考评测及真实模型批次仍待完成。
 
-当前的[开发评测工作](worklog/2026-10-19-l2-development-evaluation.md)记录参考独立性的取舍、三仓判据、一次尝试口径及未知结果处理；Goddd、Translation 双配置与 Workouts 回调的单候选自动参考及待复核记录已实现；[轮次离线汇总](../scenarios/rpcx/l2/round/README.md)已完成机制与既有受控三仓 Campaign 的关联验收；[预算批次入口](worklog/2026-10-20-budgeted-batch-cli.md)已通过本机模拟 API 验收；完整协议、真实模型能力核实及真实评测仍待完成。
+当前的[开发评测工作](worklog/2026-10-19-l2-development-evaluation.md)记录参考独立性的取舍、三仓判据、一次尝试口径及未知结果处理；Goddd、Translation 双配置与 Workouts 回调的单候选自动参考及待复核记录已实现；[轮次离线汇总](../scenarios/rpcx/l2/round/README.md)已完成机制与既有受控三仓 Campaign 的关联验收；[预算批次入口](worklog/2026-10-20-budgeted-batch-cli.md)已通过本机模拟 API 验收；[真实能力查询及预算准入复核](worklog/2026-10-20-l2-experiment-preparation.md#授权后实查模型能力与预算准入)已完成；完整协议和真实评测仍待完成。
 
 ## 记录原则
 
