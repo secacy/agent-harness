@@ -57,3 +57,5 @@ env GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly G
 设置 `HARNESS_CAMPAIGN_ARTIFACTS` 为 `runs/` 下的目录可保留联调 Campaign，便于阅读真实 summary 和逐 Target 报告。测试模型使用固定参考编辑，只用于机制验收，不能记为模型自主迁移效果。
 
 设置 `HARNESS_DOCKER_TEST=1` 后可运行 `TestCampaignDockerKilledExecutionIsolation`：先取得单独运行参照，再 SIGKILL 精确匹配本次挂载源的自有容器，断言容器已清理、故障任务零模型调用，其余正确候选和检查结果与参照相同。它杀的是执行容器，不是 goroutine、独立 worker 或 Harness 进程。
+
+三个不同仓库的确定性验收使用 `HARNESS_HETEROGENEOUS_ACCEPTANCE=1 go test ./scenarios/rpcx/runner -run '^TestCampaignHeterogeneousDelivery$'`；可选设置 `HARNESS_HETEROGENEOUS_DOCKER=1` 运行 `TestCampaignHeterogeneousDockerDelivery`。测试采用已冻结的 Goddd、Translation、Workouts 参考补丁作为脚本编辑，分别比较单独与混合批次，并注入 Translation 基线失败；结果和限制见 [工作记录](../../docs/worklog/2026-10-19-m3-4-heterogeneous-campaign.md)。
