@@ -2,6 +2,22 @@
 
 Runner 接收 `agent.Model` 与显式执行后端，准备工作副本，驱动工具循环，固定提交候选，再调用独立 `checks.Evaluate`。模型只能看到业务工作副本、只读 SDK 和规范；cases、L1 期望、oracle、门禁材料及最终证据不属于工具根目录。文件工具与执行后端共同限定访问范围，摘要校验不替代执行隔离。
 
+## 显式 Target 与宿主 Profile
+
+新的 Go API 可使用 `Config.Target`，与 ScenarioDir/SpecVersion 互斥。例如先调用 `TargetFromScenario("orders", scenarioDir, "v0.2.0")` 构造已知场景描述，再将其地址放入 Config.Target。该函数只构造描述，不读取或执行仓库；Run 负责认证实际输入。旧命令行入口继续使用 ScenarioDir/SpecVersion，内部转换为相同任务模型。
+
+ProfileT1T2 / ProfileT3 分别对应 rpcx-demo-orders-t1t2-v1 / rpcx-demo-orders-t3-v1，固定布局、SDK/基线/规范摘要、默认构建配置、十个必需测试和验证实现。原始仓库或 SDK 可以位于不同物理目录，工作副本按受认证的布局组装；这不是任意业务仓库支持。额外构建配置或未知 Profile 被拒绝，新仓库需单独接入可信规则。已使用 Profile 的内容调整发布新 ID，旧材料身份由固定摘要测试保护。
+
+显式 Target 先创建独立 Run，再读取和认证实际输入；文件消失、摘要漂移留下 Failed / Preparing 记录，failure_code=input_invalid。旧场景入口保留非法或变更输入在创建 Run 前拒绝的兼容行为；新的 T1/T2 Profile 也认证完整输入快照，不再让随意修改的基线借用旧探针。Task ID 与预算 Target ID 必须一致。
+
+## 生成前基线检查
+
+准备副本后进入 CheckingBaseline 阶段，在配置的执行后端运行 go build 和 go test -json；十个必需测试及对应包必须真实通过。空成功、跳过、缺事件、命令失败、取消或超时均阻止模型调用，不产生候选质量判定。必需检查的非零退出记录 baseline_failed，执行设施错误记录 baseline_error，原始原因和退出状态保留。
+
+inputs/profile.json 保存宿主实际配置，Input.ProfileSHA256 绑定其完整落盘字节；preflight/baseline.json 绑定配置、规范、基线及完整布局，命令记录后端/容器与 stdout/stderr 的路径和摘要。结构化报告的 baseline_check 同样保留这些事实。完整独立门禁仍在提交后重新认证并验证自己的输入，启动检查不会豁免任何质量要求。
+
+Run 的整体 Timeout 现在包含新增基线命令；每条基线命令上限 30 秒，模型预算准入发生在该阶段之后。当前仍只提供 Go API 的显式 Target 接入，没有 batch 命令、调度或恢复功能。
+
 ## 选择规范
 
 `Config.SpecVersion` 为空默认 v0.1.0，原命令行为保持不变。T3 必须同时设置 `ScenarioDir` 为 `scenarios/rpcx/t3`、`SpecVersion` 为 `v0.2.0`。版本仅接受这两个值，规范须匹配宿主支持的确切 SHA-256；T3 基线及两版 SDK 在调用模型前核对可信 pin，验证阶段仍会重新核对。版本与目录不匹配不能回退到旧规范。
@@ -19,6 +35,7 @@ inputs/task.json 与 artifacts/report.json 的可选 budget 字段保存 Campaig
 每次运行创建新的 `rpcx-agent-*` 目录，不覆盖既有 Run：
 
 - `run.json`：阶段与执行终态。只有 `Completed` 表示全部产物发布完成；`Rejected` 可以是完整交付的质量结论。
+- `preflight/`：生成前基线报告及命令日志，不属于候选质量门禁证据。
 - `inputs/`、`baseline/`：任务、规范和基线副本；`workspace/`：实际候选及只读 SDK 副本。
 - `artifacts/candidate.patch`：相对 `baseline/demo-orders` 的候选补丁，可用 Git 重放核对候选摘要。
 - `artifacts/report.json`：规范、后端、输入、补丁及 Evaluation 的结构化事实。

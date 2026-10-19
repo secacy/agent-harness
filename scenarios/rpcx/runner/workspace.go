@@ -109,24 +109,6 @@ func (files tree) module(name string) tree {
 	return module
 }
 
-// 不读取整个场景目录，避免将 cases、oracle 或验证器实现带入工作区。
-func readFixtures(ctx context.Context, scenario string) (tree, error) {
-	fixtures := tree{}
-	for _, module := range []string{"demo-orders", "rpcx-v1", "rpcx-v2"} {
-		files, err := readTree(ctx, filepath.Join(scenario, "fixtures", module))
-		if err != nil {
-			return nil, err
-		}
-		if _, ok := files["go.mod"]; !ok {
-			return nil, fmt.Errorf("module %s has no go.mod", module)
-		}
-		for path, data := range files {
-			fixtures[module+"/"+path] = data
-		}
-	}
-	return fixtures, nil
-}
-
 // 解析尚未创建的输出路径时也处理已有祖先的符号链接。
 func canonicalPath(path string) (string, error) {
 	abs, err := filepath.Abs(path)

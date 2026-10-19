@@ -1,0 +1,58 @@
+[
+  {
+    "id": "rpcx-demo-orders-t1t2-v1",
+    "repository_name": "demo-orders",
+    "spec_version": "v0.1.0",
+    "spec_sha256": "330e439ab69a9c84dbb88343ef5ccc430eeec357bb3f54e01dcad83ce860e251",
+    "repository_sha256": "e11cb7e698449e4c77fc9c381512be31bb68f00e92c56a53364e48f0147602f1",
+    "dependencies": {
+      "rpcx-v1": "eb1e667f91f214f9005654f6d49794a3088068f67f67517eeb739b84fe2a0cd4",
+      "rpcx-v2": "27509c835f6bdd59c2a94d0b382a0ff89ea8d63c00c90fd5e28dc867b3591536"
+    },
+    "protected_paths": [
+      "internal/pb"
+    ],
+    "build_config": "default",
+    "required_tests": [
+      "example.com/demo-orders/cmd/server/TestBadRequest",
+      "example.com/demo-orders/cmd/server/TestCancel",
+      "example.com/demo-orders/cmd/server/TestNotFound",
+      "example.com/demo-orders/cmd/server/TestPlace",
+      "example.com/demo-orders/internal/inventory/TestRelease",
+      "example.com/demo-orders/internal/inventory/TestReserve",
+      "example.com/demo-orders/internal/orders/TestCancel",
+      "example.com/demo-orders/internal/orders/TestCancelFailure",
+      "example.com/demo-orders/internal/orders/TestPlace",
+      "example.com/demo-orders/internal/orders/TestPlaceFailure"
+    ],
+    "verifier": "rpcx-t1t2-evidence-v1"
+  },
+  {
+    "id": "rpcx-demo-orders-t3-v1",
+    "repository_name": "demo-orders",
+    "spec_version": "v0.2.0",
+    "spec_sha256": "5f096ec6bae18525fb5113781c096b2393707f95aa62f2ac9f9e4e4f94c8cad7",
+    "repository_sha256": "e11cb7e698449e4c77fc9c381512be31bb68f00e92c56a53364e48f0147602f1",
+    "dependencies": {
+      "rpcx-v1": "b1a2645fc53a69d86c5433b11ece49204a3504abc6cd4cc69984da54bf8b7798",
+      "rpcx-v2": "a3fb156de5d934187798fe4ee127643a423eda8f2e5ff2b514f0cc9b7217f7ed"
+    },
+    "protected_paths": [
+      "internal/pb"
+    ],
+    "build_config": "default",
+    "required_tests": [
+      "example.com/demo-orders/cmd/server/TestBadRequest",
+      "example.com/demo-orders/cmd/server/TestCancel",
+      "example.com/demo-orders/cmd/server/TestNotFound",
+      "example.com/demo-orders/cmd/server/TestPlace",
+      "example.com/demo-orders/internal/inventory/TestRelease",
+      "example.com/demo-orders/internal/inventory/TestReserve",
+      "example.com/demo-orders/internal/orders/TestCancel",
+      "example.com/demo-orders/internal/orders/TestCancelFailure",
+      "example.com/demo-orders/internal/orders/TestPlace",
+      "example.com/demo-orders/internal/orders/TestPlaceFailure"
+    ],
+    "verifier": "rpcx-t3-evidence-v1"
+  }
+]

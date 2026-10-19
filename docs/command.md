@@ -100,6 +100,16 @@ env GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly G
 
 可控模型通过真实工具修改临时夹具，再运行独立验证、导出补丁并验证还原一致性。覆盖正确/被拒绝的候选、失败/预算/取消/超时、输入变化、报告与状态写入失败，以及多次运行的历史保留。命令入口测试使用本机模拟 HTTP 服务，需要临时端口监听权限；不需要真实 API Key，不访问真实 DeepSeek 服务。
 
+## M3.2 Target 与生成前基线检查
+
+```sh
+env GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly GOCACHE="$PWD/runs/go-cache" GOMODCACHE="$PWD/runs/module-cache" go test -race -p 1 ./internal/task ./scenarios/rpcx/runner -run 'TestTargetStructure|TestExplicitTarget|TestUnsupportedTarget|TestBaseline|TestSupportedProfiles'
+```
+
+检查 Target/Profile 适用范围、实际输入与配置材料绑定、基线构建/必需测试事件、取消、输入漂移、失败日志及零模型准入；正常路径实际运行可信本地 Go 基线。故障注入使用可控执行器，不冒充真实业务红测。
+
+验证新增基线阶段的 Docker 路径：使用相同离线环境变量，加 `HARNESS_DOCKER_TEST=1` 执行 `go test ./scenarios/rpcx/runner -run '^TestExplicitTargetDockerBaselineBeforeModel$'`。该对照只进行构建与十个原测试，随后使用立即报错的进程内模型替身，不调用真实服务。需已准备固定镜像，沿用下文 Docker 准备步骤。
+
 ## 单仓库任务入口
 
 ```sh

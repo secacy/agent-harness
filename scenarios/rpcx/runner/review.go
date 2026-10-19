@@ -16,6 +16,10 @@ import (
 
 // renderReview 只呈现已保存的事实，不重算判定，也不把模型自述转换为验证证据。
 func renderReview(report Report, baseline, candidate tree, trace *agent.Result) []byte {
+	module := report.Input.RepositoryName
+	if module == "" {
+		module = "demo-orders"
+	}
 	var out bytes.Buffer
 	fmt.Fprint(&out, "# 候选审核材料\n\n")
 	fmt.Fprintf(&out, "Run：%s；执行状态：%s。最终发布状态以 [run.json](../run.json) 为准。\n\n", textValue(report.RunID), textValue(string(report.Status)))
@@ -28,7 +32,22 @@ func renderReview(report Report, baseline, candidate tree, trace *agent.Result) 
 		fmt.Fprintf(&out, "执行或交付错误：%s。下方仅保留部分诊断材料，不能视为完成验收。\n\n", textValue(report.Error))
 	}
 	fmt.Fprint(&out, "ReadyForReview 表示当前门禁有充分证据，可进入常规人工审核；NeedsAttention 表示仍需确认缺口；Rejected 表示发现明确违规。判定只适用于列明的输入、构建配置和支持形态，不证明任意调用图或业务等价性。\n\n")
-	fmt.Fprintf(&out, "规范：%s（[原文](../inputs/spec/spec.md)）；后端：%s；镜像：%s。\n\n", textValue(report.Input.SpecVersion), textValue(report.Input.ExecutionMode), textValue(report.Input.Backend.Image))
+	if report.Input.Target != nil {
+		fmt.Fprintf(&out, "Target：%s；宿主 Profile：%s；配置 SHA-256：%s。\n\n", textValue(report.Input.Target.ID), textValue(report.Input.Target.ProfileID), textValue(report.Input.ProfileSHA256))
+	}
+	if report.Input.SpecSHA256 != "" && report.Baseline != nil {
+		fmt.Fprintf(&out, "规范：%s（[原文](../inputs/spec/spec.md)）；后端：%s；镜像：%s。\n\n", textValue(report.Input.SpecVersion), textValue(report.Input.ExecutionMode), textValue(report.Input.Backend.Image))
+	} else {
+		fmt.Fprint(&out, "规范及输入状态见结构化报告。\n\n")
+	}
+	if report.Baseline != nil {
+		if report.Baseline.Status == "pass" || report.Baseline.Status == "fail" {
+			fmt.Fprintf(&out, "生成前基线检查：%s；详情见 [baseline.json](../preflight/baseline.json)。该检查不替代候选独立门禁。\n\n", textValue(report.Baseline.Status))
+		} else {
+			fmt.Fprintf(&out, "生成前基线检查：%s；详情见结构化报告的 baseline_check。该检查不替代候选独立门禁。\n\n", textValue(report.Baseline.Status))
+		}
+	}
+
 	if ref := report.Input.Budget; ref != nil {
 		fmt.Fprintf(&out, "共享预算：Campaign %s，Target %s，Run %s；账本 %s；模型配置 SHA-256 %s。准入请求及已知/未知消耗以共享账本为准。\n\n", textValue(ref.CampaignID), textValue(ref.TargetID), textValue(ref.RunID), textValue(ref.LedgerPath), textValue(ref.ProfileSHA256))
 	}
@@ -41,7 +60,7 @@ func renderReview(report Report, baseline, candidate tree, trace *agent.Result) 
 		fmt.Fprint(&out, " · [候选补丁](candidate.patch)")
 	}
 	fmt.Fprint(&out, "\n\n")
-	fmt.Fprint(&out, "## 相关修改\n\n以下为文件级变化；条款对应的具体发现和行号在后续检查中。补丁以 baseline/demo-orders 为基线重放。输入逐文件摘要见 inputs/task.json。\n\n| 文件 | 变化 | 基线 SHA-256 | 候选 SHA-256 |\n| --- | --- | --- | --- |\n")
+	fmt.Fprint(&out, "## 相关修改\n\n以下为文件级变化；条款对应的具体发现和行号在后续检查中。补丁以 baseline/"+module+" 为基线重放。输入逐文件摘要见 inputs/task.json。\n\n| 文件 | 变化 | 基线 SHA-256 | 候选 SHA-256 |\n| --- | --- | --- | --- |\n")
 	paths := map[string]bool{}
 	for path := range baseline {
 		paths[path] = true
@@ -65,11 +84,11 @@ func renderReview(report Report, baseline, candidate tree, trace *agent.Result) 
 		var links []string
 		if existed {
 			oldSHA = digest(before)
-			links = append(links, link("基线", "../baseline/demo-orders/"+path))
+			links = append(links, link("基线", "../baseline/"+module+"/"+path))
 		}
 		if exists {
 			newSHA = digest(after)
-			links = append(links, link("候选", "../workspace/demo-orders/"+path))
+			links = append(links, link("候选", "../workspace/"+module+"/"+path))
 		}
 		fmt.Fprintf(&out, "| %s（%s） | %s | %s | %s |\n", textValue(path), strings.Join(links, " / "), kind, oldSHA, newSHA)
 	}

@@ -292,7 +292,8 @@ func TestRunKeepsPartialCandidateOnGenerationFailure(t *testing.T) {
 				case "cancel":
 					cancel()
 				case "timeout":
-					<-ctx.Done()
+					// 此处验证生成阶段的供应商超时；整体 Run 超时另由基线阶段测试覆盖。
+					return agent.Reply{}, context.DeadlineExceeded
 				default:
 					t.Fatal("model called after budget exhaustion")
 				}
@@ -300,9 +301,6 @@ func TestRunKeepsPartialCandidateOnGenerationFailure(t *testing.T) {
 			})
 			if mode == "budget" {
 				config.Limits.MaxModelCalls = 1
-			}
-			if mode == "timeout" {
-				config.Timeout = 100 * time.Millisecond
 			}
 			record, err := Run(ctx, config)
 			wantStatus, wantReason, wantError := StatusFailed, agent.ExitFailed, failure
@@ -482,7 +480,7 @@ func TestRunReturnsErrorWhenTerminalStateCannotBeWritten(t *testing.T) {
 	}
 }
 
-func TestRunPreservesFailedBaselineEvidence(t *testing.T) {
+func TestLegacyRunnerRejectsUnregisteredBaselineBeforeRun(t *testing.T) {
 	config := configForTest(t, modelFunc(func(context.Context, []agent.Message, []agent.ToolSpec) (agent.Reply, error) {
 		return agent.Reply{Finish: agent.FinishStop}, nil
 	}))
@@ -500,13 +498,10 @@ func TestRunPreservesFailedBaselineEvidence(t *testing.T) {
 		t.Fatal(err)
 	}
 	record, err := Run(context.Background(), config)
-	if err == nil || record.Status != StatusFailed || record.Verdict != "" || record.Phase != PhaseValidating || !strings.Contains(err.Error(), "baseline tests failed") {
-		t.Fatalf("broken baseline was treated as a candidate verdict: %+v %v", record, err)
+	if !errors.Is(err, ErrInvalidConfig) || record.Directory != "" || !strings.Contains(err.Error(), "input snapshot changed") {
+		t.Fatalf("unregistered baseline was accepted: %+v %v", record, err)
 	}
-	report := readJSON[Report](t, filepath.Join(record.Directory, "artifacts/report.json"))
-	if report.Validation == nil || report.Validation.Verdict != "" || len(report.Validation.Commands) != 1 || report.Validation.Commands[0].ExitCode == 0 {
-		t.Fatalf("missing baseline failure evidence: %+v", report)
-	}
+
 }
 
 func TestRunCancellationDuringValidationPersistsEvidence(t *testing.T) {
@@ -525,7 +520,8 @@ func TestRunCancellationDuringValidationPersistsEvidence(t *testing.T) {
 		done <- outcome{record, err}
 	}()
 	// 等待验证器创建自己的执行副本，再触发取消。
-	deadline := time.NewTimer(10 * time.Second)
+	// 生成前新增两个各限时 30 秒的基线命令，等待覆盖该阶段后再验证取消。
+	deadline := time.NewTimer(90 * time.Second)
 	defer deadline.Stop()
 	ticker := time.NewTicker(5 * time.Millisecond)
 	defer ticker.Stop()
