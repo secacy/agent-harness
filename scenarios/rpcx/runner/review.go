@@ -95,7 +95,7 @@ func renderReview(report Report, baseline, candidate tree, trace *agent.Result) 
 	if report.Validation == nil {
 		fmt.Fprint(&out, "\n## 独立检查\n\n未获得独立验证结果；不得把 Agent 的提交或本地检查视为最终质量判定。\n")
 	} else {
-		renderValidation(&out, report)
+		renderValidation(&out, report, module)
 	}
 	fmt.Fprint(&out, "\n## Agent 自述（未经独立确认）\n\n下述文字仅来自模型，不能替代以上检查依据。\n")
 	if trace != nil {
@@ -159,7 +159,7 @@ func evidenceLinks(ids []string, evidence map[string]quality.Evidence) string {
 	return strings.Join(parts, "，")
 }
 
-func renderValidation(out *bytes.Buffer, report Report) {
+func renderValidation(out *bytes.Buffer, report Report, module string) {
 	result := report.Validation
 	fmt.Fprintf(out, "\n## 检查与条款依据\n\n验证器：%s；材料集合 SHA-256：%s。每项状态仅适用于该检查的支持范围，不把 blocked、unknown 或未执行计为通过。\n", textValue(result.VerifierVersion), textValue(result.MaterialsSHA256))
 	evidence := map[string]quality.Evidence{}
@@ -183,7 +183,7 @@ func renderValidation(out *bytes.Buffer, report Report) {
 				if loc.Tree == "candidate" {
 					tree = "workspace"
 				}
-				fmt.Fprintf(out, " 位置：%s，第 %d 行（0 为文件级）。", link(loc.Tree+":"+loc.Path, "../"+tree+"/demo-orders/"+loc.Path), loc.Line)
+				fmt.Fprintf(out, " 位置：%s，第 %d 行（0 为文件级）。", link(loc.Tree+":"+loc.Path, "../"+tree+"/"+module+"/"+loc.Path), loc.Line)
 			}
 			fmt.Fprintln(out)
 		}

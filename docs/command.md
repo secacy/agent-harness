@@ -169,6 +169,14 @@ env GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly G
 
 可控模型通过真实工具修改临时夹具，再运行独立验证、导出补丁并验证还原一致性。覆盖正确/被拒绝的候选、失败/预算/取消/超时、输入变化、报告与状态写入失败，以及多次运行的历史保留。命令入口测试使用本机模拟 HTTP 服务，需要临时端口监听权限；不需要真实 API Key，不访问真实 DeepSeek 服务。
 
+针对审核材料的源码位置，可只读载入一个已有三仓 L2 Campaign，重新在内存渲染并检查链接：
+
+```sh
+HARNESS_REVIEW_CAMPAIGN="$PWD/runs/l2-dev-eval-v0.1.0/campaign" go test -race ./scenarios/rpcx/runner -run '^TestReviewPublishedCampaignLinks$'
+```
+
+该入口不创建 Run、不调用模型或门禁、不覆盖旧 review.md；要求三种已发布 L2 Profile 均有实际源码位置。未设置环境变量时显式跳过。无需运行产物的布局回归是 `TestReviewSourceLocationsUseRepositoryLayout`，同时覆盖旧 demo-orders 入口、三个 L2 模块、删除位置与路径转义。修复依据见[工作记录](worklog/2026-10-20-review-source-links.md)。
+
 ## M3.2 Target 与生成前基线检查
 
 ```sh
