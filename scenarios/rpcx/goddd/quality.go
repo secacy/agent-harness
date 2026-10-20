@@ -45,14 +45,9 @@ func migratedMod(data []byte) []byte {
 // modEntries 只接受已声明的模块语法，允许格式与块内顺序变化。
 func modEntries(data []byte) (map[string]string, error) { return gate.ModEntries(data) }
 
-func requestScope(base, candidate map[string][]byte) quality.Check {
-	out := check("request_scope", quality.StatusPass, "production changes match the authenticated API/context adaptation", "input-snapshots", "scope")
-	expected, err := adapt(base, false)
-	if err != nil {
-		out.Status = quality.StatusUnknown
-		out.Detail = err.Error()
-		return out
-	}
+func requestScope(base, candidate map[string][]byte, a adaptations) (quality.Check, map[string]string) {
+	out := check("request_scope", quality.StatusPass, "production changes match the authenticated API/context adaptation", "input-snapshots", "scope", "adaptations")
+	matches := map[string]string{}
 	paths := map[string]bool{}
 	for p := range base {
 		paths[p] = true
@@ -69,9 +64,18 @@ func requestScope(base, candidate map[string][]byte) quality.Check {
 		}
 		proved := false
 		if strings.HasSuffix(name, ".go") && base[name] != nil && candidate[name] != nil && !directives(candidate[name]) {
-			a, e1 := syntax(name, expected[name])
+			expected, e1 := syntax(name, a.production[name])
 			b, e2 := syntax(name, candidate[name])
-			proved = e1 == nil && e2 == nil && a == b
+			proved = e1 == nil && e2 == nil && expected == b
+			if proved {
+				matches[name] = "production-canonical"
+			} else if name == mockPath && e2 == nil {
+				forwarded, err := syntax(name, a.forwarded)
+				proved = err == nil && forwarded == b
+				if proved {
+					matches[name] = "production-forwarded"
+				}
+			}
 		}
 		if !proved {
 			out.Status = quality.StatusUnknown
@@ -81,7 +85,7 @@ func requestScope(base, candidate map[string][]byte) quality.Check {
 	out.Detail = "request-chain and business structure: " + out.Status
 	out.Findings[0].Detail = out.Detail
 	out.Findings[0].Code = "request_scope_" + out.Status
-	return out
+	return out, matches
 }
 func directives(data []byte) bool {
 	for _, tag := range []string{"//go:", "// +build", "//line ", "/*line ", "//export "} {

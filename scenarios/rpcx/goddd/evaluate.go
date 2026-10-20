@@ -258,24 +258,8 @@ func Evaluate(ctx context.Context, req checks.EvaluationRequest) (out checks.Eva
 		}
 	}
 	e.result.Checks["protected_paths"] = check("protected_paths", protected, "protected LICENSE/go.sum content: "+protected, "input-snapshots")
-	adaptedTests, err := adapt(testFiles(base), true)
+	adaptedTests, err := e.checkAdaptations(base, candidate)
 	if err != nil {
-		return out, err
-	}
-	integrity, err := testintegrity.CompareAdapted(testFiles(base), adaptedTests, testFiles(candidate), testintegrity.Plan{Version: "rpcx-goddd-test-structure-v1", SpecSHA256: SpecSHA256(), MaterialSHA256: e.result.MaterialsSHA256, BaselineFiles: hashes(testFiles(base)), AdditionalTestImports: []string{"errors", "time"}})
-	if err != nil {
-		return out, err
-	}
-	if err := e.saveJSON("test-integrity", "test_structure", "test-integrity.json", integrity); err != nil {
-		return out, err
-	}
-	if err := copyFiles(filepath.Join(e.req.EvidenceDir, "adapted-tests"), adaptedTests); err != nil {
-		return out, err
-	}
-	status := map[string]string{"preserved": quality.StatusPass, "violated": quality.StatusFail, "unknown": quality.StatusUnknown}[integrity.Status]
-	e.result.Checks["test_preservation"] = check("test_preservation", status, "original test structure: "+integrity.Status, "test-integrity", "input-snapshots")
-	e.result.Checks["request_scope"] = requestScope(base, candidate)
-	if err := e.saveJSON("scope", "production_scope", "scope.json", e.result.Checks["request_scope"]); err != nil {
 		return out, err
 	}
 	required, err := RequiredTests()

@@ -1,7 +1,7 @@
 # Goddd：mock context 传播与未使用形参的有限适配
 
 - 日期：2026-10-20
-- 状态：具体设计完成，隔离原型已验证可行性；生产规则尚未实现
+- 状态：有限适配与证据发布已实现并验收；原真实候选副本仍 NeedsAttention
 - 代码基线：4308f45
 - 对应里程碑：[M3.4](../MILESTONES.md#m3多仓库批量闭环)
 - 前置：[未知项根因评审](2026-10-20-needs-attention-review.md)、[Workouts 导入顺序验收](2026-10-20-workouts-import-order.md)
@@ -121,3 +121,36 @@ Evidence 必须引用新落盘材料，并绑定本次 baseline/candidate/spec�
 本轮交付为设计和可行性证据。生产规则实施、完整校准、真实候选副本的新门禁结论均待下一单元，不宣布 M3 完成。
 
 收尾核对：原 Campaign 的 5907 份文件摘要未变，四份变更文档的 99 个本地链接目标及代码围栏检查通过，git diff --check 通过。源码、冻结材料与原协议没有变化。本轮未运行项目 Go 回归或 Docker，不能据此声称完整门禁通过；原型与检查材料摘要见 runs/goddd-context-design-01/verification.json。
+
+## 实际实施与验收
+
+本节记录基于 ffc1846 的后续实现；上文原型结果及设计时的验收状态不回写。
+
+新增场景内 variants.go 和 adaptation_evidence.go：从已认证基线生成固定变体，严格核对字段/方法、原声明不使用 ctx 和完整适配声明；两份测试报告采用同一输入、规范和工具身份，不能跨报告拼凑通过。原 CompareAdapted 和共享 Plan 不变。
+
+Evaluate 在命令验证前保存四份固定适配、两份完整原测试比较、最终选中报告及 adaptations.json；每份文件逐一登记 Evidence，绑定规范、基线及候选。adaptations.json 记录声明身份、条款、文件摘要、逐生产文件匹配和选中的测试形式。adapted-tests 保存实际选中集合，可信生产副本使用同一份集合。
+
+新测试覆盖完整文件匹配、成对变更、host 结构错误、原 ctx/局部/闭包/字段同名绑定、候选改名/逻辑/init、删除断言/Skip、报告冲突与原始摘要、四处发布故障。隔离验收另直接观察 mock 收到同一 ctx（含值及取消状态）、rs、Invoked 标记和原返回结果，不将该宿主探针注入候选测试。
+
+所有材料位于 runs/goddd-context-adaptation-01/，不入 Git；不请求真实模型或读取 .env。最终验证结果如下：
+
+| 验证 | 实际结果 | 证据 |
+| --- | --- | --- |
+| Goddd/testintegrity 竞态回归 | 两包、148 项测试及子测试通过，无竞态；3 项显式验收跳过，另表执行 | core-race.jsonl |
+| 六项冻结本地校准 | 1 ReadyForReview、4 Rejected、1 NeedsAttention，原 manifest 检查、判定及条款全部保持 | matrix.jsonl、matrix/ 各 evaluation.json |
+| 新有限形式 Docker 正例 | ReadyForReview；两份测试报告、选中 blank-context、forwarded mock、原测试、类型和可信行为均通过，包含实际到期 | docker-variants/forwarded-blank-2753371499/ |
+| 独立 mock 直接传播 | 活跃及已取消的 ctx 均传给回调，同一对象、值、取消、rs、标记和返回结果通过；测试事件已核对 | 上述目录 mock-probe/、mock-probe-execution.json |
+| 错误期限 Docker 反例 | 5 秒期限仍 Rejected，结构适配不能替代期限验证 | docker-variants/wrong-duration-1006014749/ |
+| 未知 mock Docker 反例 | 回调使用 Background，完整文件不匹配；行为探针通过仍 NeedsAttention | docker-variants/wrong-mock-context-353229406/ |
+| 旧正确候选 Docker | 仍 ReadyForReview，保留 canonical 形式 | docker-legacy/correct-2195436263/ |
+| 原真实候选副本 Docker | test_preservation pass、mock 缺口消除；仅 proxying.go 仍有范围缺口，最终 NeedsAttention | real-candidate-calibration/ |
+| 项目回归 | 25 个有测试包、1037 项测试及子测试通过，7 个包无测试；37 项显式验收跳过，不算作通过。包含既有 T3 三类交付与 Runner 回归 | project-tests.jsonl |
+| 静态检查 | Goddd 的 go vet 通过 | vet.log |
+
+11 份校准报告的 Evidence 摘要、输入绑定、四份固定变体、原候选测试字节及选中/可信执行测试集合均已逐一核对。原 Campaign 的 5907 份文件摘要未变，45 个 Docker 容器均已不存在；阶段审计见 artifact-audit.json。这里没有重新评测或替换原实验，旧判定及正式指标保持。
+
+原真实 Goddd 候选摘要仍为 `9ac51f3a432cb8b62038f5e13860e525bb33b1d70670506a74fb672e49a32682`，新工具材料摘要为 `a1940825c5daa73b31236e07b580d62368ccdff765f5e0436729fe98acfafe9d`。新校准的选中适配、测试报告和未知项只解释新材料身份下的检查，不将旧 NeedsAttention 改计为自动成功。
+
+最终审计 verification.json 逐项核对上述材料、当前工具源码、原 Campaign 摘要与容器回收；规范、Profile、冻结校准数据、共享 testintegrity 及原实验协议均未变。Go 格式、git diff --check、六份文档的 138 个本地链接目标及代码围栏检查通过，文档摘要见 document-checks.json。不同轮次的重复测试不相加计为项目覆盖。
+
+本单元按已声明的两处固定适配验收，没有消除 Goddd 的全部范围缺口，也没有完成人类复核或 M3 总体验收。下一步评审 proxying.go 的命名期限常量和构造器兼容参数，再决定证明方案；不将 `_` 测试参数规则推广到生产 ctx，也不为获得放行追加真实 Run。

@@ -25,7 +25,7 @@ M3.4 已完成[样本设计与选择](worklog/2026-10-19-m3-4-sample-selection.m
 
 [生成前的计划与纳入绑定](worklog/2026-10-20-pre-generation-enrollment.md)记录静态 Enrollment 与动态 Manifest 的边界、Campaign 准备屏障和零任务接纳的失败语义。纳入清单固定参考身份，完整实验协议、预算与真实生成仍按 M3.4 推进。
 
-[首轮开发实验协议 v0.1.0](experiments/l2-dev-eval-v0.1.0/README.md)已固定实际三仓配置、750 万 Token 总额度、源码/二进制/能力依据及参考与复核规则，随后获授权执行唯一真实批次；[发布工作记录](worklog/2026-10-20-l2-protocol-release.md)说明预算取舍、容量漂移拒绝和离线验收。原三项 NeedsAttention 保留，独立自动参考均 pass；本轮没有自动放行，错误放行率无定义，另暴露 6 个审核定位链接缺陷。后续[按实际模块的源码定位修复](worklog/2026-10-20-review-source-links.md)已通过呈现回归及原三仓报告只读消费，旧报告保持原样。[六项未知检查的根因与支持范围评审](worklog/2026-10-20-needs-attention-review.md)已完成；随后[Workouts 导入顺序归一](worklog/2026-10-20-workouts-import-order.md)通过正反例、冻结矩阵及三组 Docker 开发校准，原判定和正式指标保持不变。[Goddd mock/context 后续设计](worklog/2026-10-20-goddd-context-adaptation.md)已明确固定变体、兼容约束和验收边界；隔离原型可行，生产规则尚未接入。
+[首轮开发实验协议 v0.1.0](experiments/l2-dev-eval-v0.1.0/README.md)已固定实际三仓配置、750 万 Token 总额度、源码/二进制/能力依据及参考与复核规则，随后获授权执行唯一真实批次；[发布工作记录](worklog/2026-10-20-l2-protocol-release.md)说明预算取舍、容量漂移拒绝和离线验收。原三项 NeedsAttention 保留，独立自动参考均 pass；本轮没有自动放行，错误放行率无定义，另暴露 6 个审核定位链接缺陷。后续[按实际模块的源码定位修复](worklog/2026-10-20-review-source-links.md)已通过呈现回归及原三仓报告只读消费，旧报告保持原样。[六项未知检查的根因与支持范围评审](worklog/2026-10-20-needs-attention-review.md)已完成；随后[Workouts 导入顺序归一](worklog/2026-10-20-workouts-import-order.md)通过正反例、冻结矩阵及三组 Docker 开发校准，原判定和正式指标保持不变。[Goddd mock/context 有限适配](worklog/2026-10-20-goddd-context-adaptation.md)已接入固定变体与可追溯的适配选择，旧校准及新正反例通过；真实候选副本的测试保留通过，但 proxying.go 的范围缺口继续 NeedsAttention。原实验记录与指标保持不变。
 
 ## 记录原则
 

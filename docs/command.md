@@ -213,6 +213,14 @@ HARNESS_GODDD_ACCEPTANCE=1 HARNESS_GODDD_OUTPUT="$PWD/runs/goddd-calibration" go
 
 上述命令只执行可信本地夹具。增加 `HARNESS_GODDD_BACKEND=docker` 使用已准备的固定镜像，`HARNESS_GODDD_CASES=correct,missing-timeout,mapping-helper` 可选择三类主要候选。改为 `-run '^TestRunGodddDelivery$' ./scenarios/rpcx/runner` 执行确定性 Runner 联调；不调用模型服务。机制单测、证据范围及冻结清单见 [Goddd 说明](../scenarios/rpcx/goddd/README.md)。
 
+固定 context 变体的完整门禁与直接 mock 传播校准：
+
+```sh
+env HARNESS_GODDD_ACCEPTANCE=1 HARNESS_GODDD_BACKEND=docker HARNESS_GODDD_OUTPUT="$PWD/runs/goddd-context-variants" GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly GOCACHE="$PWD/runs/go-cache" go test -json -count=1 -timeout=15m ./scenarios/rpcx/goddd -run '^TestGodddContextVariantsAcceptance$'
+```
+
+三个候选预期分别为 ReadyForReview、Rejected、NeedsAttention；另执行收到同一 ctx、值/取消、原请求及返回结果的直接回调探针。属于开发校准，不调用模型或重算历史实验指标；原始字节、固定变体和选择记录见新证据目录的 adaptations.json。
+
 ## 单仓库任务入口
 
 ```sh

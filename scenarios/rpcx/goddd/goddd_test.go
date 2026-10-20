@@ -66,7 +66,7 @@ func TestGodddAdaptationAndScope(t *testing.T) {
 			if report.Status != want {
 				t.Fatalf("test integrity=%s findings=%+v", report.Status, report.Findings)
 			}
-			scope := requestScope(base, candidate)
+			scope := scopeCandidate(t, base, candidate)
 			status := quality.StatusPass
 			if id == "mapping-helper" {
 				status = quality.StatusUnknown
@@ -153,7 +153,17 @@ func TestTimeoutPrefixIsScopedToRPCBoundary(t *testing.T) {
 	}
 	candidate := controlCandidate(t, "correct")
 	candidate["mock/mock.go"] = []byte(strings.Replace(string(candidate["mock/mock.go"]), " []shipping.Itinerary {\n", " []shipping.Itinerary {\n ctx,cancel:=context.WithTimeout(ctx,1); defer cancel()\n", 1))
-	if requestScope(module(fixtures, "goddd"), candidate).Status != quality.StatusUnknown {
+	if scopeCandidate(t, module(fixtures, "goddd"), candidate).Status != quality.StatusUnknown {
 		t.Fatal("unmodeled mock change accepted")
 	}
+}
+
+func scopeCandidate(t *testing.T, base, candidate map[string][]byte) quality.Check {
+	t.Helper()
+	a, err := prepareAdaptations(base)
+	if err != nil {
+		t.Fatal(err)
+	}
+	result, _ := requestScope(base, candidate, a)
+	return result
 }

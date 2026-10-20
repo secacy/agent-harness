@@ -8,6 +8,8 @@
 
 八项证据共同判定：依赖、保护路径、构建、22 项原测试及子测试的执行、测试结构、生产改动范围、类型化 RPC 对应与期限前缀、可信业务/请求/期限行为。确定违规得到 Rejected，必需证据不足得到 NeedsAttention，所有必需检查通过才是 ReadyForReview。有限 AST 适配支持当前认证调用链，等价 helper 重构仍可能需要人工确认。
 
+mock 的完整文件允许既有回调形式，或 FetchRoutesFn 字段与调用同时增加 ctx 的固定形式。测试 helper 仅对已认证、未使用新增参数的位置支持 `ctx` / `_` 两种写法；其他参数改名和逻辑改动不作一般等价处理。`adaptations.json`、`adaptations/` 及两份测试比较报告保存变体来源和选择，`adapted-tests/` 与可信执行采用同一集合。具体范围见[适配设计与验收](../../../docs/worklog/2026-10-20-goddd-context-adaptation.md)。
+
 可信生产副本剥离候选测试，安装由认证基线适配的原测试和[独立编写的行为探针](probes/boundary_test.go.txt)，检查参数与响应映射、远端错误/未知货物、父期限/取消/值传播、每次 30 秒上限及释放；正例还实际等待默认期限到期。这里的“独立”指不信任 Agent 与候选测试，**不是 M5 的独立离线参考标准**。
 
 宿主 Profile 为 `rpcx-goddd-t3-v1`，通过 `runner.TargetFromGoddd(id, fixturesDir, specPath)` 构造显式 Target，再传入已有 `runner.Config.Target`。旧单仓库 CLI 的 ScenarioDir/SpecVersion 入口仍只接受原两版 demo-orders；本步没有新增 Goddd 付费命令。
@@ -46,6 +48,14 @@ HARNESS_GODDD_ACCEPTANCE=1 HARNESS_GODDD_OUTPUT="$PWD/runs/goddd-calibration" \
 HARNESS_GODDD_ACCEPTANCE=1 HARNESS_GODDD_BACKEND=docker \
   HARNESS_GODDD_OUTPUT="$PWD/runs/goddd-runner" \
   go test -v -count=1 -timeout=15m -run '^TestRunGodddDelivery$' ./scenarios/rpcx/runner
+```
+
+固定 context 变体的完整正例、错误时长、未知 mock 改动，以及直接回调传播探针使用同一开关：
+
+```sh
+HARNESS_GODDD_ACCEPTANCE=1 HARNESS_GODDD_BACKEND=docker \
+  HARNESS_GODDD_OUTPUT="$PWD/runs/goddd-context-variants" \
+  go test -v -count=1 -timeout=15m -run '^TestGodddContextVariantsAcceptance$' ./scenarios/rpcx/goddd
 ```
 
 校准产物 `evaluation.json` 是逐检查、条款、证据与命令索引；Runner 另交付 `artifacts/candidate.patch`、`report.json` 和 `review.md`。实施取舍、失败轮次与实际验收见[工作记录](../../../docs/worklog/2026-10-19-goddd-evidence-gate.md)。
