@@ -38,4 +38,4 @@ go test -count=1 -timeout=20m ./scenarios/rpcx/l2/evaluation -run '^TestGodddRef
 
 增加 `HARNESS_L2_REFERENCE_BACKEND=docker` 使用固定禁网镜像；`HARNESS_L2_REFERENCE_CASES=correct,missing-timeout,mapping-helper` 选择 Goddd 主要对照。Translation 使用同一组环境变量，将测试名改为 `^TestTranslationReferenceAcceptance$`，主要对照改为 `correct,alternate-missing-timeout,mapping-helper`。Workouts 的测试名为 `^TestWorkoutsReferenceAcceptance$`，主要对照为 `correct,outer-context,mapping-helper`。各场景必须使用不同的输出目录；Workouts 全矩阵使用 `-timeout=30m`。
 
-所有校准仅是开发材料，不调用模型，也不产生真实模型效果指标。删断言对照可以自动通过，所以仍必须保持待复核；实现结果和实际源码检查见[工作记录](../../../../docs/worklog/2026-10-19-l2-development-evaluation.md#10-goddd-单候选参考实现与验收)。Workouts 的实现与验收见同一工作记录第 12 节；[轮次汇总](../round/README.md)在参考之后关联原 Run/门禁和复核，参考包不读取其结果；完整真实评测协议发布仍待完成。
+所有校准仅是开发材料，不调用模型，也不产生真实模型效果指标。删断言对照可以自动通过，所以仍必须保持待复核；实现结果和实际源码检查见[工作记录](../../../../docs/worklog/2026-10-19-l2-development-evaluation.md#10-goddd-单候选参考实现与验收)。Workouts 的实现与验收见同一工作记录第 12 节；[轮次汇总](../round/README.md)在参考之后关联原 Run/门禁和复核，参考包不读取其结果；[首轮真实开发批次](../../../../docs/experiments/2026-10-20-rpcx-l2-real-model-01.md)已按冻结开发协议完成自动参考与汇总，实际人工复核仍待；M5 正式评测的协议冻结与验收尚未完成。
