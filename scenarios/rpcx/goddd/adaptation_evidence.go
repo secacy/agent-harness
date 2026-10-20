@@ -77,7 +77,15 @@ func (e *evaluation) checkAdaptations(base, candidate map[string][]byte) (map[st
 	}
 	integrity := reports[selected]
 	index.TestVariant = []string{"tests-canonical", "tests-blank-context"}[selected]
-	scope, matches := requestScope(base, candidate, a)
+	scope, matches, routing := requestScope(base, candidate, a)
+	if routing != nil {
+		routing.Binding = e.binding()
+		routing.MaterialsSHA256 = e.result.MaterialsSHA256
+		if err := e.saveJSON("routing-scope", "bounded_structure", "routing-scope.json", routing); err != nil {
+			return nil, err
+		}
+		scope.EvidenceIDs = append(scope.EvidenceIDs, "routing-scope")
+	}
 	index.ProductionMatches = matches
 	if err := e.saveJSON("adaptations", "host_adaptation_selection", "adaptations.json", index); err != nil {
 		return nil, err

@@ -75,7 +75,7 @@ func TestMockAdaptationRequiresWholeFileMatch(t *testing.T) {
 			} else if tc.old != "" {
 				candidate[mockPath] = changeSource(t, candidate[mockPath], tc.old, tc.new)
 			}
-			result, matches := requestScope(base, candidate, a)
+			result, matches, _ := requestScope(base, candidate, a)
 			if result.Status != want {
 				t.Fatalf("scope=%+v want=%s", result, want)
 			}

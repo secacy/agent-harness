@@ -10,6 +10,8 @@
 
 mock 的完整文件允许既有回调形式，或 FetchRoutesFn 字段与调用同时增加 ctx 的固定形式。测试 helper 仅对已认证、未使用新增参数的位置支持 `ctx` / `_` 两种写法；其他参数改名和逻辑改动不作一般等价处理。`adaptations.json`、`adaptations/` 及两份测试比较报告保存变体来源和选择，`adapted-tests/` 与可信执行采用同一集合。具体范围见[适配设计与验收](../../../docs/worklog/2026-10-20-goddd-context-adaptation.md)。
 
+routing 文件额外支持两种局部结构证明：全新未导出常量仅用于该 RPC 的 30 秒期限，以及构造器首部对兼容参数的一次 `_ = ctx`。限定表达式、声明/引用节点及位置，归约只用于比较副本；完整剩余结构、类型绑定与实际行为仍必须通过。越界改动保留 unknown。`routing-scope.json` 保存原文件摘要、节点位置/片段摘要、条款和剩余结构结果；这种证明不写成 `production-canonical`。详见[设计与验收](../../../docs/worklog/2026-10-20-goddd-routing-scope.md)。
+
 可信生产副本剥离候选测试，安装由认证基线适配的原测试和[独立编写的行为探针](probes/boundary_test.go.txt)，检查参数与响应映射、远端错误/未知货物、父期限/取消/值传播、每次 30 秒上限及释放；正例还实际等待默认期限到期。这里的“独立”指不信任 Agent 与候选测试，**不是 M5 的独立离线参考标准**。
 
 宿主 Profile 为 `rpcx-goddd-t3-v1`，通过 `runner.TargetFromGoddd(id, fixturesDir, specPath)` 构造显式 Target，再传入已有 `runner.Config.Target`。旧单仓库 CLI 的 ScenarioDir/SpecVersion 入口仍只接受原两版 demo-orders；本步没有新增 Goddd 付费命令。
@@ -56,6 +58,14 @@ HARNESS_GODDD_ACCEPTANCE=1 HARNESS_GODDD_BACKEND=docker \
 HARNESS_GODDD_ACCEPTANCE=1 HARNESS_GODDD_BACKEND=docker \
   HARNESS_GODDD_OUTPUT="$PWD/runs/goddd-context-variants" \
   go test -v -count=1 -timeout=15m -run '^TestGodddContextVariantsAcceptance$' ./scenarios/rpcx/goddd
+```
+
+命名期限与构造器空读的完整正例、错误期限、额外常量未知对照，以及 nil/取消/有值构造器 ctx 与请求 ctx 的实际区分：
+
+```sh
+HARNESS_GODDD_ACCEPTANCE=1 HARNESS_GODDD_BACKEND=docker \
+  HARNESS_GODDD_OUTPUT="$PWD/runs/goddd-routing-scope" \
+  go test -v -count=1 -timeout=15m -run '^TestGodddRoutingScopeAcceptance$' ./scenarios/rpcx/goddd
 ```
 
 校准产物 `evaluation.json` 是逐检查、条款、证据与命令索引；Runner 另交付 `artifacts/candidate.patch`、`report.json` 和 `review.md`。实施取舍、失败轮次与实际验收见[工作记录](../../../docs/worklog/2026-10-19-goddd-evidence-gate.md)。

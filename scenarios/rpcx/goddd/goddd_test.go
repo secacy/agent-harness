@@ -164,6 +164,6 @@ func scopeCandidate(t *testing.T, base, candidate map[string][]byte) quality.Che
 	if err != nil {
 		t.Fatal(err)
 	}
-	result, _ := requestScope(base, candidate, a)
+	result, _, _ := requestScope(base, candidate, a)
 	return result
 }

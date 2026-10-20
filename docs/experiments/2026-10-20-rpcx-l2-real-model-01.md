@@ -99,3 +99,6 @@ M3 保持实现中：有了首轮真实开发观察，但完整人类复核、�
 - audit/analysis.json、*-replay/、original-campaign-files.json、delivery-checks.json、final-verification.json：轨迹辅助分析、重放、原材料摘要、6 项断链和最终资源/凭证核对。
 
 启动记录与 stdout/stderr 位于 runs/l2-dev-eval-v0.1.0-launch/；驱动和日志保存在 runs/l2-dev-eval-{launch.py,reference.go,reference,audit.py,final-audit.py,summarize} 及同前缀日志。参考驱动源码/二进制和汇总器二进制摘要已记录到 final-verification.json；驱动只组装原有发布 API，不更改冻结参考实现。
+
+
+其后[Goddd routing 范围证明](../worklog/2026-10-20-goddd-routing-scope.md)解释了限定的新期限常量与构造器参数读取；同字节候选副本经新工具的完整 Docker 校准，八项检查通过并得到 ReadyForReview。该结果属于已见样本上的后续开发校准，不能追溯增加本轮自动成功数、覆盖原 NeedsAttention 或补填人类复核。

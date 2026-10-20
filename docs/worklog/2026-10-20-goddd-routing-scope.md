@@ -1,7 +1,7 @@
 # Goddd：命名期限常量与构造器兼容参数的范围证明
 
 - 日期：2026-10-20
-- 状态：设计与最小结构原型完成；生产规则未实现
+- 状态：两条局部证明、证据接入及声明范围内的完整验收已完成；下文保留设计时的原型结论
 - 代码基线：dc939a3
 - 对应里程碑：[M3.4](../MILESTONES.md#m3多仓库批量闭环)
 - 前置：[mock/context 有限适配验收](2026-10-20-goddd-context-adaptation.md)
@@ -103,3 +103,48 @@ _ = ctx
 本设计没有形成需要替代已有 ADR 的长期架构选择；依然遵循 [宿主规则所有权](../adr/007-host-owned-task-profiles.md)和[绑定证据聚合](../adr/002-evidence-bound-quality.md)。若未来需要通用常量/绑定事实或证明组合成为重复负担，再单独比较并记录长期选择。
 
 本轮收尾：原 Campaign 的 5907 份文件摘要未变，四份文档的 103 个本地链接目标、代码围栏及 git diff --check 通过。源码、冻结数据、规范、Profile 和原协议未改；没有运行项目 Go 回归、Docker 或新质量判定。原型与检查材料身份见 runs/goddd-routing-scope-design-01/verification.json。
+
+
+## 实际实施
+
+本节记录基于 9d6f3af 的实现；上文原型只证明结构可表达，不改记为运行时验收。
+
+新增 routing_scope.go，先核对全生产快照的名称新鲜性、候选声明和引用的实际 AST 节点、限定期限前缀及构造器参数读取，再仅在内存 AST 中移除已解释的声明/空读。完整剩余结构通过现有 syntax 比较；原候选和实际执行内容保持原字节。没有扩展共享类型协议、worker、测试完整性规则或宿主 Profile。
+
+requestScope 优先尝试已有整文件适配，仅对 routing 文件不匹配时调用局部证明。局部事实成功但剩余结构不同仍为 unknown；生产快照无法解析、名称/引用越界、构造器签名/位置不符等也不放行。两条证明以独立 routing-scope.json 发布，绑定规范、基线、候选及工具材料，记录原文件、声明/引用节点摘要与位置、条款、缺口和完整剩余指纹。适配索引继续只记录原始模板匹配，不把归约结果登记为 canonical。
+
+机制测试覆盖两项分别出现/共同出现/均不出现、不同新名称与单项 const 块；反例包含声明形状、值和名称、基线同名字段/局部、跨文件/其他方法引用、实际使用节点、遮蔽、取消/父 ctx/签名/唯一方法、构造器调用/捕获/重绑/重复/移动读取、请求/响应/错误处理、额外 helper 和语义指令。另核对局部事实不能掩盖剩余差异、原始字节和节点可重算、未知结果仍保存依据、证据写失败无最终判定。
+
+新增显式 TestGodddRoutingScopeAcceptance：通过候选、错误命名期限和额外未使用常量分别验证完整门禁；正例另复制到独立探针目录，实际使用 nil、已取消和有值的构造器 ctx，检查请求 ctx 来源、期限、取消及释放。这个宿主探针不加入候选，也不替代现有 HTTP 调用链和真实到期验证。
+
+所有新产物在 runs/goddd-routing-scope-01/；没有读取 .env 或调用真实模型，原批次和冻结规范/数据保持原样。完整结果见下表。
+
+
+原样候选副本已完成独立 Docker Evaluate，八项必需检查均 pass，得到 ReadyForReview；候选摘要仍为 `9ac51f3a432cb8b62038f5e13860e525bb33b1d70670506a74fb672e49a32682`，新工具材料摘要为 `b363f77ad33e7dd34a4d9cbf620ac9877fbdf0a96478a9e6f432bd97c42310a3`。两个局部事实的四个节点均从原候选取位置/片段摘要；原文件不变，剩余指纹一致。该结果只解释新工具身份下的已见开发样本，不覆盖原报告或增加原实验成功数。
+
+审计脚本的首轮检查曾误认为历史 original-campaign-files.json 列出了当前目录的全部文件，因集合不相等而停止。实际索引中的 5907 份文件均未缺失或改动；额外 234 份 cache/download 元数据的修改/变更时间均不晚于 10:21:24，早于本轮代码基线提交 12:30:41。将它们单独保存为 preexisting-cache-metadata.json，并在最终检查时分别核对两组，保留原文件；没有删除文件或扩大旧索引来掩盖差异。初次错误与处理记录在 partial-audit-first-error.json，原脚本另存 verify-first.py。这是审计清单假设错误，不是候选运行失败，也不据时间戳声称旧索引已经认证了额外文件。
+
+
+## 验收结果与边界
+
+| 验证 | 实际结果 | 证据（相对 runs/goddd-routing-scope-01/） |
+| --- | --- | --- |
+| Goddd/testintegrity 竞态回归 | 两包、210 项测试及子测试通过，无竞态；4 项显式验收跳过，另行执行 | core-race.jsonl |
+| 最后补充的 routing 边界竞态检查 | 66 项测试及子测试通过，包括重复 RPC/构造器、非首层空读及非法赋值；没有扩大生产规则 | routing-race-final.jsonl |
+| 六项冻结本地校准 | 1 ReadyForReview、4 Rejected、1 NeedsAttention；原 manifest 的检查、判定及条款保持 | matrix.jsonl、matrix/ |
+| 新有限形式 Docker 正例 | ReadyForReview，八项检查通过，保留实际 30 秒到期 | docker-routing/named-and-read-887969791/ |
+| 错误命名期限 Docker | 5 秒期限 Rejected；范围 unknown 不能压过期限违规 | docker-routing/wrong-named-duration-232782909/ |
+| 越界结构 Docker | 额外未使用常量的行为通过，仍 NeedsAttention | docker-routing/extra-unused-constant-2266838667/ |
+| 独立构造器探针 | nil、已取消和有值的兼容 ctx 均不替代请求 ctx；请求值、30 秒上限、取消及释放通过 | 上述正例的 constructor-probe/、constructor-probe-execution.json |
+| 旧形式与上一单元 Docker 兼容 | 旧正确、新 forwarded/blank 形式均放行；错误时长仍 Rejected，错 mock ctx 仍 NeedsAttention；直接回调传播通过 | docker-compat.jsonl、docker-compat/ |
+| 原真实候选副本 Docker | 同字节候选八项检查全 pass，ReadyForReview；属于后续开发校准 | real-candidate-calibration/ |
+| 项目回归 | 25 个有测试包、1099 项测试及子测试通过；7 包无测试，38 项显式验收跳过，不记通过 | project-tests.jsonl |
+| 静态检查 | Goddd 的 go vet 通过 | vet.log |
+
+项目回归启动后补充了四项结构边界反例；它们已由最后的 66 项 routing 竞态检查覆盖，不把两轮重复测试相加充作项目覆盖。没有运行新付费实验或修改原实验协议。
+
+最终 verification.json 核对了 14 份校准报告、84 组输入快照映射、全部 Evidence 的摘要/绑定/引用、实际固定变体及测试选择、局部节点位置与片段摘要、完整剩余指纹和当前工具源码。10 份行为通过报告实际执行了默认期限到期并核对成功事件；72 个记录到 ID 的 Docker 容器均已不存在。原索引的 5907 份材料及单列的 234 份已有缓存元数据均保持本次核对的摘要，冻结规范、Profile、数据、共享分析器及 testintegrity 未改。
+
+Go 格式、git diff --check、六份文档的 139 个本地链接目标及代码围栏检查通过，文档摘要另存 document-checks.json。运行产物不入 Git。
+
+本单元按已声明范围验收。支持的是两类有限结构变换，不是任意常量提取、构造器等价或完整语义证明；helper 重构等仍保留 unknown。原三仓实验判定、分母和人类复核状态保持不变，M3 整体验收与独立留出仍未完成。下一步针对 Translation 的期限绑定/前缀位置与测试诊断文字分别评审支持范围和代价，再决定是否扩展；不以让三个已见候选全部放行为目标。

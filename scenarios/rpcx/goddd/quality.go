@@ -45,9 +45,10 @@ func migratedMod(data []byte) []byte {
 // modEntries 只接受已声明的模块语法，允许格式与块内顺序变化。
 func modEntries(data []byte) (map[string]string, error) { return gate.ModEntries(data) }
 
-func requestScope(base, candidate map[string][]byte, a adaptations) (quality.Check, map[string]string) {
+func requestScope(base, candidate map[string][]byte, a adaptations) (quality.Check, map[string]string, *routingScopeReport) {
 	out := check("request_scope", quality.StatusPass, "production changes match the authenticated API/context adaptation", "input-snapshots", "scope", "adaptations")
 	matches := map[string]string{}
+	var routing *routingScopeReport
 	paths := map[string]bool{}
 	for p := range base {
 		paths[p] = true
@@ -77,6 +78,14 @@ func requestScope(base, candidate map[string][]byte, a adaptations) (quality.Che
 				}
 			}
 		}
+		if !proved && name == routingPath && base[name] != nil && candidate[name] != nil {
+			report := routingScope(base, candidate, a.production[name])
+			routing = &report
+			proved = report.Matched
+			if proved {
+				out.Findings = append(out.Findings, quality.Finding{Code: "bounded_routing_structure", Detail: "bounded routing changes preserve the remaining production structure", RuleIDs: requirement("request_scope"), Locations: []quality.Location{{Tree: "candidate", Path: name}}, EvidenceIDs: []string{"routing-scope"}})
+			}
+		}
 		if !proved {
 			out.Status = quality.StatusUnknown
 			out.Findings = append(out.Findings, quality.Finding{Code: "unmodeled_production_change", Detail: "production structure requires review: " + name, RuleIDs: requirement("request_scope"), Locations: []quality.Location{{Tree: "candidate", Path: name}}, EvidenceIDs: out.EvidenceIDs})
@@ -85,7 +94,7 @@ func requestScope(base, candidate map[string][]byte, a adaptations) (quality.Che
 	out.Detail = "request-chain and business structure: " + out.Status
 	out.Findings[0].Detail = out.Detail
 	out.Findings[0].Code = "request_scope_" + out.Status
-	return out, matches
+	return out, matches, routing
 }
 func directives(data []byte) bool {
 	for _, tag := range []string{"//go:", "// +build", "//line ", "/*line ", "//export "} {

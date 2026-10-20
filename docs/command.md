@@ -221,6 +221,14 @@ env HARNESS_GODDD_ACCEPTANCE=1 HARNESS_GODDD_BACKEND=docker HARNESS_GODDD_OUTPUT
 
 三个候选预期分别为 ReadyForReview、Rejected、NeedsAttention；另执行收到同一 ctx、值/取消、原请求及返回结果的直接回调探针。属于开发校准，不调用模型或重算历史实验指标；原始字节、固定变体和选择记录见新证据目录的 adaptations.json。
 
+Goddd 命名期限与构造器参数读取的独立范围证明校准：
+
+```sh
+env HARNESS_GODDD_ACCEPTANCE=1 HARNESS_GODDD_BACKEND=docker HARNESS_GODDD_OUTPUT="$PWD/runs/goddd-routing-scope" GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly GOCACHE="$PWD/runs/go-cache" go test -json -count=1 -timeout=15m ./scenarios/rpcx/goddd -run '^TestGodddRoutingScopeAcceptance$'
+```
+
+三个候选分别检验有限形式、5 秒错误期限和额外常量；正例另执行 nil/已取消/有值构造器 ctx 的直接探针，确认请求值、取消、30 秒上限及释放。routing-scope.json 记录原始节点与完整剩余结构，不更改候选或历史报告。
+
 ## 单仓库任务入口
 
 ```sh
