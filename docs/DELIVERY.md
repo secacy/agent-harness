@@ -73,6 +73,8 @@ M3 收尾评审已完成，总体验收未通过：五项条件已有声明范�
 
 对尚未填写的 review-template.json 另存复核记录，保留 Target/Run/候选及 reference.json 摘要绑定，填写真实身份、时间、三项结论和文件/证据定位。按照[离线参考接口](../scenarios/rpcx/l2/evaluation/README.md)与[汇总接口](../scenarios/rpcx/l2/round/README.md)消费；模板本身不代表复核通过。
 
+Goddd 已准备[实际人工复核导览与材料包](worklog/2026-10-20-goddd-human-review.md)，逐项定位全部变更、测试差异、参考覆盖和原两处断链；实际复核仍待填写，不计为 R1 完成。
+
 没有原运行归档时，可按[命令说明](command.md)复跑冻结校准和确定性 Runner/Campaign，验证三类判定与故障边界。真实模型生成是另一项实验，需要新的协议和授权，不作为日常演示的前提。
 
 ## 接下来做什么
