@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "id": "l2-dev-eval-v0_1_0",
+  "kind": "development_evaluation",
+  "targets": [
+    {
+      "id": "goddd",
+      "profile_id": "rpcx-goddd-t3-v1",
+      "build_config": "default",
+      "baseline_sha256": "3f2f404c1947f4076dfcc1f54c03fc08a7475a44f30db8398848ef48dda7a610",
+      "spec_sha256": "917575e0f4fc571f6f72c743ffded00771da838144371435ab0edfb61b578610",
+      "reference_version": "rpcx-l2-reference-goddd-data-v2",
+      "reference_sha256": "5cd44c1d8c00f147809d41545086ce1c32ae7cfcc0f6bb47b867c8a7601715c7",
+      "tool_sha256": "ad6681e9020f8f250b9457cf7c7b34ac490d4ebaa2d4566aae51330105d0b939"
+    },
+    {
+      "id": "translation",
+      "profile_id": "rpcx-translation-t3-v1",
+      "build_config": "all-required",
+      "baseline_sha256": "e520d248568e98e6a91556041a27ed23e916198436678e561c590d2756b57784",
+      "spec_sha256": "d45937d461cf056a82aba50741a27ba3c991c73967047e0d4e723cc70feb5e5f",
+      "reference_version": "rpcx-l2-reference-translation-data-v2",
+      "reference_sha256": "1687c993a76ff6682111f0f6eb6b9662e4bc193b7e92d3d4baa2c2fdcf54acbd",
+      "tool_sha256": "ad6681e9020f8f250b9457cf7c7b34ac490d4ebaa2d4566aae51330105d0b939"
+    },
+    {
+      "id": "workouts",
+      "profile_id": "rpcx-workouts-t3-v1",
+      "build_config": "default",
+      "baseline_sha256": "4f269c1ee06787cd3b08cfc68de33eb9a6ac9afb3ac2922738f8b15b3659d670",
+      "spec_sha256": "789d30540799249d0f5d96b3ba921b7e00d4cbc1e457491a2a79eba89829a526",
+      "reference_version": "rpcx-l2-reference-workouts-data-v1",
+      "reference_sha256": "400e7c32a2e6b9cac3936aa6bd5e2f1c4911d96aeca44fc25a20ff58dab6f669",
+      "tool_sha256": "ad6681e9020f8f250b9457cf7c7b34ac490d4ebaa2d4566aae51330105d0b939"
+    }
+  ]
+}

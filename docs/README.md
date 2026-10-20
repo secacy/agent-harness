@@ -25,6 +25,8 @@ M3.4 已完成[样本设计与选择](worklog/2026-10-19-m3-4-sample-selection.m
 
 [生成前的计划与纳入绑定](worklog/2026-10-20-pre-generation-enrollment.md)记录静态 Enrollment 与动态 Manifest 的边界、Campaign 准备屏障和零任务接纳的失败语义。纳入清单固定参考身份，完整实验协议、预算与真实生成仍按 M3.4 推进。
 
+[首轮开发实验协议 v0.1.0](experiments/l2-dev-eval-v0.1.0/README.md)已固定实际三仓配置、750 万 Token 总额度、源码/二进制/能力依据及参考与复核规则，待本次生成授权；[发布工作记录](worklog/2026-10-20-l2-protocol-release.md)说明预算取舍、容量漂移拒绝和离线验收。协议冻结不等于已取得真实模型效果。
+
 ## 记录原则
 
 **里程碑与工程记录**：`MILESTONES.md` 只跟踪已确定的开发目标及其验收状态。`worklog/` 按需记录重要的设计与开发过程，也可暂存尚未确定的技术问题；不要求每天或每次修改都写日志。

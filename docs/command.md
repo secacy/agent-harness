@@ -116,6 +116,11 @@ runs/harness batch --config runs/l2-capability.json --probe-model
 | `targets[].budget` | 单 Target 生成次数与 Token 限额，同时受全批额度约束 |
 | `targets[].max_model_calls/max_tool_calls/timeout` | Agent 尝试/工具次数和整个 Run 时限（例如 `10m`） |
 | `enrollment.path/sha256`（可选） | 静态评测纳入清单的文件及原文字节摘要；相对路径基于本配置目录，任务与当前参考身份不符时在 API 访问前拒绝 |
+| `model.expected_context_tokens`（可选） | 正数表示实际生成前必须匹配的服务上下文容量；0/省略不比较，负数拒绝。只比较 Discover，不覆盖真实上界 |
+
+设置 expected_context_tokens 后，实际查询容量不符时先保存 config.json、models.json 和 capabilities.json，退出 2；不初始化执行后端/Campaign，不发送生成请求。该诊断目录保留且不能覆盖。`--check` 不联网确认容量，`--probe-model` 仍可保存变化后的声明用于诊断，不按该期望值阻止探测。
+
+[首轮 L2 开发协议 v0.1.0](experiments/l2-dev-eval-v0.1.0/README.md)已固定真实模型名、三仓身份、每任务 250 万/全批 750 万 Token 和执行/评测口径；区别于通用示例中的 600 万草案。已冻结不代表已授权或已运行，实际启动须核对材料并取得本次生成授权。
 
 三仓模板现引用[静态纳入示例](../examples/rpcx-l2-enrollment.json)，固定 Target 顺序及基线/规范/参考数据/工具身份；仍不是完整实验协议。参考工具生产源码变化会使摘要过期，应先审查并发布匹配的清单，再开始新实验。普通批次可省略 enrollment，继续按原方式运行，但没有生成前的评测纳入记录。
 

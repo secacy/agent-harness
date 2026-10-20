@@ -37,9 +37,10 @@ type batchConfig struct {
 }
 
 type batchModel struct {
-	Name      string `json:"name"`
-	Endpoint  string `json:"endpoint,omitempty"`
-	MaxTokens int    `json:"max_tokens"`
+	Name                  string `json:"name"`
+	Endpoint              string `json:"endpoint,omitempty"`
+	MaxTokens             int    `json:"max_tokens"`
+	ExpectedContextTokens int64  `json:"expected_context_tokens,omitempty"`
 }
 
 type batchExecution struct {
@@ -92,6 +93,9 @@ func loadBatchConfig(path string) (batchConfig, campaign.Plan, error) {
 	}
 	if _, err := deepseek.ModelsEndpoint(config.Model.Endpoint); err != nil {
 		return config, plan, err
+	}
+	if config.Model.ExpectedContextTokens < 0 {
+		return config, plan, errors.New("expected context tokens must not be negative")
 	}
 	e := &config.Execution
 	if e.Image == "" {

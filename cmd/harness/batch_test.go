@@ -62,6 +62,7 @@ func TestBatchCommandUsesDiscoveredProfileBeforeGeneration(t *testing.T) {
 			const secret = "batch-test-secret-never-save"
 			t.Setenv("DEEPSEEK_API_KEY", secret)
 			config := batchTestConfig(t)
+			config.Model.ExpectedContextTokens = 2000
 			if mixed {
 				missing := config.Targets[0]
 				missing.Input.ID = "missing"
@@ -148,6 +149,7 @@ func TestBatchCheckIsOfflineAndRejectsInvalidConfiguration(t *testing.T) {
 		"zero concurrency": func(c *batchConfig) { c.Concurrency = 0 },
 		"bad timeout":      func(c *batchConfig) { c.Targets[0].Timeout = "0s" },
 		"bad endpoint":     func(c *batchConfig) { c.Model.Endpoint = "http://example.com/chat/completions" },
+		"negative context": func(c *batchConfig) { c.Model.ExpectedContextTokens = -1 },
 		"input overlap": func(c *batchConfig) {
 			c.Directory = filepath.Join(c.Targets[0].Input.Repository.Directory, "batch-output")
 		},

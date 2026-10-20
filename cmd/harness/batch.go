@@ -66,6 +66,14 @@ func runBatch(ctx context.Context, args []string, stdout, stderr io.Writer) int 
 			plan.Profile.Model, plan.Profile.ContextTokens, plan.Profile.MaxOutputTokens, plan.Profile.ContextTokens+plan.Profile.MaxOutputTokens)
 		return 0
 	}
+	// 只比较服务声明，协议中的期望值不能替代实际查询得到的预算上界。
+	if expected := config.Model.ExpectedContextTokens; expected > 0 && plan.Profile.ContextTokens != expected {
+		if err := saveBatchMaterials(config, capabilities, nil); err != nil {
+			return batchError(err, stderr)
+		}
+		fmt.Fprintf(stderr, "model context tokens changed: expected %d, discovered %d; capabilities saved to %s\n", expected, plan.Profile.ContextTokens, config.Directory)
+		return 2
+	}
 	q := plan.Profile.ContextTokens + plan.Profile.MaxOutputTokens
 	if plan.Budget.MaxTokens < q {
 		fmt.Fprintf(stderr, "campaign token budget %d cannot reserve one model request (%d tokens required)\n", plan.Budget.MaxTokens, q)

@@ -1,0 +1,130 @@
+{
+  "schema_version": 1,
+  "id": "l2-dev-eval-v0_1_0",
+  "directory": "../../../runs/l2-dev-eval-v0.1.0",
+  "concurrency": 2,
+  "execution_concurrency": 2,
+  "budget": {
+    "max_calls": 120,
+    "max_tokens": 7500000
+  },
+  "model": {
+    "name": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "max_tokens": 4096,
+    "expected_context_tokens": 1048576
+  },
+  "execution": {
+    "trusted_local": false,
+    "image": "golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd",
+    "cpus": 2,
+    "memory_mib": 2048,
+    "pids": 128
+  },
+  "enrollment": {
+    "path": "enrollment.json",
+    "sha256": "452d6937981e109b4af131800b389b07589b1ca32ae0ba01a59040593431d6d6"
+  },
+  "targets": [
+    {
+      "input": {
+        "id": "goddd",
+        "profile_id": "rpcx-goddd-t3-v1",
+        "build_config": "default",
+        "repository": {
+          "directory": "../../../scenarios/rpcx/l2/data/rpcx-l2-goddd-v1/fixtures/goddd",
+          "sha256": "3f2f404c1947f4076dfcc1f54c03fc08a7475a44f30db8398848ef48dda7a610"
+        },
+        "dependencies": {
+          "rpcx-v1": {
+            "directory": "../../../scenarios/rpcx/l2/data/rpcx-l2-goddd-v1/fixtures/rpcx-v1",
+            "sha256": "3494436826b66504e9d1f28fa22fa22db4f927d0ee43309ab92b2868e5c6d24b"
+          },
+          "rpcx-v2": {
+            "directory": "../../../scenarios/rpcx/l2/data/rpcx-l2-goddd-v1/fixtures/rpcx-v2",
+            "sha256": "c8b687c6964c5659391144f0c74934e36a5c0462c438bc8ed886bcdeafb5357c"
+          }
+        },
+        "specification": {
+          "path": "../../../scenarios/rpcx/goddd/specs/v0.3.0.md",
+          "sha256": "917575e0f4fc571f6f72c743ffded00771da838144371435ab0edfb61b578610"
+        }
+      },
+      "budget": {
+        "max_calls": 40,
+        "max_tokens": 2500000
+      },
+      "max_model_calls": 40,
+      "max_tool_calls": 80,
+      "timeout": "10m"
+    },
+    {
+      "input": {
+        "id": "translation",
+        "profile_id": "rpcx-translation-t3-v1",
+        "build_config": "all-required",
+        "repository": {
+          "directory": "../../../scenarios/rpcx/l2/data/rpcx-l2-translation-v1/fixtures/translation",
+          "sha256": "e520d248568e98e6a91556041a27ed23e916198436678e561c590d2756b57784"
+        },
+        "dependencies": {
+          "rpcx-v1": {
+            "directory": "../../../scenarios/rpcx/l2/data/rpcx-l2-translation-v1/fixtures/rpcx-v1",
+            "sha256": "3494436826b66504e9d1f28fa22fa22db4f927d0ee43309ab92b2868e5c6d24b"
+          },
+          "rpcx-v2": {
+            "directory": "../../../scenarios/rpcx/l2/data/rpcx-l2-translation-v1/fixtures/rpcx-v2",
+            "sha256": "c8b687c6964c5659391144f0c74934e36a5c0462c438bc8ed886bcdeafb5357c"
+          }
+        },
+        "specification": {
+          "path": "../../../scenarios/rpcx/translation/specs/v0.4.0.md",
+          "sha256": "d45937d461cf056a82aba50741a27ba3c991c73967047e0d4e723cc70feb5e5f"
+        }
+      },
+      "budget": {
+        "max_calls": 40,
+        "max_tokens": 2500000
+      },
+      "max_model_calls": 40,
+      "max_tool_calls": 80,
+      "timeout": "10m"
+    },
+    {
+      "input": {
+        "id": "workouts",
+        "profile_id": "rpcx-workouts-t3-v1",
+        "build_config": "default",
+        "repository": {
+          "directory": "../../../scenarios/rpcx/l2/data/rpcx-l2-workouts-v1/fixtures/trainings",
+          "sha256": "4f269c1ee06787cd3b08cfc68de33eb9a6ac9afb3ac2922738f8b15b3659d670"
+        },
+        "dependencies": {
+          "common": {
+            "directory": "../../../scenarios/rpcx/l2/data/rpcx-l2-workouts-v1/fixtures/common",
+            "sha256": "761bbbcbc890a042e6d4c6cab2da56b205412097e903dd49d2b8d060badb519f"
+          },
+          "rpcx-v1": {
+            "directory": "../../../scenarios/rpcx/l2/data/rpcx-l2-workouts-v1/fixtures/rpcx-v1",
+            "sha256": "3494436826b66504e9d1f28fa22fa22db4f927d0ee43309ab92b2868e5c6d24b"
+          },
+          "rpcx-v2": {
+            "directory": "../../../scenarios/rpcx/l2/data/rpcx-l2-workouts-v1/fixtures/rpcx-v2",
+            "sha256": "c8b687c6964c5659391144f0c74934e36a5c0462c438bc8ed886bcdeafb5357c"
+          }
+        },
+        "specification": {
+          "path": "../../../scenarios/rpcx/workouts/specs/v0.5.0.md",
+          "sha256": "789d30540799249d0f5d96b3ba921b7e00d4cbc1e457491a2a79eba89829a526"
+        }
+      },
+      "budget": {
+        "max_calls": 40,
+        "max_tokens": 2500000
+      },
+      "max_model_calls": 40,
+      "max_tool_calls": 80,
+      "timeout": "10m"
+    }
+  ]
+}

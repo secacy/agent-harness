@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "id": "l2-dev-eval-v0.1.0",
+  "files": {
+    "README.md": "2ab6c91c0e4d7122db2d5cc1f7608fca4518e557969834037dfe0b6f23f27fe7",
+    "batch.json": "b743069410305489846ca8245450f72e499a82cbbb4fff9ff9b22ad9ced7656a",
+    "capabilities-observed.json": "9743d744c58468765cb1d8c478700183e7687a87ebc754efc939451a421a3f11",
+    "enrollment.json": "452d6937981e109b4af131800b389b07589b1ca32ae0ba01a59040593431d6d6",
+    "implementation.json": "682f70091d637d12c380bd08b6315dfc041aa6980e99cc7e4e49247420460423",
+    "models-observed.json": "b86388abe65929c84de3825eee299b8d78bae23e82e300239f3c788569eb5f39"
+  }
+}
