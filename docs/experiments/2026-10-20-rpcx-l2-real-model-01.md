@@ -102,3 +102,7 @@ M3 保持实现中：有了首轮真实开发观察，但完整人类复核、�
 
 
 其后[Goddd routing 范围证明](../worklog/2026-10-20-goddd-routing-scope.md)解释了限定的新期限常量与构造器参数读取；同字节候选副本经新工具的完整 Docker 校准，八项检查通过并得到 ReadyForReview。该结果属于已见样本上的后续开发校准，不能追溯增加本轮自动成功数、覆盖原 NeedsAttention 或补填人类复核。
+
+## 后续实际人工复核（2026-10-20）
+
+secacy 已确认 Goddd 的测试保留 pass、变更覆盖 pass、交付依据 fail；最后一项因原审核文档两处发现项源码断链，不代表业务迁移错误。记录按用户确认另存，来源与时间依据见[复核接入记录](../worklog/2026-10-20-goddd-human-review.md#实际复核接入2026-10-20)。新请求与汇总位于 runs/goddd-human-review-01/completed-review-01/round-request.json、completed-round-01/；完整参考为 1 fail（delivery）和 2 inconclusive（仍缺复核）。本节是后续观察，以上原批次、参考、汇总及统计保持原样，未覆盖旧文件。原三项 NeedsAttention、自动成功 0/3、错误放行率无定义及原成本均不改；M3 仍待其余两仓人工复核与实际留出准备。
