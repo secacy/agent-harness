@@ -19,13 +19,13 @@
 
 整体开发路线、阶段交付与验收边界以[里程碑](MILESTONES.md)为准；本轮阶段顺序及预算、判定、评测边界的取舍见[路线规划记录](worklog/2026-10-18-milestone-roadmap.md)。当前推进 [M3 具体设计](worklog/2026-10-19-m3-batch-runtime.md)，预算的长期约束见 [ADR-006](adr/006-campaign-budget-reservations.md)。任务输入与宿主验证配置的边界见 [ADR-007](adr/007-host-owned-task-profiles.md)。
 
-M3.4 已完成[样本设计与选择](worklog/2026-10-19-m3-4-sample-selection.md)及 [Goddd 离线基线与共用 L2 SDK](worklog/2026-10-19-goddd-baseline.md)。三个开发来源、当前准备状态与待独立准备的留出名额见 [L2 说明](../scenarios/rpcx/l2/README.md)；[Goddd 新规范、Profile、三类判定和 Runner 接入](worklog/2026-10-19-goddd-evidence-gate.md)已完成开发校准；[Translation 双配置离线基线](worklog/2026-10-19-translation-baseline.md)及[双配置迁移门禁/Runner](worklog/2026-10-19-translation-evidence-gate.md)已接入，[Workouts 多模块离线基线](worklog/2026-10-19-workouts-baseline.md)也已准备，[Workouts 迁移规范、门禁和确定性 Docker Runner](worklog/2026-10-19-workouts-evidence-gate.md)已接入。[三个异构 Target 的确定性 Campaign](worklog/2026-10-19-m3-4-heterogeneous-campaign.md)已通过，独立参考评测及真实模型批次仍待完成。
+M3.4 已完成[样本设计与选择](worklog/2026-10-19-m3-4-sample-selection.md)及 [Goddd 离线基线与共用 L2 SDK](worklog/2026-10-19-goddd-baseline.md)。三个开发来源、当前准备状态与待独立准备的留出名额见 [L2 说明](../scenarios/rpcx/l2/README.md)；[Goddd 新规范、Profile、三类判定和 Runner 接入](worklog/2026-10-19-goddd-evidence-gate.md)已完成开发校准；[Translation 双配置离线基线](worklog/2026-10-19-translation-baseline.md)及[双配置迁移门禁/Runner](worklog/2026-10-19-translation-evidence-gate.md)已接入，[Workouts 多模块离线基线](worklog/2026-10-19-workouts-baseline.md)也已准备，[Workouts 迁移规范、门禁和确定性 Docker Runner](worklog/2026-10-19-workouts-evidence-gate.md)已接入。[三个异构 Target 的确定性 Campaign](worklog/2026-10-19-m3-4-heterogeneous-campaign.md)已通过；后续真实批次及独立自动参考已完成，结果与剩余人类复核缺口见下文。
 
-当前的[开发评测工作](worklog/2026-10-19-l2-development-evaluation.md)记录参考独立性的取舍、三仓判据、一次尝试口径及未知结果处理；Goddd、Translation 双配置与 Workouts 回调的单候选自动参考及待复核记录已实现；[轮次离线汇总](../scenarios/rpcx/l2/round/README.md)已完成机制与既有受控三仓 Campaign 的关联验收；[预算批次入口](worklog/2026-10-20-budgeted-batch-cli.md)已通过本机模拟 API 验收；[真实能力查询及预算准入复核](worklog/2026-10-20-l2-experiment-preparation.md#授权后实查模型能力与预算准入)已完成；完整协议和真实评测仍待完成。
+当前的[开发评测工作](worklog/2026-10-19-l2-development-evaluation.md)记录参考独立性的取舍、三仓判据、一次尝试口径及未知结果处理；Goddd、Translation 双配置与 Workouts 回调的单候选自动参考及待复核记录已实现；[轮次离线汇总](../scenarios/rpcx/l2/round/README.md)已完成机制与既有受控三仓 Campaign 的关联验收；[预算批次入口](worklog/2026-10-20-budgeted-batch-cli.md)已通过本机模拟 API 验收；[真实能力查询及预算准入复核](worklog/2026-10-20-l2-experiment-preparation.md#授权后实查模型能力与预算准入)已完成；[首轮真实开发实验](experiments/2026-10-20-rpcx-l2-real-model-01.md)已按冻结协议完成生成、自动参考与汇总，人类复核仍待完成。
 
 [生成前的计划与纳入绑定](worklog/2026-10-20-pre-generation-enrollment.md)记录静态 Enrollment 与动态 Manifest 的边界、Campaign 准备屏障和零任务接纳的失败语义。纳入清单固定参考身份，完整实验协议、预算与真实生成仍按 M3.4 推进。
 
-[首轮开发实验协议 v0.1.0](experiments/l2-dev-eval-v0.1.0/README.md)已固定实际三仓配置、750 万 Token 总额度、源码/二进制/能力依据及参考与复核规则，待本次生成授权；[发布工作记录](worklog/2026-10-20-l2-protocol-release.md)说明预算取舍、容量漂移拒绝和离线验收。协议冻结不等于已取得真实模型效果。
+[首轮开发实验协议 v0.1.0](experiments/l2-dev-eval-v0.1.0/README.md)已固定实际三仓配置、750 万 Token 总额度、源码/二进制/能力依据及参考与复核规则，随后获授权执行唯一真实批次；[发布工作记录](worklog/2026-10-20-l2-protocol-release.md)说明预算取舍、容量漂移拒绝和离线验收。原三项 NeedsAttention 保留，独立自动参考均 pass；本轮没有自动放行，错误放行率无定义，另暴露 6 个审核定位链接缺陷。
 
 ## 记录原则
 

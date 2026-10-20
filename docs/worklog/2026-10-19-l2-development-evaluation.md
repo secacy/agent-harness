@@ -1,7 +1,7 @@
 # M3.4：开发评测协议与独立参考设计
 
 - 日期：2026-10-19。
-- 状态：Goddd、Translation 双配置与 Workouts 回调的单候选独立参考在声明范围内已验收，见第 10—12 节。轮次汇总机制及受控 Campaign 关联已验收，见第 13 节；后续[正式开发协议 v0.1.0](../experiments/l2-dev-eval-v0.1.0/README.md)已发布，待本次生成授权及实际候选复核，未运行真实模型评测。
+- 状态：Goddd、Translation 双配置与 Workouts 回调的单候选独立参考在声明范围内已验收，见第 10—12 节。轮次汇总机制及受控 Campaign 关联已验收，见第 13 节；后续[正式开发协议 v0.1.0](../experiments/l2-dev-eval-v0.1.0/README.md)已发布并获授权执行，[唯一真实批次](../experiments/2026-10-20-rpcx-l2-real-model-01.md)三项 NeedsAttention、自动参考均 pass，完整人类复核未完成。前述设计/校准各节保留当时事实。
 - 对应里程碑：[M3](../MILESTONES.md#m3多仓库批量闭环)。
 - 代码基线：009d56a；前置：[三仓确定性 Campaign](2026-10-19-m3-4-heterogeneous-campaign.md)。
 - 本轮交付：确定首轮任务纳入、独立参考的边界、未知结果和指标口径，为实现提供验收条件。
