@@ -48,3 +48,5 @@ Profile、规范和冻结校准数据不变。具体生产比较器字节进入�
 本单元按既定边界验收，不表示 M3 整体完成。下一步分别设计 Goddd 的 ctx 适配模板与未使用形参名证明；Translation 的控制流/绑定证明以及失败提示策略继续保留原边界。本轮未调用真实模型或读取 .env。
 
 六份文档的本地链接目标与代码围栏完整性检查通过，记录见 document-checks.json。
+
+后续 Goddd 的具体设计与原型证据见 [mock context 与未使用形参适配](2026-10-20-goddd-context-adaptation.md)。
