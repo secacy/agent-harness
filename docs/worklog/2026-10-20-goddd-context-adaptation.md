@@ -154,3 +154,5 @@ Evaluate 在命令验证前保存四份固定适配、两份完整原测试比�
 最终审计 verification.json 逐项核对上述材料、当前工具源码、原 Campaign 摘要与容器回收；规范、Profile、冻结校准数据、共享 testintegrity 及原实验协议均未变。Go 格式、git diff --check、六份文档的 138 个本地链接目标及代码围栏检查通过，文档摘要见 document-checks.json。不同轮次的重复测试不相加计为项目覆盖。
 
 本单元按已声明的两处固定适配验收，没有消除 Goddd 的全部范围缺口，也没有完成人类复核或 M3 总体验收。下一步评审 proxying.go 的命名期限常量和构造器兼容参数，再决定证明方案；不将 `_` 测试参数规则推广到生产 ctx，也不为获得放行追加真实 Run。
+
+后续取舍、局部证明边界及最小原型见 [Goddd routing 范围证明](2026-10-20-goddd-routing-scope.md)。
