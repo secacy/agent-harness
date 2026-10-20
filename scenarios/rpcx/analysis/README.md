@@ -65,3 +65,5 @@ Gaps 保留双方原有缺口并标记 baseline/candidate。空 Changes 只表�
 默认测试验证可信本地加载、冻结候选、支持/未知形态、配置缺口、故障和协议。真实 Docker 对照单独启用，命令见[开发说明](../../../docs/command.md#m23-隔离类型加载与边界分析)。
 
 Translation 接入支持函数开头经类型认证的 `ctx.Err()` 非空立即返回，随后须紧接 WithTimeout/defer；局部常量/字段/类型转换/内建 new 构造请求或响应只允许出现在派生及 defer 之后、RPC 之前。纯局部构造先于派生仍返回 unknown，首轮真实候选的触发原因见[支持范围评审](../../../docs/worklog/2026-10-20-needs-attention-review.md)。不接受用户函数、副作用语句、通道接收或取消绑定被额外使用。每次分析仍只有一个配置，不会自行合并构建标签；Translation 宿主门禁另以固定双配置交叉核对已知互斥文件，并保留原缺口报告。
+
+后续[Translation 受限准备语句设计](../../../docs/worklog/2026-10-20-translation-boundary-support.md)拟按 Go 对象识别直接用于请求/响应的有限构造，并保留原位置和其他边界条件；目前只有最小类型原型，尚未修改上述运行时支持范围。
