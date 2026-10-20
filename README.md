@@ -6,6 +6,7 @@
 
 **项目开发中。**目标、范围和验收进度以以下文档为准：
 
+- [当前交付说明与剩余工作](docs/DELIVERY.md)
 - [项目目标与范围](docs/PROJECT.md)
 - [里程碑与验收进度](docs/MILESTONES.md)
 - [开发与运行命令](docs/command.md)

@@ -27,7 +27,7 @@ M3.4 已完成[样本设计与选择](worklog/2026-10-19-m3-4-sample-selection.m
 
 [首轮开发实验协议 v0.1.0](experiments/l2-dev-eval-v0.1.0/README.md)已固定实际三仓配置、750 万 Token 总额度、源码/二进制/能力依据及参考与复核规则，随后获授权执行唯一真实批次；[发布工作记录](worklog/2026-10-20-l2-protocol-release.md)说明预算取舍、容量漂移拒绝和离线验收。原三项 NeedsAttention 保留，独立自动参考均 pass；本轮没有自动放行，错误放行率无定义，另暴露 6 个审核定位链接缺陷。后续[按实际模块的源码定位修复](worklog/2026-10-20-review-source-links.md)已通过呈现回归及原三仓报告只读消费，旧报告保持原样。[六项未知检查的根因与支持范围评审](worklog/2026-10-20-needs-attention-review.md)已完成；随后[Workouts 导入顺序归一](worklog/2026-10-20-workouts-import-order.md)通过正反例、冻结矩阵及三组 Docker 开发校准，原判定和正式指标保持不变。[Goddd mock/context 有限适配](worklog/2026-10-20-goddd-context-adaptation.md)已接入固定变体与可追溯的适配选择，旧校准及新正反例通过；该单元真实候选副本的测试保留通过，但 proxying.go 的范围缺口当时仍为 NeedsAttention。原实验记录与指标保持不变。后续[命名期限常量及构造器读取证明](worklog/2026-10-20-goddd-routing-scope.md)已接入局部节点证据与完整剩余结构比较；原样候选副本在新 Docker 校准中八项检查通过，得到 ReadyForReview。旧 NeedsAttention、原实验指标及人类复核状态保持，新增结果仅属于已见开发校准。
 
-[Translation 剩余支持范围设计](worklog/2026-10-20-translation-boundary-support.md)已分别评审期限前准备语句、结构绑定/共享常量与测试诊断差异，选择先扩展受限类型边界；最小原型只证明语法与对象关系可表达，生产规则和原实验判定未改。
+[Translation 剩余支持范围设计](worklog/2026-10-20-translation-boundary-support.md)已完成评审和最小原型，按最新交付优先级暂缓实施。当前以[交付说明](DELIVERY.md)关联已有能力、原实验与剩余项；[交付收敛记录](worklog/2026-10-20-delivery-focus.md)说明为何固定支持范围、整理 M3 复核入口并优先推进 M4 设计，原阶段验收条件不变。
 
 ## 记录原则
 
