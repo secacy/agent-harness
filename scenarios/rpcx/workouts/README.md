@@ -6,4 +6,6 @@
 
 校准材料位于 `cases/`，包含九份候选补丁及其阶段预期。它们只供开发验收使用，不进入 Agent 可见目录或运行门禁输入。等价 helper 超出有限结构证明时保留 `NeedsAttention`。这套切片不证明 Firestore 事务、远端回滚、Schedule/Move 或整仓兼容。
 
+生产结构指纹允许同一 import 块内换序及空行分组变化，保留路径、别名、重复项与导入块边界；正文和语义指令检查不变。这只消除导入排序差异，不能替代上下文、期限、测试和业务证据。实现及新旧验证器的开发校准见[导入顺序工作记录](../../../docs/worklog/2026-10-20-workouts-import-order.md)。
+
 快速机制测试：`go test ./scenarios/rpcx/workouts ./scenarios/rpcx/runner`。完整候选验收显式设置 `HARNESS_WORKOUTS_ACCEPTANCE=1` 后运行 `go test -timeout=20m ./scenarios/rpcx/workouts -run '^TestWorkoutsAcceptance$'`；`HARNESS_WORKOUTS_CASES` 可指定逗号分隔的候选名，`HARNESS_WORKOUTS_BACKEND=docker` 使用固定禁网 Docker 执行器。Runner 交付验收用同一开关运行 `go test -timeout=15m ./scenarios/rpcx/runner -run '^TestRunWorkoutsDelivery$'`。实际取舍与验收结果见[工作记录](../../../docs/worklog/2026-10-19-workouts-evidence-gate.md)。

@@ -7,6 +7,7 @@ import (
 	"go/parser"
 	"go/token"
 	"reflect"
+	"slices"
 	"strings"
 
 	"github.com/secacy/agent-harness/internal/quality"
@@ -103,12 +104,42 @@ func syntax(name string, data []byte) (string, error) {
 			}
 		}
 	}
+	sortImports(f)
 	var b bytes.Buffer
 	err = ast.Fprint(&b, nil, f, func(name string, value reflect.Value) bool {
 		return value.Type() != reflect.TypeFor[token.Pos]() && ast.NotNilFilter(name, value)
 	})
 	return gate.Digest(b.Bytes()), err
 }
+
+// sortImports 只归一各导入块内的顺序，保留路径、别名、重复项和声明边界。
+func sortImports(file *ast.File) {
+	alias := func(spec *ast.ImportSpec) string {
+		if spec.Name == nil {
+			return ""
+		}
+		return spec.Name.Name
+	}
+	file.Imports = nil
+	for _, decl := range file.Decls {
+		group, ok := decl.(*ast.GenDecl)
+		if !ok || group.Tok != token.IMPORT {
+			continue
+		}
+		slices.SortStableFunc(group.Specs, func(a, b ast.Spec) int {
+			left, right := a.(*ast.ImportSpec), b.(*ast.ImportSpec)
+			if order := strings.Compare(left.Path.Value, right.Path.Value); order != 0 {
+				return order
+			}
+			return strings.Compare(alias(left), alias(right))
+		})
+		// 文件级索引和声明共用节点，按相同顺序重建，避免指纹仍受原序列影响。
+		for _, spec := range group.Specs {
+			file.Imports = append(file.Imports, spec.(*ast.ImportSpec))
+		}
+	}
+}
+
 func scope(base, candidate map[string][]byte) quality.Check {
 	expected, err := adapt(base)
 	out := check("request_scope", quality.StatusPass, "production changes match the bounded API/context adaptation", "input-snapshots", "scope")
