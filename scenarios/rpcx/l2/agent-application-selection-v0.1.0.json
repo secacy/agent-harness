@@ -1,0 +1,211 @@
+{
+  "schema_version": 1,
+  "version": "rpcx-agent-application-selection-v0.1.0",
+  "purpose": "Application source eligibility metadata before baseline adaptation; not a prepared dataset, L2 admission or formal heldout result.",
+  "assignment_sha256": "354a2ff455033b3ce1b25a75b89252cd0cfe67af48e8976a14e5b0a4cdee80f5",
+  "public_selection_sha256": "9597e7473a231c94fb6da697c1546884b88ec8f82b5e9b9cfb549a463699dd90",
+  "public_preparation_sha256": "cb17aa42d376bbaf9bacb545b16cd253f54d841057a1378b767c1c98dbbb365d",
+  "preparer_task": "/root/application_sample_preparer",
+  "validation_attribution": "Preparer static source review and adaptation plan; parent checked public metadata only. Private evidence hashes were reported, not recomputed by the parent.",
+  "assignment_id": "rpcx-application-selection-01",
+  "fixed_harness_commit": "24d801097f9e40941ef7389ce4181f9c14716822",
+  "preparer_role": "fresh_agent",
+  "parent_history_inherited": false,
+  "phase": "source_selection_complete",
+  "status": "selected_not_prepared",
+  "newly_surveyed_sources": [
+    {
+      "repository": "https://github.com/cli/cli",
+      "tree_url": "https://github.com/cli/cli/tree/49f72234acd346666a4646a0f5a427fb3543debc",
+      "commit": "49f72234acd346666a4646a0f5a427fb3543debc",
+      "origin_group": "cli",
+      "license": "MIT",
+      "decision": "selected_as_next_preparation_input",
+      "reason_code": "application_and_original_boundary_evidence"
+    }
+  ],
+  "selected_source": {
+    "repository": "https://github.com/cli/cli",
+    "tree_url": "https://github.com/cli/cli/tree/49f72234acd346666a4646a0f5a427fb3543debc",
+    "commit": "49f72234acd346666a4646a0f5a427fb3543debc",
+    "origin_group": "cli",
+    "license": "MIT"
+  },
+  "selection_eligibility": [
+    {
+      "id": "source_and_group",
+      "status": "supported_static",
+      "reason_code": "fixed_new_origin_and_license",
+      "reason": "Pinned public source, a different origin group, and license are established."
+    },
+    {
+      "id": "business_representativeness",
+      "status": "supported_static",
+      "reason_code": "existing_application_workflow_and_original_assertions",
+      "reason": "Static inspection establishes an existing application workflow and meaningful original assertions."
+    },
+    {
+      "id": "outbound_boundary_fidelity",
+      "status": "supported_adaptation_plan",
+      "reason_code": "existing_outbound_contract_preserved_in_plan",
+      "reason": "A concrete plan preserves the existing outbound contract and surrounding behavior; adaptation has not run."
+    },
+    {
+      "id": "migration_relevance",
+      "status": "planned_not_verified",
+      "reason_code": "no_frozen_baseline_production_path",
+      "reason": "Production SDK usage and context/deadline observations are planned and remain unverified."
+    },
+    {
+      "id": "original_assertions",
+      "status": "supported_static_path_plan",
+      "reason_code": "original_tests_reach_existing_production_dispatch",
+      "reason": "Relevant original assertions statically reach the production boundary planned for adaptation; runtime coverage remains unverified."
+    },
+    {
+      "id": "offline_baseline_and_identity",
+      "status": "pending_not_verified",
+      "reason_code": "dependency_closure_and_execution_unprepared",
+      "reason": "Upstream identity is retained; the bounded dependency closure and offline baseline remain unprepared."
+    },
+    {
+      "id": "isolation_scope",
+      "status": "supported_procedural",
+      "reason_code": "fresh_preparer_no_migration_work",
+      "reason": "Fresh procedural preparation and metadata-only parent reporting were maintained."
+    }
+  ],
+  "core_source_qualification_supported": true,
+  "all_required_conditions_passed": false,
+  "eligibility_fixed_before_adaptation": true,
+  "eligibility_sha256": "2c18e3a7e044dedf264268687838f0f761a45ebe7ed5d084ea56c6e5d74ad005",
+  "upstream_manifest_sha256": "99f8ff7c2ae1d8bddb1b10670db545a683a57719962d7d9b7bf00269d79afb22",
+  "baseline_tree_sha256": null,
+  "adaptation_sha256": null,
+  "provenance_manifest_sha256": "a5f051e9889a98308325f1c1bd455d512f266d95283dbf4e7196bc3f5185d820",
+  "source_fidelity": {
+    "retained_upstream_file_count": 1320,
+    "retained_upstream_test_file_count": 319,
+    "baseline_retained_file_count": null,
+    "baseline_modified_file_count": null,
+    "baseline_added_file_count": 0,
+    "baseline_excluded_file_count": null,
+    "original_candidate_assertions_modified": 0,
+    "original_candidate_test_counts": {
+      "original_test_files": 1,
+      "original_top_level_tests": 2,
+      "original_table_scenarios": 9,
+      "original_business_scenarios": 5,
+      "original_argument_scenarios": 4,
+      "added_test_files": 0,
+      "excluded_tests_from_candidate_package": 0
+    },
+    "static_candidate_package_count": 27,
+    "static_candidate_source_file_count": 84,
+    "semantic_boundary": "Existing application behavior and original outbound result/error handling are preservation requirements. SDK dispatch, real-network and serialization equivalence are unverified plans.",
+    "baseline_created": false
+  },
+  "baseline_validation": {
+    "executed": false,
+    "build": {
+      "executed": false
+    },
+    "test": {
+      "executed": false
+    },
+    "image": "golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd",
+    "image_inspected": true,
+    "image_pulled": false,
+    "network": "none (required for future execution; not executed)",
+    "limits": {
+      "cpus": 2,
+      "memory_bytes": 2147483648,
+      "pids": 128,
+      "read_only_root": true,
+      "status": "planned_not_applied"
+    },
+    "original_tests_run": 0,
+    "added_tests_run": 0,
+    "passed": 0,
+    "failed": 0,
+    "owned_containers_created": 0,
+    "owned_containers_remaining": 0,
+    "owned_cleanup_required": false,
+    "inputs_unchanged": true
+  },
+  "limitations": [
+    "Source qualification supplies input for a later bounded preparation phase; it does not establish all-condition admission.",
+    "Migration relevance, SDK production execution, dependency closure and offline usability are planned or pending, without a frozen B.",
+    "Original coverage was inspected statically; no test was run.",
+    "A preliminary search exposure to another public source was not a pinned candidate survey; no assertion or implementation evidence from it supports this selection.",
+    "Procedural isolation does not imply independent human or model-training novelty."
+  ],
+  "runtime_profile_registered": false,
+  "formal_evaluation_started": false,
+  "preparation_stop_reason": "source_qualification_phase_closed_before_adaptation",
+  "counts_as_prepared_sample": false,
+  "counts_as_formal_heldout": false,
+  "private_artifacts": "runs/m5-application-selection-01/private",
+  "public_receipts": "runs/m5-application-selection-01/public",
+  "next_action": "Prepare at most one bounded offline B from this pinned U, preserving original behavior and assertions. Verify actual adapted outbound execution and original tests before any reference/Profile or formal admission work.",
+  "public_exposure_sha256": "e87655f32adffb9f4f9eabaf2f19e6e8f75354cce7fddb07f65115e26a732326",
+  "additional_search_exposures": [
+    {
+      "repository": "https://github.com/cli/cli",
+      "commit": "49f72234acd346666a4646a0f5a427fb3543debc",
+      "origin_group": "cli",
+      "visibility": "pinned_source",
+      "not_a_pinned_survey": false
+    },
+    {
+      "repository": "https://github.com/usememos/memos",
+      "commit": null,
+      "origin_group": "memos",
+      "visibility": "search_source_excerpt",
+      "not_a_pinned_survey": true
+    },
+    {
+      "repository": "https://github.com/gavv/httpexpect",
+      "commit": null,
+      "origin_group": "httpexpect",
+      "visibility": "search_metadata_only",
+      "not_a_pinned_survey": true
+    },
+    {
+      "repository": "https://github.com/spksupakorn/Currency-Converter",
+      "commit": null,
+      "origin_group": "spksupakorn-currency-converter",
+      "visibility": "search_metadata_only",
+      "not_a_pinned_survey": true
+    },
+    {
+      "repository": "https://github.com/leeprovoost/go-rest-api-template",
+      "commit": null,
+      "origin_group": "leeprovoost-go-rest-api-template",
+      "visibility": "search_metadata_only",
+      "not_a_pinned_survey": true
+    },
+    {
+      "repository": "https://github.com/gocanto/money",
+      "commit": null,
+      "origin_group": "gocanto-money",
+      "visibility": "search_metadata_only",
+      "not_a_pinned_survey": true
+    },
+    {
+      "repository": "https://github.com/Hexilee/htest",
+      "commit": null,
+      "origin_group": "hexilee-htest",
+      "visibility": "search_metadata_only",
+      "not_a_pinned_survey": true
+    },
+    {
+      "repository": "https://github.com/ISL270/ISL270",
+      "commit": null,
+      "origin_group": "isl270-profile",
+      "visibility": "search_metadata_only",
+      "not_a_pinned_survey": true
+    }
+  ],
+  "exposure_record_scope": "Pinned-source survey and incidental search exposures are recorded separately; unknown commits stay null and search metadata is not counted as prepared samples or full source review."
+}
