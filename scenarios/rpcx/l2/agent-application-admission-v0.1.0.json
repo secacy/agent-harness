@@ -1,0 +1,179 @@
+{
+  "schema_version": 1,
+  "version": "rpcx-agent-application-admission-v0.1.0",
+  "purpose": "Independent isolated-agent admission for reference preparation only; not a reference, runnable Profile, formal evaluation or independent-human heldout result.",
+  "assignment_id": "rpcx-application-admission-01",
+  "assignment_sha256": "c9d99ecc3cbf68deab244413d007b3a25f97d9047b93bf6829c6c18e197df946",
+  "public_assessment_sha256": "af2afaf76265f4b0e665db077758313390c8b0eb4a31f33229508365c9a3180b",
+  "fixed_harness_commit": "15e187e857d8c63de22790a57fc808c3b76a1dd5",
+  "reviewed_at_utc": "2026-10-21T04:46:37.679023+00:00",
+  "preparation_receipt": "scenarios/rpcx/l2/agent-application-baseline-v0.1.0.json",
+  "preparation_receipt_sha256": "2ec616935db0c3f7d3590e177efc7893868fc5adfcc49081a3997fbc7a6a9a5e",
+  "reviewer": {
+    "role": "fresh_agent",
+    "task": "/root/application_admission_reviewer",
+    "parent_history_inherited": false,
+    "is_preparer": false,
+    "independent_human": false,
+    "source_visibility_to_tuning_agent": "metadata_only",
+    "isolation": "Separate conversation from preparer and tuning history; shared filesystem/model family, procedural access boundary only."
+  },
+  "decision": "admit_for_reference_preparation",
+  "decision_rule_applied": "Admit for reference preparation only if all required criteria supported. Confirmed mismatch => supplementary_only with substantive reason codes. Missing evidence => insufficient_evidence, not semantic failure. No automatic L2 count or formal heldout admission.",
+  "reason": "All six required criteria are supported within the frozen bounded scope by independent source/evidence inspection and hash verification. Eligibility is for subsequent reference preparation only.",
+  "criteria": [
+    {
+      "id": "source_and_group",
+      "required": true,
+      "status": "supported",
+      "reason_code": "fixed_source_license_and_distinct_origin_verified",
+      "reason": "Fixed source/version, license, retained provenance and assigned origin-group separation are supported."
+    },
+    {
+      "id": "business_representativeness",
+      "required": true,
+      "status": "supported",
+      "reason_code": "existing_application_behavior_retained",
+      "reason": "The bounded slice retains an existing application use case with meaningful original behavior assertions."
+    },
+    {
+      "id": "outbound_boundary_fidelity",
+      "required": true,
+      "status": "supported",
+      "reason_code": "existing_operation_and_surrounding_semantics_preserved",
+      "reason": "Direct source comparison and separate recorded checks support preserved request/result/error handling and surrounding control flow within the declared deadline and in-process scope."
+    },
+    {
+      "id": "migration_relevance",
+      "required": true,
+      "status": "supported",
+      "reason_code": "actual_sdk_path_and_context_timeout_interface_relevance",
+      "reason": "Original-only recorded coverage reaches the actual production adapter and SDK; separate recorded checks support response/error and context/deadline behavior relevant to later migration."
+    },
+    {
+      "id": "original_assertions",
+      "required": true,
+      "status": "supported",
+      "reason_code": "original_assertions_unchanged_executed_and_path_relevant",
+      "reason": "Original target assertions are unchanged and executed against the adapted production path. Excluded support suites do not uniquely exercise that adapted boundary within the bounded claim."
+    },
+    {
+      "id": "offline_baseline_and_identity",
+      "required": true,
+      "status": "supported",
+      "reason_code": "offline_records_and_frozen_identity_independently_verified",
+      "reason": "Frozen identities, entry hashes, dependency checksums, command exits, test events, offline environment and recorded cleanup agree."
+    },
+    {
+      "id": "isolation_scope",
+      "required": false,
+      "status": "supported",
+      "reason_code": "procedural_metadata_isolation_only",
+      "reason": "Separate reviewer and preparer roles and metadata-only parent visibility are supported procedurally; no human, training-data or operating-system independence is claimed."
+    }
+  ],
+  "selected_source": {
+    "repository": "https://github.com/cli/cli",
+    "tree_url": "https://github.com/cli/cli/tree/49f72234acd346666a4646a0f5a427fb3543debc",
+    "commit": "49f72234acd346666a4646a0f5a427fb3543debc",
+    "origin_group": "cli",
+    "license": "MIT"
+  },
+  "verified_identities": {
+    "assignment_sha256": "c9d99ecc3cbf68deab244413d007b3a25f97d9047b93bf6829c6c18e197df946",
+    "preparation_receipt_sha256": "2ec616935db0c3f7d3590e177efc7893868fc5adfcc49081a3997fbc7a6a9a5e",
+    "preparation_public_receipt_sha256": "7fce2cfd1a607aef33374dd60b8358129d2112e92dfb5f7588c0bf155ed0357d",
+    "fixed_upstream_manifest_sha256": "99f8ff7c2ae1d8bddb1b10670db545a683a57719962d7d9b7bf00269d79afb22",
+    "fixed_eligibility_sha256": "2c18e3a7e044dedf264268687838f0f761a45ebe7ed5d084ea56c6e5d74ad005",
+    "baseline_tree_sha256": "1be48a4d09c5956430781ee8d284baa9ef9df7ce9a02384249208d79d778a07e",
+    "baseline_manifest_sha256": "be0bc4c338e451d113e7b312aa2709c5d8fbed5f24bcdc08dd9519342cd38790",
+    "provenance_manifest_sha256": "950a96417d12893a135d567dc88b3bd73b531dd3120320f37688d12bb83801e7",
+    "adaptation_sha256": "8768405ebc485f5f7b169268bafafede88be85dbe5f1966082369ea9bc8d7940",
+    "dependency_manifest_sha256": "66990d9f58a987d1859ce00408ee917c683e5f966b2c42a4abf3577ed4ca866d",
+    "evidence_manifest_sha256": "187c37268f1ec3aa7840e87247c4615c105381fa51199740475b990e630d1928",
+    "validation_report_sha256": "3efc02c14cc9e07a2f74accff2322ed23530b4176dab0f55c780036f3048a3ab"
+  },
+  "reviewer_reported_verification": {
+    "source_manifest_entries": 1320,
+    "frozen_baseline_entries": 73,
+    "retained_identical_upstream_entries": 64,
+    "modified_upstream_entries": 3,
+    "excluded_upstream_entries": 1253,
+    "added_entries": 6,
+    "evidence_entries": 46,
+    "sdk_v1_entries_byte_verified": 4,
+    "dependency_archives_content_hash_verified": 85,
+    "used_modules": 62,
+    "same_module_build_packages": 20,
+    "original_test_events": {
+      "pass": 11,
+      "fail": 0,
+      "skip": 0,
+      "top_level": 2,
+      "subtests": 9
+    },
+    "added_probe_test_events": {
+      "pass": 8,
+      "fail": 0,
+      "skip": 0,
+      "top_level": 4,
+      "subtests": 4
+    },
+    "sdk_v1_test_events": {
+      "pass": 5,
+      "fail": 0,
+      "skip": 0,
+      "top_level": 5,
+      "subtests": 0
+    },
+    "original_only_coverage": {
+      "sdk_dispatches": 7,
+      "sdk_statements_covered": 18,
+      "sdk_statements_instrumented": 20,
+      "adapter_statements_covered": 26,
+      "adapter_statements_instrumented": 35,
+      "all_statements_covered": 95,
+      "all_statements_instrumented": 120,
+      "sha256": "5904f6a4611e02b0ea55a7fd58fa325584d754409aeff8c92a21560222abe154",
+      "counts_are_path_observations_not_semantic_or_scenario_counts": true
+    },
+    "final_individual_command_exit_codes_verified_zero": 7,
+    "recorded_owned_containers_created": 2,
+    "recorded_owned_containers_removed": 2,
+    "recorded_owned_containers_remaining": 0,
+    "hash_or_manifest_mismatches": 0,
+    "independent_reexecution": false,
+    "baseline_or_tests_executed_by_reviewer": false,
+    "network_or_container_used_by_reviewer": false
+  },
+  "reviewer_reported_input_identity": {
+    "scope": "Assigned frozen source/baseline and evidence identities, validation records, SDK source identity and checksum artifacts; unrelated build cache artifacts excluded.",
+    "tracked_entries": 1670,
+    "before_sha256": "f1a881d0ac70e5ccd06b49cc53f5127a92534d555aa1da8321ef755d28eca2b2",
+    "after_sha256": "f1a881d0ac70e5ccd06b49cc53f5127a92534d555aa1da8321ef755d28eca2b2",
+    "unchanged": true
+  },
+  "private_assessment_sha256": "c32bc6483ab5378c3883e7410a24f532ac5742cccd84f1756a92d0184b2c6da1",
+  "private_verification_sha256": "43f50a0f0018e598e4a2f0e774500a09ab8a8b2ce1a128afe3493dd28a0f1bda",
+  "supplemental_verification_sha256": "0905bdb9f2634beca3f6337f14b7144ccebcd1c1a100289040e51298d81f56e2",
+  "validation_attribution": "Isolated reviewer independently inspected source/evidence and recomputed their identities without reexecuting tests. Parent checked public metadata and fixed-rule consistency only; parent did not read private materials or recompute private hashes.",
+  "limitations": [
+    "Existing records were independently inspected and hashed; no baseline or test was reexecuted.",
+    "Original assertions, source comparison and added boundary checks are separate evidence; passing events or dispatch counts alone do not establish semantic fidelity.",
+    "The declared SDK v1 deadline ceiling is intentional. Recorded checks observe deadline values and shorter parent expiry/cancellation; a full default-duration expiry is not independently established.",
+    "One negative control-flow property is supported by unchanged source structure; the added runtime checks do not independently assert every downstream ordering invariant.",
+    "The in-process bounded slice does not establish real-network/wire equivalence, whole-repository behavior, all specialized support-helper behavior or v2 runtime correctness.",
+    "Conversation/file-access separation is procedural; shared filesystem/model-family and unknown training visibility remain.",
+    "This decision does not create a migration, reference, runtime Profile, formal evaluation, human review or automatic original heldout/denominator inclusion."
+  ],
+  "reference_preparation_eligible": true,
+  "migration_work_started": false,
+  "runtime_profile_registered": false,
+  "formal_evaluation_started": false,
+  "counts_as_original_heldout_slot": false,
+  "counts_in_original_effect_denominators": false,
+  "private_review_artifacts": "runs/m5-application-admission-01/private",
+  "public_assessment": "runs/m5-application-admission-01/public/assessment.json",
+  "reviewer_platform_cost": "not_measured; not added to prior Campaign usage",
+  "next_action": "Prepare independent reference criteria and bounded positive/negative controls with source kept isolated; explicitly address remaining default-duration expiry evidence before claiming T3 reference completeness. No automatic runtime Profile registration or formal evaluation."
+}
