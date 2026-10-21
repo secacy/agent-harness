@@ -22,7 +22,9 @@
 
 [准入决定](agent-admission-v0.1.0.json)现为 supplementary_only：该准备版本不进入原定 L2 业务样本的参考/Profile 接入。隔离评审发现应用代表性和出站适配保真不符，相关断言覆盖及运行契约仍有未知；不是仅按库标签拒绝，也不是推翻原基线测试事实。完整材料和原回执保留，后续应用选源应先检查适用性，不将本候选加入正常效果分母。
 
-随后按原业务判据先行筛选，[新应用选源回执](agent-application-selection-v0.1.0.json)固定 GitHub CLI 的一个有限切片来源，状态 selected_not_prepared。已有静态应用/原断言路径依据和适配计划；依赖闭包、B 及禁网构建测试尚未完成，未注册 Profile。完整材料仍由隔离准备侧保管，主流程仅接收元数据；该选源不增加已准备数量，也不等于准入通过。
+随后按原业务判据先行筛选，[新应用选源回执](agent-application-selection-v0.1.0.json)固定 GitHub CLI 的一个有限切片来源，记录当时的 selected_not_prepared：有静态应用/原断言路径依据和适配计划，依赖闭包、B 及禁网构建测试尚未完成。完整材料由隔离准备侧保管，主流程仅接收元数据；该选源回执不等于准入通过，后续准备结果另存如下。
+
+该固定来源随后完成[有限基线准备](agent-application-baseline-v0.1.0.json)，另存 prepared_baseline 回执，不改旧选源状态：准备者禁网构建 20 包，原测试 11 项、新增检查 8 项及 v1 SDK 测试 5 项完成事件通过；原测试单独覆盖运行观测到 7 次真实 SDK 派发，不与测试事件累加。冻结材料不变，自建容器已回收；支持包测试及 v2 SDK 未运行，整仓、真实网络与传输序列化等价性不在证明范围。主流程只核对公开材料，下一步为隔离侧独立业务准入评审，尚未接入参考/Profile，也不增加原效果分母。
 
 [首轮开发评测工作](../../../docs/worklog/2026-10-19-l2-development-evaluation.md)采用三个 Target 各一次尝试，独立行为参考结合源码/交付复核；参考未知与确认错误分列。[三场景单候选参考](evaluation/README.md)及[真实批次](../../../docs/experiments/2026-10-20-rpcx-l2-real-model-01.md)已完成：三项原判定均为 NeedsAttention，自动参考均 pass，S/N=0/3、A=0，错误放行率无定义。Goddd、Translation 的实际人员复核与 Workouts 的助手补充已分列，见[阶段收尾](../../../docs/worklog/2026-10-20-m3-closeout-review.md)。[轮次汇总](round/README.md)现支持 v2 协议绑定及一次尝试的身份关联、未知区间和成本分列；独立留出与完整正式评测仍待准备。
 

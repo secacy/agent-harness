@@ -1,0 +1,235 @@
+{
+  "schema_version": 1,
+  "version": "rpcx-agent-application-baseline-v0.1.0",
+  "purpose": "Isolated preparer report of a bounded offline application baseline; not independent admission, a runnable Profile or formal heldout evaluation.",
+  "assignment_id": "rpcx-application-baseline-01",
+  "fixed_harness_commit": "f840d441dd18f88be93a3a2d30dffeab2dc44e38",
+  "assignment_sha256": "ddd410b69088a27b63e7f355b99809b02b7b4224e42baa568c38cdff2ef2b0c2",
+  "public_preparation_sha256": "7fce2cfd1a607aef33374dd60b8358129d2112e92dfb5f7588c0bf155ed0357d",
+  "selection_receipt": "scenarios/rpcx/l2/agent-application-selection-v0.1.0.json",
+  "selection_receipt_sha256": "57c8bd26ca654e2d13de0ebf64c08d55f0680ce4c89ac2613596b4a84b34a7ca",
+  "preparer": {
+    "role": "fresh_agent",
+    "task": "/root/application_sample_preparer",
+    "parent_history_inherited": false,
+    "continues_own_selection_context": true,
+    "source_visibility_to_tuning_agent": "metadata_only",
+    "independent_human": false,
+    "model_training_visibility": "unknown",
+    "isolation": "Separate conversation and procedural file boundaries; shared filesystem and model family."
+  },
+  "status": "prepared_baseline",
+  "phase": "baseline_preparation_complete",
+  "selected_source": {
+    "repository": "https://github.com/cli/cli",
+    "tree_url": "https://github.com/cli/cli/tree/49f72234acd346666a4646a0f5a427fb3543debc",
+    "commit": "49f72234acd346666a4646a0f5a427fb3543debc",
+    "origin_group": "cli",
+    "license": "MIT"
+  },
+  "fixed_upstream_manifest_sha256": "99f8ff7c2ae1d8bddb1b10670db545a683a57719962d7d9b7bf00269d79afb22",
+  "fixed_eligibility_sha256": "2c18e3a7e044dedf264268687838f0f761a45ebe7ed5d084ea56c6e5d74ad005",
+  "eligibility_fixed_before_adaptation": true,
+  "baseline_frozen_before_validation": true,
+  "baseline_tree_sha256": "1be48a4d09c5956430781ee8d284baa9ef9df7ce9a02384249208d79d778a07e",
+  "baseline_tree_after_validation_sha256": "1be48a4d09c5956430781ee8d284baa9ef9df7ce9a02384249208d79d778a07e",
+  "baseline_manifest_sha256": "be0bc4c338e451d113e7b312aa2709c5d8fbed5f24bcdc08dd9519342cd38790",
+  "provenance_manifest_sha256": "950a96417d12893a135d567dc88b3bd73b531dd3120320f37688d12bb83801e7",
+  "adaptation_sha256": "8768405ebc485f5f7b169268bafafede88be85dbe5f1966082369ea9bc8d7940",
+  "dependency_manifest_sha256": "66990d9f58a987d1859ce00408ee917c683e5f966b2c42a4abf3577ed4ca866d",
+  "evidence_manifest_sha256": "187c37268f1ec3aa7840e87247c4615c105381fa51199740475b990e630d1928",
+  "validation_report_sha256": "3efc02c14cc9e07a2f74accff2322ed23530b4176dab0f55c780036f3048a3ab",
+  "source_fidelity": {
+    "full_upstream_retained_privately": true,
+    "retained_upstream_file_count": 67,
+    "retained_identical_upstream_file_count": 64,
+    "modified_upstream_file_count": 3,
+    "excluded_upstream_file_count": 1253,
+    "new_production_file_count": 1,
+    "new_probe_file_count": 1,
+    "unchanged_sdk_file_count": 4,
+    "baseline_total_file_count": 73,
+    "original_test_files_retained": 1,
+    "original_test_files_modified": 0,
+    "candidate_original_test_exclusions": 0,
+    "semantic_boundary": "Existing application behavior, outbound request/result/error handling and surrounding control remain in place. In-process SDK dispatch adds its documented deadline ceiling; actual network and wire serialization equivalence are outside this baseline.",
+    "closure_comparison": {
+      "previous_static_plan": {
+        "internal_packages": 27,
+        "upstream_source_files": 84
+      },
+      "actual_bounded_preparation": {
+        "internal_packages": 20,
+        "upstream_source_files": 64
+      },
+      "reason": "Different preparation stages: unrelated sibling support functionality and its transitive imports were excluded while retaining original target assertions and whole required upstream support files. Previous source identities and receipts were not modified."
+    }
+  },
+  "preparer_reported_validation": {
+    "executed": true,
+    "build": {
+      "executed": true,
+      "exit_code": 0,
+      "packages": 20
+    },
+    "test_count_definition": "Go per-test completion events; top-level parent tests and subtests are reported separately, not counted as independent scenarios.",
+    "original_tests": {
+      "executed": true,
+      "process_exit_code": 0,
+      "test_completion_events": 11,
+      "top_level_completion_events": 2,
+      "subtest_completion_events": 9,
+      "passed": 11,
+      "failed": 0,
+      "skipped": 0,
+      "package_endings": {
+        "pass": 1,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "added_boundary_probes": {
+      "executed": true,
+      "process_exit_code": 0,
+      "test_completion_events": 8,
+      "top_level_completion_events": 4,
+      "subtest_completion_events": 4,
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0,
+      "package_endings": {
+        "pass": 1,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "sdk_tests": {
+      "executed": true,
+      "process_exit_code": 0,
+      "test_completion_events": 5,
+      "top_level_completion_events": 5,
+      "subtest_completion_events": 0,
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0,
+      "package_endings": {
+        "pass": 1,
+        "fail": 0,
+        "skip": 0
+      },
+      "module": "example.com/rpcx",
+      "sdk_version": "v1",
+      "v2_tests_executed": false
+    },
+    "original_production_path": {
+      "proof_type": "original-only Go statement-count coverage including production adapter and real rpcx-v1 module; added probes excluded by test filter",
+      "original_sdk_dispatches": 7,
+      "original_sdk_covered_statements": 18,
+      "original_sdk_total_instrumented_statements": 20,
+      "original_adapter_covered_statements": 26,
+      "original_adapter_total_instrumented_statements": 35,
+      "all_instrumented_covered_statements": 95,
+      "all_instrumented_statements": 120,
+      "coverage_sha256": "5904f6a4611e02b0ea55a7fd58fa325584d754409aeff8c92a21560222abe154",
+      "counts_not_added_to_test_event_counts": true
+    },
+    "environment": {
+      "image": "golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd",
+      "platform": [
+        "linux",
+        "arm64",
+        "go1.26.5"
+      ],
+      "network": "none",
+      "read_only_root": true,
+      "cpus": 2.0,
+      "memory_bytes": 2147483648,
+      "pids": 128,
+      "capabilities_dropped": [
+        "ALL"
+      ],
+      "security_options": [
+        "no-new-privileges"
+      ],
+      "backend": "local_docker"
+    },
+    "dependency_checksum_verification_exit_code": 0,
+    "used_external_module_count": 62,
+    "cached_checksummed_module_count": 85,
+    "module_cache_read_only": true,
+    "attempts": 2,
+    "successful_attempt": 2,
+    "prior_failures_retained": true,
+    "prior_failure_categories": [
+      "temporary_directory_execution_permission",
+      "verification_argument_order",
+      "overbroad_optional_module_metadata_inventory_unavailable_offline"
+    ],
+    "baseline_source_changes_between_attempts": false,
+    "owned_containers_created": 2,
+    "owned_containers_removed": 2,
+    "owned_containers_remaining": 0,
+    "cleanup_verified": true,
+    "fixed_inputs_unchanged": true,
+    "frozen_baseline_unchanged": true,
+    "sdk_original_bytes_unchanged": true,
+    "test_packages_not_run": {
+      "scope": "Supporting upstream package/repository suites and v2 SDK are outside this bounded validation.",
+      "supporting_internal_package_count": 19,
+      "candidate_package_test_exclusions": 0
+    }
+  },
+  "preparer_reported_criteria": [
+    {
+      "id": "source_and_group",
+      "status": "supported",
+      "reason": "Fixed public source, origin and license retained."
+    },
+    {
+      "id": "business_representativeness",
+      "status": "supported_in_bounded_baseline",
+      "reason": "Original application assertions execute unchanged."
+    },
+    {
+      "id": "outbound_boundary_fidelity",
+      "status": "supported_in_bounded_baseline",
+      "reason": "Real SDK dispatch forwards the existing outbound contract and preserves response/error handling; separate probes verify boundary behavior."
+    },
+    {
+      "id": "migration_relevance",
+      "status": "baseline_production_path_observed",
+      "reason": "Actual v1 dispatch, default deadline and parent context/error behavior observed; no v2 migration executed."
+    },
+    {
+      "id": "original_assertions",
+      "status": "runtime_path_supported",
+      "reason": "Original-only coverage observes the production adapter and SDK; added probes remain separately counted."
+    },
+    {
+      "id": "offline_baseline_and_identity",
+      "status": "prepared_and_verified",
+      "reason": "Frozen byte identities, disabled-network build/tests, checksummed dependencies and exact resource cleanup are recorded."
+    }
+  ],
+  "validation_attribution": "Executed and self-checked by the isolated preparer; tuning agent verifies public identities and count consistency only. Private evidence hashes are reported, not recomputed by the parent. No independent reexecution or admission is claimed.",
+  "l2_admission": "not_assessed_by_independent_reviewer",
+  "migration_work_started": false,
+  "runtime_profile_registered": false,
+  "formal_evaluation_started": false,
+  "counts_as_prepared_baseline": true,
+  "counts_as_original_heldout_slot": false,
+  "counts_in_original_effect_denominators": false,
+  "limitations": [
+    "Prepared baseline is not independent L2 admission; later independent review remains required.",
+    "Validation covers the bounded application package, supporting build closure and v1 SDK, not the entire upstream repository or v2 SDK.",
+    "Original assertions establish their existing application behavior; separate added probes establish additional SDK boundary/error/context observations.",
+    "Seven observed SDK dispatches are coverage observations from the original-only run and are not added to eleven original test completion events.",
+    "The backend remains in-process and retains upstream HTTP doubles for offline tests; real network and wire serialization equivalence are not established.",
+    "Initial facility/configuration failures are retained; no frozen source change was needed to recover.",
+    "Procedural conversation isolation is not independent human, model-training or OS security isolation."
+  ],
+  "private_artifacts": "runs/m5-application-baseline-01/private",
+  "public_receipt": "runs/m5-application-baseline-01/public/preparation.json",
+  "preparer_platform_cost": "not_measured; not added to prior Campaign usage",
+  "next_action": "Independent isolated admission review of frozen U-to-B fidelity, original-test relevance and recorded evidence; no Profile/reference work before that decision."
+}
