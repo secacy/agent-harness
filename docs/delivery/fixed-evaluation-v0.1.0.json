@@ -1,0 +1,160 @@
+{
+  "schema_version": 1,
+  "id": "harness-fixed-evaluation-v0.1.0",
+  "recorded_on": "2026-10-22",
+  "purpose": "post-execution delivery identity and limited fixed-sample results; this receipt is generated after archive verification and is not a member of that archive",
+  "protocol": {
+    "path": "docs/experiments/l2-fixed-eval-v0.1.0",
+    "freeze_sha256": "938c0cbca0d84cca5d019207ea75d588947b8a7579da8580c8ef7bd1147dbfee",
+    "runtime_revision": "1e334e0d0dd9fe4841381db47e8efffe59b90404",
+    "implementation_source_sha256": "a896ce0130022accebbd0043b0a813965338b1886a5368b4f2dc1f709523d4f5",
+    "source_files": 762,
+    "harness_sha256": "df976b9efc5438bd4b415d87a8524fb1a9500e52b5e96ca0880fe31be5bc84f8"
+  },
+  "method": {
+    "kind": "formal_evaluation",
+    "split": "development",
+    "strata": {
+      "seen-development": 3,
+      "isolated-prepared-calibrated": 1
+    },
+    "attempts_per_target": 1,
+    "review_method": "assistant",
+    "reviewer": "codex:/root",
+    "strict_unseen_holdout": false,
+    "independent_human_validation": false,
+    "original_milestone_acceptance": false
+  },
+  "counts": {
+    "targets": 4,
+    "runs": 4,
+    "candidates": 4,
+    "released": 1,
+    "needs_attention": 2,
+    "success": 1,
+    "unknown_success": 0,
+    "wrong_releases": 0,
+    "unknown_releases": 0,
+    "execution": {
+      "Completed": 4
+    },
+    "verdicts": {
+      "NeedsAttention": 2,
+      "ReadyForReview": 1,
+      "Rejected": 1
+    },
+    "reference": {
+      "fail": 1,
+      "inconclusive": 1,
+      "pass": 2
+    },
+    "failures": {},
+    "wrong_release_categories": {}
+  },
+  "metrics": {
+    "effective_automatic_success": {
+      "lower_numerator": 1,
+      "upper_numerator": 1,
+      "denominator": 4
+    },
+    "wrong_release": {
+      "lower_numerator": 0,
+      "upper_numerator": 0,
+      "denominator": 1
+    },
+    "attention_targets": {
+      "lower_numerator": 2,
+      "upper_numerator": 2,
+      "denominator": 4
+    },
+    "attention_candidates": {
+      "lower_numerator": 2,
+      "upper_numerator": 2,
+      "denominator": 4
+    }
+  },
+  "cost": {
+    "generation_admissions": 120,
+    "tool_calls": 196,
+    "known_input_tokens": 1861376,
+    "known_output_tokens": 24591,
+    "known_tokens": 1885967,
+    "reserved_tokens": 0,
+    "unknown_tokens": 0,
+    "batch_wall_seconds": 679.186,
+    "currency_cost": null,
+    "human_active_review_time": null
+  },
+  "review_records": {
+    "goddd": {
+      "path": "runs/l2-fixed-eval-v0.1.0/reviews/goddd.json",
+      "sha256": "3ba2be97e9f81e0b5eeee14e13084ef3c026c9594ff3e69c59bd582c42ce8a8f"
+    },
+    "translation": {
+      "path": "runs/l2-fixed-eval-v0.1.0/reviews/translation.json",
+      "sha256": "f8de63897737beda7938a18c27044684af52092b382822bd2f958c2eb4d4f8e0"
+    },
+    "workouts": {
+      "path": "runs/l2-fixed-eval-v0.1.0/reviews/workouts.json",
+      "sha256": "5dcb988654345e32af6ae538fe2bc52c0aeb11d38d603fc75eb6db11b5b1e21e"
+    },
+    "ghcli": {
+      "path": "runs/l2-fixed-eval-v0.1.0/reviews/ghcli.json",
+      "sha256": "4a079f7e58a21af0c14142344216d41f678990723c0414d055b7e31b552ae3c7"
+    }
+  },
+  "result": {
+    "path": "runs/l2-fixed-eval-v0.1.0/round-final/round.json",
+    "sha256": "74e7d2cde25a9c565bb6a8474af0e16858af1b7e7aeb488a46e2a3c31ecf8a78",
+    "strata_path": "runs/l2-fixed-eval-v0.1.0/strata.json",
+    "strata_sha256": "0b622ea9d252f007268949db60bf8871904cc1dbafcf6e38bdee79b4b62c6c82"
+  },
+  "integrity": {
+    "original_campaign_files_unchanged": 19290,
+    "patch_replays": 4,
+    "local_review_links": 681,
+    "missing_review_links": 0,
+    "recorded_container_ids_removed": 141,
+    "remaining_recorded_containers": 0,
+    "remaining_current_registry_containers": 0
+  },
+  "archive": {
+    "path": "runs/deliveries/harness-fixed-evaluation-v0.1.0.tar.gz",
+    "sha256": "ce5876abc4ffd2b4a52bbf5f139482cbddb19795b41598510f3788c7d94041b3",
+    "bytes": 720893955,
+    "members_excluding_manifest": 30025,
+    "uncompressed_file_bytes": 1077663357,
+    "manifest_sha256": "41f8cdd9c0909058c210500a9dabf04b994cfc0d4e9bf603618a6d41f3a92cb4",
+    "scope": "one pre-registered four-target fixed-sample real evaluation with assistant reviews; not strict unseen holdout or human-independent validation",
+    "excluded": [
+      "cache",
+      "Git metadata",
+      "credential/private paths",
+      "duplicate patch replay directories"
+    ]
+  },
+  "offline_verification": {
+    "path": "runs/deliveries/harness-fixed-evaluation-v0.1.0.verification.json",
+    "sha256": "2b586ac0a26834fd8bee05e9dd2e7ba33749f95acd3f9a6655213f05c138161e",
+    "integrity": "pass",
+    "audits": 1,
+    "rounds_recomputed": 1,
+    "compared_fields": [
+      "counts",
+      "metrics",
+      "cost",
+      "targets"
+    ],
+    "bundle_unchanged": true,
+    "network_denied": true,
+    "original_workspace_read_denied": true,
+    "go_or_docker_required": false
+  },
+  "limitations": [
+    "four fixed and previously exposed or calibrated inputs, one attempt each",
+    "one released candidate does not establish production error probability",
+    "Goddd additional mock branch remains unconfirmed",
+    "GHCLI runtime Rejected is retained; semantic checks pass but delivery justification fails for an identified false rejection",
+    "raw runtime and frozen protocol are not changed by this post-execution receipt"
+  ]
+}
