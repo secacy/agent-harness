@@ -1,0 +1,124 @@
+{
+  "schema_version": 1,
+  "id": "harness-engineering-v0.1.0",
+  "exclude_artifact_directories": [
+    "cache"
+  ],
+  "artifacts": [
+    "runs/m3-stage-delivery-01",
+    "runs/l2-dev-eval-v0.1.0",
+    "runs/goddd-human-review-01/completed-review-01",
+    "runs/translation-human-review-01/completed-review-01",
+    "runs/translation-human-review-01/completed-round-01",
+    "runs/workouts-assistant-review-01",
+    "runs/m4-checkpoint-01/core-verified",
+    "runs/m4-checkpoint-01/core-verified.jsonl",
+    "runs/m4-checkpoint-01/verification.json",
+    "runs/m4-rerun-01/core-accepted",
+    "runs/m4-rerun-01/core-accepted.jsonl",
+    "runs/m4-rerun-01/verification.json",
+    "runs/m4-windows-01/rpcx-final",
+    "runs/m4-windows-01/budget-final",
+    "runs/m4-windows-01/core-final.jsonl",
+    "runs/m4-windows-01/rpcx-final.jsonl",
+    "runs/m4-windows-01/regression.jsonl",
+    "runs/m4-windows-01/verification.json",
+    "runs/m4-connection-01/real",
+    "runs/m4-connection-01/core.jsonl",
+    "runs/m4-connection-01/real-first.jsonl",
+    "runs/m4-connection-01/regression.jsonl",
+    "runs/m4-connection-01/containers.json",
+    "runs/m4-connection-01/native.json",
+    "runs/m4-connection-01/verification.json"
+  ],
+  "audits": [
+    {
+      "id": "original-real",
+      "path": "runs/l2-dev-eval-v0.1.0/campaign",
+      "expected": {
+        "consistency": "pass",
+        "execution_state": "completed"
+      }
+    },
+    {
+      "id": "baseline_passed",
+      "path": "runs/m4-windows-01/rpcx-final/rerun-baseline_passed-3194056080/campaign",
+      "expected": {
+        "consistency": "pass",
+        "execution_state": "incomplete",
+        "recovery_execution_state": "completed"
+      }
+    },
+    {
+      "id": "budget_exhausted",
+      "path": "runs/m4-windows-01/rpcx-final/rerun-budget_exhausted-811135357/campaign",
+      "expected": {
+        "consistency": "pass",
+        "execution_state": "incomplete"
+      }
+    },
+    {
+      "id": "candidate_fixed",
+      "path": "runs/m4-windows-01/rpcx-final/rerun-candidate_fixed-2719286817/campaign",
+      "expected": {
+        "consistency": "pass",
+        "execution_state": "incomplete",
+        "recovery_execution_state": "completed"
+      }
+    },
+    {
+      "id": "model_pending",
+      "path": "runs/m4-windows-01/rpcx-final/rerun-model_pending-2669444387/campaign",
+      "expected": {
+        "consistency": "pass",
+        "execution_state": "incomplete",
+        "recovery_execution_state": "completed"
+      }
+    },
+    {
+      "id": "report_published",
+      "path": "runs/m4-windows-01/rpcx-final/rerun-report_published-1055189499/campaign",
+      "expected": {
+        "consistency": "pass",
+        "execution_state": "incomplete",
+        "recovery_execution_state": "completed"
+      }
+    },
+    {
+      "id": "run_terminal",
+      "path": "runs/m4-windows-01/rpcx-final/rerun-run_terminal-197643437/campaign",
+      "expected": {
+        "consistency": "pass",
+        "execution_state": "incomplete",
+        "recovery_execution_state": "completed"
+      }
+    },
+    {
+      "id": "docker-connection",
+      "path": "runs/m4-connection-01/real/docker-resources-770255429/campaign",
+      "expected": {
+        "consistency": "pass",
+        "execution_state": "incomplete",
+        "recovery_execution_state": "completed",
+        "resource_state": "recorded_removed"
+      }
+    }
+  ],
+  "rounds": [
+    {
+      "id": "original",
+      "request": "runs/l2-dev-eval-v0.1.0/round-with-references/request.json",
+      "report": "runs/l2-dev-eval-v0.1.0/round-with-references/round.json"
+    },
+    {
+      "id": "human",
+      "request": "runs/translation-human-review-01/completed-round-01/request.json",
+      "report": "runs/translation-human-review-01/completed-round-01/round.json"
+    },
+    {
+      "id": "supplemental",
+      "request": "runs/workouts-assistant-review-01/supplemental-round/request.json",
+      "report": "runs/workouts-assistant-review-01/supplemental-round/round.json"
+    }
+  ]
+}

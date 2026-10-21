@@ -528,4 +528,33 @@ HARNESS_DOCKER_CONNECTION_ACCEPTANCE=1 HARNESS_RECOVERY_ARTIFACTS="$PWD/runs/m4-
 
 该场景复用宿主强杀/邻居保留/精确清理/新 Run 全链路，在清理前、清理成功后及检查点后三次断连；分别断言未停止诊断、Prepare 拒绝及 Execute 零分配/零模型组装。恢复后重新实时核对相同 engine，旧成果不变。它只验证新连接不可用及恢复，不是 daemon 重启或在途连接中断实验。[实施与证据](worklog/2026-10-21-m4-docker-connection.md)。
 
+## 创建和离线复核工程交付包
+
+创建需要 Python 3.11+、本机 Go/Git，以及[清单](delivery/engineering-v0.1.1.json)中的原运行材料。输出目录必须尚不存在；从导出的源码在禁用模块网络的配置下构建二进制，不读取 .env，不调用 Docker 或模型：
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 python3 scripts/package_delivery.py create \
+  --plan docs/delivery/engineering-v0.1.1.json \
+  --output "$PWD/runs/deliveries/harness-engineering-v0.1.1"
+```
+
+生成同名目录、tar.gz 及外部 `.tar.gz.sha256`。重复打包应使用新版本/新目录，不能覆盖已交付版本。收到归档后，在归档所在目录核对外部摘要并解包，再从新目录复核：
+
+```sh
+shasum -a 256 -c harness-engineering-v0.1.1.tar.gz.sha256
+tar -xzf harness-engineering-v0.1.1.tar.gz
+python3 harness-engineering-v0.1.1/source/scripts/package_delivery.py verify \
+  --root harness-engineering-v0.1.1 --output review-output
+```
+
+完整复核输出必须是包外新目录；先核对全部成员/模式/摘要，再调用包内 harness audit 和既有 summarize，重算三份原汇总，最后再核对包未变。所附二进制目前为 darwin/arm64；其他平台可先加 `--integrity-only` 核对完整性，该模式不算执行审计/汇总。源码自行构建属于另一环境，不宣称原二进制的执行验收。
+
+工具边界测试：
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s scripts -p 'test_package_delivery.py' -v
+```
+
+包是选定工程证据的开发版交付，不是全部历史运行、独立留出或正式 M5 实验；原报告中的旧缺陷保持。设计与隔离验证见[工作记录](worklog/2026-10-21-engineering-delivery.md)。
+
 资源命令并发的实际 Docker 对照可单独运行：`HARNESS_DOCKER_TEST=1 go test -race ./internal/execution -run '^TestOwnedDockerConcurrentCommandCleanup$' -count=1`。该命令运行四个短命令并核对各自回收；设置 HARNESS_RECOVERY_ARTIFACTS 可保留逐命令记录。受控 CLI 故障替身需要本机 Python 3。

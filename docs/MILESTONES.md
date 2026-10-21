@@ -25,7 +25,7 @@ M3 是最低项目交付点，但不代表全部项目目标完成：进程中�
 
 1. 固定当前支持范围，暂缓 Translation 分析扩展，保留已有 NeedsAttention；正确性与证据/交付缺陷仍优先修复。
 2. M3 [逐项验收评审](worklog/2026-10-20-m3-closeout-review.md)和受托复核已完成；A1—A5 有范围内证据，A6/A7 的原人员口径与实际留出缺口保留，不再重复整理同一批材料。A=0 时错误放行率无定义，不为制造非零分母追加生成。
-3. M3 尚未完成移交，M4 按已明确的并行边界形成范围证据。[收尾核对](worklog/2026-10-21-m4-closeout-review.md)、[持久化窗口补充](worklog/2026-10-21-m4-persistence-windows.md)及[真实连接故障链](worklog/2026-10-21-m4-docker-connection.md)分别记录完整恢复、预算组件与 Docker 连接的边界。后续固定工程开发版的完整实现/二进制身份与归档；正式评测保留草案，实际留出和人员等材料齐备后另行整体冻结，不降低原验收标准。
+3. M3 尚未完成移交，M4 按已明确的并行边界形成范围证据。[收尾核对](worklog/2026-10-21-m4-closeout-review.md)、[持久化窗口补充](worklog/2026-10-21-m4-persistence-windows.md)及[真实连接故障链](worklog/2026-10-21-m4-docker-connection.md)分别记录完整恢复、预算组件与 Docker 连接的边界。[工程交付包](worklog/2026-10-21-engineering-delivery.md)已固定工作区源码/二进制和选定归档，离开原工作区可离线审计并重算原轮次；当前仍是工程开发版。正式评测保留草案，实际留出和人员等材料齐备后另行整体冻结，不降低原验收标准，也不将本包当作未来实验的代码/模型/预算冻结。
 
 当前 [Goddd 实际人工复核](worklog/2026-10-20-goddd-human-review.md)和 [Translation 双配置实际复核](worklog/2026-10-20-translation-human-review.md)均已完成并进入最新离线汇总：二者测试保留/变更覆盖 pass、交付依据 fail；原质量判定保持。Workouts 在原正式汇总中仍 inconclusive，受托助手评审见下文；独立留出仍待，M3 状态保持。
 
