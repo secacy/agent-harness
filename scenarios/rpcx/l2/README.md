@@ -26,7 +26,9 @@
 
 该固定来源随后完成[有限基线准备](agent-application-baseline-v0.1.0.json)，另存 prepared_baseline 回执，不改旧选源状态：准备者禁网构建 20 包，原测试 11 项、新增检查 8 项及 v1 SDK 测试 5 项完成事件通过；原测试单独覆盖运行观测到 7 次真实 SDK 派发，不与测试事件累加。冻结材料不变，自建容器已回收；支持包测试及 v2 SDK 未运行，整仓、真实网络与传输序列化等价性不在证明范围。主流程只核对公开材料，后续准入决定另存如下，不增加原效果分母。
 
-[应用准入评审](agent-application-admission-v0.1.0.json)已由与准备者分开的隔离 Agent 完成，六项必需条件均 supported，结论 admit_for_reference_preparation。评审只读核对来源、基线及既有运行材料并复算摘要，没有重跑测试或修改输入；允许下一步准备行为参考与正反例，尚无可执行参考/Profile 或正式效果。完整默认期限的真实到期等限制保留，不能以本次准入代替后续 T3 参考验证。
+[应用准入评审](agent-application-admission-v0.1.0.json)由与准备者分开的隔离 Agent 完成，六项必需条件均 supported，结论 admit_for_reference_preparation。评审只读核对来源、基线及既有运行材料并复算摘要，没有重跑测试或修改输入；该时点允许准备行为参考与正反例，不代替后续 T3 参考验证，旧回执保持。
+
+[隔离参考准备与校准](agent-application-reference-v0.1.0.json)现已完成声明范围验收，实施与边界见[工作记录](../../../docs/worklog/2026-10-21-isolated-application-reference.md)。新隔离作者实际制作参考、手工正确 v2 和三个单错反例，另一个隔离评审者只读核验通过；五组原测试均 11 项通过，三个反例仍分别被超时、上下文与错误条件指出。v1/正确 v2 的完整应用入口分别真实等待约 30.038/30.032 秒到期，初始边界记录另列。私有可执行产物与复现入口由隔离侧保管，结构识别/资源观察限制保留；尚未注册到现有公开参考 API 或可信 Profile，不表示模型效果或正式纳入。
 
 [首轮开发评测工作](../../../docs/worklog/2026-10-19-l2-development-evaluation.md)采用三个 Target 各一次尝试，独立行为参考结合源码/交付复核；参考未知与确认错误分列。[三场景单候选参考](evaluation/README.md)及[真实批次](../../../docs/experiments/2026-10-20-rpcx-l2-real-model-01.md)已完成：三项原判定均为 NeedsAttention，自动参考均 pass，S/N=0/3、A=0，错误放行率无定义。Goddd、Translation 的实际人员复核与 Workouts 的助手补充已分列，见[阶段收尾](../../../docs/worklog/2026-10-20-m3-closeout-review.md)。[轮次汇总](round/README.md)现支持 v2 协议绑定及一次尝试的身份关联、未知区间和成本分列；独立留出与完整正式评测仍待准备。
 

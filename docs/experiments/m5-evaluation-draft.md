@@ -45,7 +45,9 @@
 
 该固定来源另存[应用基线准备回执](../../scenarios/rpcx/l2/agent-application-baseline-v0.1.0.json)：prepared_baseline，准备者禁网构建、原测试及新增/v1 SDK 检查通过；原测试覆盖观测支持其确经实际适配生产路径。主流程未读取私有材料或重跑；有限基线不能代表整个上游、v2 迁移或正式效果。旧选源/准备回执保留原时点状态，独立准入结果另存。
 
-[应用准入决定](../../scenarios/rpcx/l2/agent-application-admission-v0.1.0.json)为 admit_for_reference_preparation：新隔离评审者只读比较来源/基线并核对存量证据，六项必需条件均 supported，输入未改、测试未重跑。当前可推进独立参考与有限正反例准备；完整默认期限真实到期等尚需后续建立，可信 Profile、正式协议冻结与原人员留出条件均未由本次准入满足，不自动纳入原效果分母。
+[应用准入决定](../../scenarios/rpcx/l2/agent-application-admission-v0.1.0.json)为 admit_for_reference_preparation：新隔离评审者只读比较来源/基线并核对存量证据，六项必需条件均 supported，输入未改、测试未重跑。该时点允许继续准备参考，可信 Profile、正式协议冻结与原人员留出条件未由准入满足，不自动纳入原效果分母。
+
+后续[隔离应用参考回执](../../scenarios/rpcx/l2/agent-application-reference-v0.1.0.json)记录实际参考实现、一个手工正确 v2/三个单错对照、禁网执行及独立只读核验，见[实施记录](../worklog/2026-10-21-isolated-application-reference.md)。完整生产入口的 v1/正确 v2 均实际约 30 秒到期；三个“原测试通过”的反例分别命中声明的语义条件。初始/补充参考修订分开绑定，结构识别与资源观察限制保持。这是一个业务切片的手工参考校准，尚无新可信 Profile 或公开参考调用入口，非模型效果、正式留出或协议冻结；接入前须明确可见范围与可信配置/参考身份，不凭私有准备成功直接打开 heldout。
 
 方法标签为 fresh_agent_preparation。它隔离的是当前开发上下文与准备过程，不是独立人员、不同模型家族或独立权限系统；基础模型是否在训练中见过公开来源无法据此证明。本轮先检查新样本的基线准备可行性，原严格人员留出要求及原选择清单保持，不在正式实验中悄悄换口径。
 

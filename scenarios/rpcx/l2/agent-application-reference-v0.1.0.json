@@ -1,0 +1,569 @@
+{
+  "schema_version": 1,
+  "version": "rpcx-agent-application-reference-v0.1.0",
+  "purpose": "Isolated behavior reference preparation, manual positive/negative calibration and independent read-only implementation/evidence verification; not a published runtime Profile or formal evaluation.",
+  "status": "calibrated_with_declared_limits",
+  "fixed_harness_commit": "804a8f88c2473063a2d66c3fc795a829a36e6775",
+  "assignment_id": "rpcx-application-reference-01",
+  "assignment_sha256": "814bd0b36561de72fb01c32b16e022bf74c3589b360465fceaf3d40811f2e3a5",
+  "public_preparation_sha256": "5df0bb5bc59a2fbd6ba095d8ec69c17170ff1b53d2b884bcda0db104d0513712",
+  "verification_assignment_sha256": "3226c55629297138d41d4940010efccce4f4944e624cb30496a2fe370718e64c",
+  "public_verification_sha256": "df4ec22171edc03ceb7a892807fc515fe8a2ba54d0dd01a523b9345fac16cd01",
+  "source": {
+    "repository": "https://github.com/cli/cli",
+    "tree_url": "https://github.com/cli/cli/tree/49f72234acd346666a4646a0f5a427fb3543debc",
+    "commit": "49f72234acd346666a4646a0f5a427fb3543debc",
+    "origin_group": "cli",
+    "license": "MIT"
+  },
+  "baseline_receipt": "scenarios/rpcx/l2/agent-application-baseline-v0.1.0.json",
+  "baseline_receipt_sha256": "2ec616935db0c3f7d3590e177efc7893868fc5adfcc49081a3997fbc7a6a9a5e",
+  "admission_receipt": "scenarios/rpcx/l2/agent-application-admission-v0.1.0.json",
+  "admission_receipt_sha256": "1e7c0eabff8214c12f981b8edc6308b19fbf962deccc09e58a7b03c0bfee5c62",
+  "reference_author": {
+    "task": "/root/application_reference_author",
+    "parent_history_inherited": false,
+    "is_baseline_preparer": false
+  },
+  "read_only_reviewer": {
+    "task": "/root/application_admission_reviewer",
+    "parent_history_inherited": false,
+    "is_reference_author": false,
+    "continues_own_admission_context": true
+  },
+  "source_visibility_to_tuning_agent": "metadata_only",
+  "criteria_ids": [
+    "original_behavior",
+    "sdk_v2_contract",
+    "request_context",
+    "per_call_timeout",
+    "real_default_expiry",
+    "resources_and_errors",
+    "reference_independence",
+    "evidence_binding"
+  ],
+  "material_identities": {
+    "baseline_tree_sha256": "1be48a4d09c5956430781ee8d284baa9ef9df7ce9a02384249208d79d778a07e",
+    "baseline_manifest_sha256": "be0bc4c338e451d113e7b312aa2709c5d8fbed5f24bcdc08dd9519342cd38790",
+    "dependency_manifest_sha256": "66990d9f58a987d1859ce00408ee917c683e5f966b2c42a4abf3577ed4ca866d",
+    "reference_sha256": "c9f862cc0ab66f837577ad0c5b5428b3d2fc14eb7a76d11b387db874387d8bb0",
+    "spec_sha256": "1fa965109322127ddcf732f03d663bd971d55cb794d1e6120ece26399ad48611",
+    "expected_sha256": "f8a235211a09bde1e9861c89614948ed6a384ed09d98e53ecf1c9df9a7055002",
+    "controls_sha256": "330c308deb55ce5109f02caf66ed4d64703bff293d8b28f7ba68ff230be4c71d",
+    "evidence_sha256": "ad731b16c53ac8f243a2dd02a9f7f0a4861630bc1421c059a0071701862af7be"
+  },
+  "reference_revisions": [
+    {
+      "id": "reference-01",
+      "freeze_sha256": "d5981802a529808cb31450f38a73a290685ec0b80aee14778aff661e71680de3",
+      "frozen_before_its_first_execution": true,
+      "observations": "Original tests, independent fast checks and production-boundary expiry."
+    },
+    {
+      "id": "entrypoint-evidence-01",
+      "freeze_sha256": "254c3985f5b6a2677094b04bbe7222b3372c540f4ec4d813e32c4d35fe9c3d25",
+      "frozen_before_its_first_execution": true,
+      "added_after_initial_runs": true,
+      "acceptance_and_timing_tolerance_unchanged": true,
+      "observations": "Supplementary complete production-entry expiry."
+    }
+  ],
+  "final_reference_was_not_all_fixed_before_initial_runs": true,
+  "author_reported_controls": [
+    {
+      "id": "baseline-v1",
+      "kind": "unchanged_basis",
+      "automatic_reference": "pass",
+      "original": {
+        "status": "pass",
+        "counts": {
+          "pass": 11,
+          "fail": 0,
+          "skip": 0
+        },
+        "expected_completion_identity_matches": true
+      },
+      "independent_fast": {
+        "status": "pass",
+        "counts": {
+          "pass": 10,
+          "fail": 0,
+          "skip": 0
+        }
+      },
+      "detected_criterion_ids": [],
+      "sdk_v2_contract": {
+        "applicable": false,
+        "status": "not_applicable"
+      },
+      "boundary_expiry": {
+        "status": "pass",
+        "observations": [
+          {
+            "child_done": true,
+            "deadline_exceeded": true,
+            "elapsed_monotonic_seconds": 30.033506894,
+            "response_nil": true
+          }
+        ]
+      },
+      "entrypoint_expiry": {
+        "status": "pass",
+        "observations": [
+          {
+            "child_deadline_exceeded": true,
+            "deadline_exceeded": true,
+            "elapsed_monotonic_seconds": 30.03753833,
+            "outbound_operations": 1,
+            "parent_live": true,
+            "success_output_absent": true
+          }
+        ]
+      },
+      "external_calibration": {
+        "expectation_matches": true,
+        "required_detection_observed": null
+      },
+      "candidate_sha256": "f77b70546e8dea6558ab0e4c8120ffdd8af803900c0903ec770e2786e7761ae9",
+      "production_view_sha256": "064f94d6bffd7aaa3b67fd49afa4d60d659c817d70dad11bc14302f0f9083646",
+      "original_view_sha256": "3cdff917c9700e435629624e9bddfca3c03221c1cb270395fbe651ff7128671c",
+      "candidate_unchanged": true,
+      "protected_material_matches": true
+    },
+    {
+      "id": "correct-v2",
+      "kind": "manual_positive",
+      "automatic_reference": "pass",
+      "original": {
+        "status": "pass",
+        "counts": {
+          "pass": 11,
+          "fail": 0,
+          "skip": 0
+        },
+        "expected_completion_identity_matches": true
+      },
+      "independent_fast": {
+        "status": "pass",
+        "counts": {
+          "pass": 10,
+          "fail": 0,
+          "skip": 0
+        }
+      },
+      "detected_criterion_ids": [],
+      "sdk_v2_contract": {
+        "applicable": true,
+        "status": "pass"
+      },
+      "boundary_expiry": {
+        "status": "pass",
+        "observations": [
+          {
+            "child_done": true,
+            "deadline_exceeded": true,
+            "elapsed_monotonic_seconds": 30.038854189,
+            "response_nil": true
+          }
+        ]
+      },
+      "entrypoint_expiry": {
+        "status": "pass",
+        "observations": [
+          {
+            "child_deadline_exceeded": true,
+            "deadline_exceeded": true,
+            "elapsed_monotonic_seconds": 30.031807901,
+            "outbound_operations": 1,
+            "parent_live": true,
+            "success_output_absent": true
+          }
+        ]
+      },
+      "external_calibration": {
+        "expectation_matches": true,
+        "required_detection_observed": null
+      },
+      "candidate_sha256": "df8432eb67eca1bd754721be80ab8a662e1f462870433a51f355bf363128aa22",
+      "production_view_sha256": "7e3b86a509387fc8405bb2ae72771b4194dfd4b810817b06446a5db282f2c476",
+      "original_view_sha256": "92dd57745bd93cdc349b4769be090c4d8f336c70757ad259bf7683cdd4b9d66d",
+      "candidate_unchanged": true,
+      "protected_material_matches": true
+    },
+    {
+      "id": "missing-timeout-v2",
+      "kind": "manual_negative",
+      "automatic_reference": "fail",
+      "original": {
+        "status": "pass",
+        "counts": {
+          "pass": 11,
+          "fail": 0,
+          "skip": 0
+        },
+        "expected_completion_identity_matches": true
+      },
+      "independent_fast": {
+        "status": "fail",
+        "counts": {
+          "pass": 9,
+          "fail": 1,
+          "skip": 0
+        }
+      },
+      "detected_criterion_ids": [
+        "per_call_timeout"
+      ],
+      "sdk_v2_contract": {
+        "applicable": true,
+        "status": "pass"
+      },
+      "boundary_expiry": {
+        "status": "not_executed",
+        "observations": []
+      },
+      "entrypoint_expiry": {
+        "status": "not_executed_unmet_fast_prerequisites",
+        "observations": []
+      },
+      "external_calibration": {
+        "expectation_matches": true,
+        "required_detection_observed": true
+      },
+      "candidate_sha256": "98eb1157b409c4495abb654fbd19f713eadfd684fc42ca174efb8b8a6212557f",
+      "production_view_sha256": "1d89e70648e6b8b3970ff56b01e38b308bd35ead9c9720966dcd05e2ba960aac",
+      "original_view_sha256": "bb8d7f9a46d807d87f5cbf54d5b1b872a730ab03e0c9b641293e1ac7140189c3",
+      "candidate_unchanged": true,
+      "protected_material_matches": true
+    },
+    {
+      "id": "background-fallback-v2",
+      "kind": "manual_negative",
+      "automatic_reference": "fail",
+      "original": {
+        "status": "pass",
+        "counts": {
+          "pass": 11,
+          "fail": 0,
+          "skip": 0
+        },
+        "expected_completion_identity_matches": true
+      },
+      "independent_fast": {
+        "status": "fail",
+        "counts": {
+          "pass": 2,
+          "fail": 8,
+          "skip": 0
+        }
+      },
+      "detected_criterion_ids": [
+        "request_context"
+      ],
+      "sdk_v2_contract": {
+        "applicable": true,
+        "status": "pass"
+      },
+      "boundary_expiry": {
+        "status": "not_executed",
+        "observations": []
+      },
+      "entrypoint_expiry": {
+        "status": "not_executed_unmet_fast_prerequisites",
+        "observations": []
+      },
+      "external_calibration": {
+        "expectation_matches": true,
+        "required_detection_observed": true
+      },
+      "candidate_sha256": "6526920192463e688ae04f534a8ac3b0b4531ec1a7d92fd12fbe740251e95b37",
+      "production_view_sha256": "6450dd2842324ff61f9bff306a56565b110f3b7aec08a70fd29a8d2ac5083f92",
+      "original_view_sha256": "d19bcbade01c5c27c5e8346cd138c2755df3859f3f63b8b9b02b0b3909d1c019",
+      "candidate_unchanged": true,
+      "protected_material_matches": true
+    },
+    {
+      "id": "swallowed-error-v2",
+      "kind": "manual_negative",
+      "automatic_reference": "fail",
+      "original": {
+        "status": "pass",
+        "counts": {
+          "pass": 11,
+          "fail": 0,
+          "skip": 0
+        },
+        "expected_completion_identity_matches": true
+      },
+      "independent_fast": {
+        "status": "fail",
+        "counts": {
+          "pass": 3,
+          "fail": 7,
+          "skip": 0
+        }
+      },
+      "detected_criterion_ids": [
+        "resources_and_errors"
+      ],
+      "sdk_v2_contract": {
+        "applicable": true,
+        "status": "pass"
+      },
+      "boundary_expiry": {
+        "status": "not_executed",
+        "observations": []
+      },
+      "entrypoint_expiry": {
+        "status": "not_executed_unmet_fast_prerequisites",
+        "observations": []
+      },
+      "external_calibration": {
+        "expectation_matches": true,
+        "required_detection_observed": true
+      },
+      "candidate_sha256": "4ae91012af97d99db9ea7a038b7d1a533bfd0ef0930a3ffdea81f86a1334c3a5",
+      "production_view_sha256": "e8bcafd4817d4f6ad735c11e88295c489d34a59505182e53abf58edaaa1ea8ec",
+      "original_view_sha256": "9084776fcd5d2b09a0294d53fbd510fa618f6aa4c336ce8f60a09e348d962d5b",
+      "candidate_unchanged": true,
+      "protected_material_matches": true
+    }
+  ],
+  "author_reported_aggregate": {
+    "application_scenarios": 1,
+    "unchanged_v1_basis": 1,
+    "manual_v2_controls": 4,
+    "autonomous_agent_runs": 0,
+    "original_completion_events": {
+      "pass": 55,
+      "fail": 0,
+      "skip": 0
+    },
+    "independent_fast_completion_events": {
+      "pass": 34,
+      "fail": 16,
+      "skip": 0
+    },
+    "boundary_expiry_completion_events": {
+      "pass": 2,
+      "fail": 0,
+      "skip": 0
+    },
+    "complete_entrypoint_expiry_completion_events": {
+      "pass": 2,
+      "fail": 0,
+      "skip": 0
+    },
+    "long_checks_not_executed_after_fast_failures": 3,
+    "counts_include_parent_and_subtest_completion_events": true,
+    "distinct_real_expiry_observations": 4,
+    "expiry_observations_are_two_layers_on_two_controls_not_additional_cases": true,
+    "external_calibration_matches": 5
+  },
+  "expiry_proof": {
+    "real_clock_and_actual_sdk": true,
+    "tolerance_seconds": [
+      29,
+      35
+    ],
+    "watchdog_seconds": 45,
+    "watchdog_triggered": false,
+    "watchdog_used_only_for_infrastructure_protection": true,
+    "boundary_and_complete_entrypoint_measurements_separate": true
+  },
+  "author_reported_environment": {
+    "image": "golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd",
+    "network": "none",
+    "cpus": 2,
+    "memory_bytes": 2147483648,
+    "pids": 128,
+    "read_only_root": true,
+    "capabilities_dropped": "ALL",
+    "no_new_privileges": true,
+    "exact_owned_cleanup": true,
+    "created_containers": 7,
+    "created_containers_removed": 7,
+    "owned_containers_remaining": 0,
+    "actual_limits_and_read_only_inputs_verified": true,
+    "dependency_verification_exits": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  "retained_failure_and_revision_counts": {
+    "infrastructure_access_failures": 1,
+    "semantic_negative_controls_rejected": 3,
+    "process_timeouts": 0,
+    "reference_implementation_corrections": 0,
+    "supplementary_observation_revisions": 1
+  },
+  "author_reported_input_identity": {
+    "input_identity_before_sha256": "9c478e6217e02911797e42c1f90caf16e70931b279dfa4b2bb2ba2a14e134b95",
+    "input_identity_after_sha256": "e4dc610da4374342aa2839e196acdcdf823818bdf85c593f513c31901572e3c3",
+    "all_fixed_inputs_match": true
+  },
+  "read_only_verification": {
+    "decision": "verified_for_declared_calibration",
+    "reason": "Stored implementation, frozen identities, manual control deltas and recorded results support the declared bounded calibration. No substantive mismatch or material missing evidence was found within that disclosed scope.",
+    "verified_identities": {
+      "assignment_sha256": "3226c55629297138d41d4940010efccce4f4944e624cb30496a2fe370718e64c",
+      "reference_assignment_sha256": "814bd0b36561de72fb01c32b16e022bf74c3589b360465fceaf3d40811f2e3a5",
+      "reference_public_receipt_sha256": "5df0bb5bc59a2fbd6ba095d8ec69c17170ff1b53d2b884bcda0db104d0513712",
+      "baseline_tree_sha256": "1be48a4d09c5956430781ee8d284baa9ef9df7ce9a02384249208d79d778a07e",
+      "reference_sha256": "c9f862cc0ab66f837577ad0c5b5428b3d2fc14eb7a76d11b387db874387d8bb0",
+      "spec_sha256": "1fa965109322127ddcf732f03d663bd971d55cb794d1e6120ece26399ad48611",
+      "expected_sha256": "f8a235211a09bde1e9861c89614948ed6a384ed09d98e53ecf1c9df9a7055002",
+      "controls_sha256": "330c308deb55ce5109f02caf66ed4d64703bff293d8b28f7ba68ff230be4c71d",
+      "evidence_sha256": "ad731b16c53ac8f243a2dd02a9f7f0a4861630bc1421c059a0071701862af7be"
+    },
+    "checks": [
+      {
+        "id": "label_independence",
+        "status": "supported"
+      },
+      {
+        "id": "control_construction",
+        "status": "supported"
+      },
+      {
+        "id": "single_fault_negatives",
+        "status": "supported"
+      },
+      {
+        "id": "production_and_original_binding",
+        "status": "supported"
+      },
+      {
+        "id": "real_expiry",
+        "status": "supported"
+      },
+      {
+        "id": "revision_freeze",
+        "status": "supported"
+      },
+      {
+        "id": "input_snapshot_difference",
+        "status": "supported"
+      },
+      {
+        "id": "limits_and_release_observations",
+        "status": "supported_with_limits"
+      },
+      {
+        "id": "evidence_and_cleanup",
+        "status": "supported"
+      }
+    ],
+    "verified_counts": {
+      "application_scenarios": 1,
+      "unchanged_basis": 1,
+      "manual_candidate_controls": 4,
+      "manual_positive_controls": 1,
+      "single_fault_negative_controls": 3,
+      "autonomous_agent_runs": 0,
+      "external_calibration_matches": 5,
+      "evidence_entries": 1456,
+      "original_test_completion_events": {
+        "pass": 55,
+        "fail": 0,
+        "skip": 0
+      },
+      "independent_fast_completion_events": {
+        "pass": 34,
+        "fail": 16,
+        "skip": 0
+      },
+      "boundary_expiry_completion_events": {
+        "pass": 2,
+        "fail": 0,
+        "skip": 0
+      },
+      "complete_entry_expiry_completion_events": {
+        "pass": 2,
+        "fail": 0,
+        "skip": 0
+      },
+      "negative_controls_with_long_checks_explicitly_unexecuted": 3,
+      "reference_revisions": 2,
+      "created_containers": 7,
+      "created_containers_removed": 7,
+      "remaining_owned_containers": 0,
+      "retained_infrastructure_access_failure_without_container": 1,
+      "process_timeouts": 0,
+      "dependency_verification_zero_exits": 5,
+      "hash_or_manifest_mismatches": 0,
+      "counts_include_parent_and_subtest_events": true
+    },
+    "actual_expiry_observations": {
+      "basis_v1": {
+        "boundary_seconds": 30.033506894,
+        "complete_entry_seconds": 30.03753833
+      },
+      "manual_positive_v2": {
+        "boundary_seconds": 30.038854189,
+        "complete_entry_seconds": 30.031807901
+      },
+      "tolerance_seconds": [
+        29,
+        35
+      ],
+      "external_watchdog_seconds": 45,
+      "all_four_records_have_actual_deadline_exceeded": true,
+      "watchdog_triggered": false,
+      "two_layers_on_two_controls_not_four_additional_cases": true
+    },
+    "revision_binding": {
+      "initial_material_frozen_before_initial_executions": true,
+      "supplemental_material_frozen_before_own_executions": true,
+      "supplement_added_after_initial_executions": true,
+      "final_material_not_all_fixed_before_first_run": true,
+      "original_criteria_and_timing_tolerance_unchanged": true,
+      "prior_failure_preserved": true
+    },
+    "preparation_input_identity_resolution": {
+      "reported_before_sha256": "9c478e6217e02911797e42c1f90caf16e70931b279dfa4b2bb2ba2a14e134b95",
+      "reported_after_sha256": "e4dc610da4374342aa2839e196acdcdf823818bdf85c593f513c31901572e3c3",
+      "report_digests_are_different": true,
+      "explanation": "Before is an identity descriptor with locations and content arrays; after is a verification report with check results and content arrays. Their schemas and bytes differ. The common fixed content arrays are equal, and actual fixed inputs match their declared hashes. The all-fixed-inputs claim concerns content identity against fixed manifests, not equality of report-file digests.",
+      "fixed_input_drift_found": false,
+      "prior_upstream_basis": "Fixed trusted manifest; no fresh full pre-run scan is claimed."
+    },
+    "review_input_identity": {
+      "tracked_files": 2869,
+      "before_sha256": "51abd18a52648b44224c2c2212a153922f5a8cd82e304954e4d4323f0e83b849",
+      "after_sha256": "51abd18a52648b44224c2c2212a153922f5a8cd82e304954e4d4323f0e83b849",
+      "unchanged": true,
+      "scope": "Assigned material, frozen baseline and SDK source identities, existing evidence and fixed upstream content; unrelated generated build caches excluded."
+    },
+    "private_assessment_sha256": "d43be907a12a9c4d570fc5217801e760d23f58da411bced18860c6d1befb0229",
+    "private_verification_sha256": "07334613326451238e25de50c57b51e0dc6cce27e33fe13add9a1109e73653ec"
+  },
+  "validation_attribution": "Reference author executed all calibration. Separate isolated reviewer inspected implementation, controls and original records and recomputed hashes without reexecution. Parent checked public identities, fixed matrix and count consistency only, without private source/answer access or private-hash recomputation.",
+  "limitations": [
+    "This is independent read-only inspection and hashing of stored records, without reexecution.",
+    "Verified for the fixed manual calibration only; matching controls does not prove every original goal or a general formal gate.",
+    "Structural recognition covers the declared local module and retained interface expressions. Equivalent alternative implementations were not calibrated.",
+    "Resource observations establish response-context lifetime and release at body close or transport error, plus live parent behavior. SDK-internal context release and general timer or memory leak freedom were not independently observed.",
+    "The supplementary complete-entry observations were frozen after initial boundary runs; this chronology is explicit.",
+    "Unexecuted long checks on fast-failing negatives are not passes; the four actual waits are two layers on two controls.",
+    "Original assertion execution and independent behavior observations remain separate; no whole-repository, real-network, race, model-effect or human-independence claim is made.",
+    "Shared filesystem/model family and procedural conversation boundaries only; independent human preparation and model-training novelty are not established.",
+    "Private executable reference/control artifacts and reproduction recipe are retained by isolated roles; no new public Evaluate/Runner/Profile entry is registered."
+  ],
+  "runtime_profile_registered": false,
+  "formal_evaluation_started": false,
+  "counts_as_original_heldout_slot": false,
+  "counts_in_original_effect_denominators": false,
+  "autonomous_agent_runs": 0,
+  "manual_v2_controls_prepared": 4,
+  "provider_generation_calls": 0,
+  "preparation_platform_cost": "not_measured; not added to prior Campaign usage",
+  "private_artifacts": "runs/m5-application-reference-01/private",
+  "private_verification_artifacts": "runs/m5-application-reference-verification-01/private",
+  "public_preparation": "runs/m5-application-reference-01/public/reference-preparation.json",
+  "public_verification": "runs/m5-application-reference-verification-01/public/assessment.json",
+  "next_action": "Design bounded host Profile and callable reference integration with independent gate/reference ownership and protected oracle visibility; keep implementation coverage limits explicit before formal enrollment. No automatic paid generation or M5 completion."
+}
