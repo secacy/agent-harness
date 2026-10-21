@@ -1,8 +1,8 @@
 # L2 轮次离线汇总
 
-`Summarize(ctx, Request)` 在单候选参考之后读取发布记录，输出新的 `round.json` 和 `summary.md`。当前支持一个 Campaign、每 Target 一次尝试的三个已发布 L2 Profile；不运行模型、候选命令或门禁，不修改原 Campaign/Run/参考/复核。多 Run 恢复及通用离线审计仍归 M4。
+`Summarize(ctx, Request)` 在单候选参考之后读取发布记录，输出新的 `round.json` 和 `summary.md`。当前支持一个 Campaign、每 Target 一次尝试的四个已发布 L2 Profile；不运行模型、候选命令或门禁，不修改原 Campaign/Run/参考/复核。多 Run 恢复及通用离线审计仍归 M4。
 
-GHCLI 新 Profile `rpcx-ghcli-t3-v1` 只支持 schema 1 `development_calibration`，绑定活跃 `rpcx-l2-reference-ghcli-data-v2`；schema 1 的开发评测与 schema 2/heldout 均拒绝。消费参考时必须读取规范、工具、宿主清单、索引和全部声明分片，核对引用集合与实际有序字节/HostSHA，不仅信任报告里的 pass。单文件上界保持 16 MiB；新 Profile 接通不等于正式协议已冻结。实际校准状态见[接入记录](../../../../docs/worklog/2026-10-21-isolated-application-integration.md#9-第二实现单元单仓库-harness-与独立参考闭环)。
+GHCLI Profile `rpcx-ghcli-t3-v1` 的 schema 1 入口仍只支持 `development_calibration`；schema 2 可按完整协议进入 development 分区的校准、开发评测或 `formal_evaluation`，heldout 仍拒绝。生成前绑定活跃 `rpcx-l2-reference-ghcli-data-v2`；消费参考时必须读取规范、工具、宿主清单、索引和全部声明分片，核对引用集合与实际有序字节/HostSHA，不仅信任报告里的 pass。单文件上界保持 16 MiB；协议准入不等于正式材料已冻结。实际校准状态见[接入记录](../../../../docs/worklog/2026-10-21-isolated-application-integration.md#9-第二实现单元单仓库-harness-与独立参考闭环)，准入验证见[实施记录](../../../../docs/worklog/2026-10-21-m5-freeze-readiness.md#7-四任务协议准入实现2026-10-22)。
 
 输入分两部分：Manifest 固定轮次 kind、Campaign/计划摘要、按计划顺序纳入的 Target 集合，以及 Profile/构建/基线/规范/参考数据/参考工具身份；Request 指向该清单、Campaign 目录、尚不存在的输出目录和可选的逐 Target 参考/复核文件。Request 所有路径为绝对路径，参考/复核文件另带实际 SHA-256。纳入清单不是完整实验协议，也不授权模型调用。真实开发轮次的清单应在生成前固定；开发校准可以在既有受控运行上创建，必须标 `development_calibration`。受控模型 Campaign 不能通过更换 kind 冒充真实评测。
 
@@ -37,7 +37,7 @@ Manifest 的 `schema_version=1`、`id`、`kind`、`campaign_id`、`plan_sha256` 
 
 ## v2 协议契约
 
-v1 继续读取原开发记录。v2 的 Enrollment 和 Manifest 都必须携带 `protocol`，可使用原两个开发 kind 或 `formal_evaluation`。当前只支持三个已见 L2 Profile、`split=development`、每 Target 一次尝试；尚无可用的独立留出 Profile。formal kind 是协议绑定格式，不是 M5 完成标志，不能代表未见样本。用合成服务检查这一格式也不算真实模型效果。
+v1 继续读取原开发记录。v2 的 Enrollment 和 Manifest 都必须携带 `protocol`，可使用原两个开发 kind 或 `formal_evaluation`。当前支持 Goddd、Translation、Workouts、GHCLI 四个 L2 Profile、`split=development`、每 Target 一次尝试；尚无可用的独立留出 Profile。formal kind 是协议绑定格式，不是 M5 完成标志，不能代表未见样本。用合成服务检查这一格式也不算真实模型效果。
 
 | protocol 字段 | 约束与用途 |
 | --- | --- |

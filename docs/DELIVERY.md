@@ -97,5 +97,5 @@ Translation 的[双配置材料与实际人工复核](worklog/2026-10-20-transla
 ## 接下来做什么
 
 1. [工程包](worklog/2026-10-21-engineering-delivery.md)已固定完整实现/二进制身份及选定归档，可先离线复核当前开发版；暂不扩展 daemon 重启、多代恢复或业务场景。
-2. 新应用已完成声明范围的[受控接入及最终核验](worklog/2026-10-21-isolated-application-integration.md)，无需重复评审。按[首轮范围与冻结清单](worklog/2026-10-21-m5-freeze-readiness.md)，先补 GHCLI 的 schema 2 development 协议准入，保留 heldout 等拒绝边界；不再从头准备另一个样本来代替这项工作。
+2. 新应用已完成声明范围的[受控接入及最终核验](worklog/2026-10-21-isolated-application-integration.md)，无需重复评审。[GHCLI 的 schema 2 development 协议准入](worklog/2026-10-21-m5-freeze-readiness.md#7-四任务协议准入实现2026-10-22)已实现，heldout 等拒绝边界保留；下一步按冻结清单准备实际材料。
 3. 发布四个固定样本、一次尝试的新协议：三个已见开发样本与一个隔离准备后校准样本分层报告，候选复核由实际助手完成并披露方法。固定本轮源码/二进制/环境、实际复核者和模型/预算，离线核对后另取该次授权再生成。旧工程包不充当新版本冻结，旧实验不改名复用；原严格留出及人员缺口不阻止该有限评测，但仍阻止宣布原 M3/M5 总体验收通过。

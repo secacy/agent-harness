@@ -77,7 +77,7 @@ func TestGHCLIRoundRejectsCrossTargetAndRunReference(t *testing.T) {
 	}
 }
 
-func TestGHCLIRoundRejectsUnadmittedKindsAndProtocols(t *testing.T) {
+func TestGHCLIRoundProtocolEligibility(t *testing.T) {
 	for _, mode := range []string{"schema1-calibration", "schema1-development", "schema1-formal", "schema1-heldout", "schema2-calibration", "schema2-development", "schema2-formal", "schema2-heldout"} {
 		t.Run(mode, func(t *testing.T) {
 			req, m := ghcliRoundFixture(t)
@@ -100,12 +100,13 @@ func TestGHCLIRoundRejectsUnadmittedKindsAndProtocols(t *testing.T) {
 				}
 			}
 			enrollment := Enrollment{SchemaVersion: m.SchemaVersion, ID: m.ID, Kind: m.Kind, Targets: m.Targets, Protocol: m.Protocol}
-			// 跳过尚未冻结的新参考发布身份，单独证明资格校验不会被 provider 遮蔽。
+			// 合成记录不认证参考字节；实际发布身份另由四任务纳入测试覆盖。
 			err := enrollment.validate(plan.Targets, false)
 			manifestErr := validateManifest(m)
-			if mode == "schema1-calibration" {
+			allowed := mode == "schema1-calibration" || mode == "schema2-calibration" || mode == "schema2-development" || mode == "schema2-formal"
+			if allowed {
 				if err != nil || manifestErr != nil {
-					t.Fatalf("allowed calibration rejected: %v %v", err, manifestErr)
+					t.Fatalf("allowed GHCLI round rejected: %v %v", err, manifestErr)
 				}
 			} else if err == nil || manifestErr == nil {
 				t.Fatalf("unadmitted GHCLI round accepted: %v %v", err, manifestErr)

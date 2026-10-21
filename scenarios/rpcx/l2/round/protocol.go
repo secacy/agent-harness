@@ -38,10 +38,10 @@ func validateProtocol(schema int, kind string, targets []TargetPin, p *Protocol)
 		if p != nil || kind != Calibration && kind != Development {
 			return errors.New("schema 1 only supports development rounds without a protocol contract")
 		}
-		// 新应用只获准受控校准，不能沿用旧场景的开发评测资格。
+		// 旧格式的新应用入口仍限校准；效果评测必须绑定 schema 2 协议。
 		for _, pin := range targets {
 			if pin.ProfileID == "rpcx-ghcli-t3-v1" && kind != Calibration {
-				return errors.New("GHCLI only supports schema 1 development_calibration")
+				return errors.New("schema 1 GHCLI rounds must remain development_calibration")
 			}
 		}
 		return nil
@@ -70,7 +70,7 @@ func validateProtocol(schema int, kind string, targets []TargetPin, p *Protocol)
 	for _, pin := range targets {
 		// 已见 Profile 不能通过换 split 名称认证成留出；新增数据须另行发布和接入。
 		switch pin.ProfileID {
-		case "rpcx-goddd-t3-v1", "rpcx-translation-t3-v1", "rpcx-workouts-t3-v1":
+		case "rpcx-goddd-t3-v1", "rpcx-translation-t3-v1", "rpcx-workouts-t3-v1", "rpcx-ghcli-t3-v1":
 		default:
 			return fmt.Errorf("unsupported protocol profile: %s", pin.ProfileID)
 		}

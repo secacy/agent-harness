@@ -203,6 +203,12 @@ func protocolRound(t *testing.T, kind string) (Request, Manifest) {
 		review.Kind = "candidate_review"
 		req.References[0].Review.SHA256 = write(t, req.References[0].Review.Path, review)
 	}
+	publishProtocolRound(t, req, &m, plan, kind)
+	return req, m
+}
+
+func publishProtocolRound(t *testing.T, req Request, m *Manifest, plan campaign.Plan, kind string) {
+	t.Helper()
 	m.SchemaVersion, m.Kind = 2, kind
 	m.Protocol = testProtocol(t, m.Targets, plan)
 	root := filepath.Dir(req.CampaignDir)
@@ -219,7 +225,6 @@ func protocolRound(t *testing.T, kind string) (Request, Manifest) {
 	write(t, filepath.Join(root, "round-manifest.json"), m)
 	write(t, filepath.Join(root, "execution.json"), m.Protocol.Execution)
 	write(t, req.ManifestPath, m)
-	return req, m
 }
 
 func TestProtocolRoundConsumesPublishedSnapshots(t *testing.T) {
