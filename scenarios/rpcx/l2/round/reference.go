@@ -11,7 +11,7 @@ import (
 	"github.com/secacy/agent-harness/scenarios/rpcx/l2/evaluation"
 )
 
-func attachReference(reader *reader, out *Result, pin TargetPin, ref Reference, kind string) error {
+func attachReference(reader *reader, out *Result, pin TargetPin, ref Reference, kind string, protocol *Protocol) error {
 	raw, exists, err := reader.read(ref.Report.Path, ref.Report.SHA256)
 	if err != nil {
 		return err
@@ -45,8 +45,15 @@ func attachReference(reader *reader, out *Result, pin TargetPin, ref Reference, 
 			if e = Decode(data, &review); e != nil {
 				return fmt.Errorf("%w: invalid review: %v", ErrInvalid, e)
 			}
-			if kind == Development && review.Kind != "candidate_review" {
-				return fmt.Errorf("%w: calibration review cannot enter development evaluation", ErrInvalid)
+			if kind != Calibration && review.Kind != "candidate_review" {
+				return fmt.Errorf("%w: calibration review cannot enter an evaluation round", ErrInvalid)
+			}
+			if protocol != nil {
+				for _, item := range review.Items {
+					if item.Status != evaluation.Inconclusive && review.Reviewer != protocol.Reviewers[pin.ID] {
+						return fmt.Errorf("%w: reviewer differs from the frozen protocol", ErrInvalid)
+					}
+				}
 			}
 			reviewRaw = data
 			out.ReviewSHA256 = gate.Digest(data)

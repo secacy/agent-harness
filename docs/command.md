@@ -126,6 +126,8 @@ runs/harness batch --config runs/l2-capability.json --probe-model
 
 带 enrollment 的实际批次先固定静态文件快照；Campaign 保存真实 plan.json 后，在接纳任何 Target 前发布 `enrollment.json`、`round-manifest.json`、`round-request.json`。计划身份由实际原文字节计算，缺项、换序、身份漂移或发布失败均阻止任务开始。`--probe-model` 只检查静态清单，不生成这些动态文件。
 
+同一入口接受 [v2 协议契约](../scenarios/rpcx/l2/round/README.md#v2-协议契约)：schema_version=2 必须附 protocol，固定 Plan 设置摘要、实际 execution.Info、四份材料和逐 Target 复核人。材料在 API 访问前检查并快照，实际设置/后端不符则零生成停止；成功时先发布 `protocol-materials/` 再发布动态清单。`--check` 不证明尚未查询的能力和后端符合冻结值。formal_evaluation 目前仅支持 development 分区和已发布的三个 Profile；heldout 尚未接入，不能据此启动未齐备的 M5 实验或复用旧授权。
+
 批次结束后，可先用自动生成的请求离线汇总：
 
 ```sh

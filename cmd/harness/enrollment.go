@@ -8,11 +8,12 @@ import (
 	"path/filepath"
 
 	"github.com/secacy/agent-harness/internal/campaign"
+	"github.com/secacy/agent-harness/internal/execution"
 	"github.com/secacy/agent-harness/scenarios/rpcx/gate"
 	"github.com/secacy/agent-harness/scenarios/rpcx/l2/round"
 )
 
-func readBatchEnrollment(config batchConfig, targets []campaign.Target) ([]byte, error) {
+func readBatchEnrollment(config *batchConfig, targets []campaign.Target) ([]byte, error) {
 	path := config.Enrollment.Path
 	if gate.Overlap(path, config.Directory) {
 		return nil, errors.New("enrollment source overlaps batch output")
@@ -40,11 +41,15 @@ func readBatchEnrollment(config batchConfig, targets []campaign.Target) ([]byte,
 	if err := enrollment.Validate(targets); err != nil {
 		return nil, err
 	}
+	config.enrollmentMaterials, err = round.ReadProtocolMaterials(enrollment.Protocol, config.Directory)
+	if err != nil {
+		return nil, err
+	}
 	return data, nil
 }
 
 // prepareBatchEnrollment 绑定实际计划，只发布元数据，不向模型或门禁提供参考正文。
-func prepareBatchEnrollment(config batchConfig) func(context.Context, campaign.Artifact) error {
+func prepareBatchEnrollment(config batchConfig, backend execution.Executor) func(context.Context, campaign.Artifact) error {
 	if config.Enrollment == nil {
 		return nil
 	}
@@ -68,6 +73,29 @@ func prepareBatchEnrollment(config batchConfig) func(context.Context, campaign.A
 			return err
 		}
 		root := config.Directory
+		if manifest.Protocol != nil {
+			if backend == nil || backend.Info() != manifest.Protocol.Execution {
+				return errors.New("actual execution backend differs from the frozen protocol")
+			}
+			if len(config.enrollmentMaterials) != len(manifest.Protocol.Materials) {
+				return errors.New("protocol material snapshots are required before publication")
+			}
+			if err := os.Mkdir(filepath.Join(root, "protocol-materials"), 0700); err != nil {
+				return err
+			}
+			if err := syncBatchDirectory(root); err != nil {
+				return err
+			}
+			for name, material := range manifest.Protocol.Materials {
+				data := config.enrollmentMaterials[name]
+				if gate.Digest(data) != material.SHA256 {
+					return errors.New("protocol material snapshot digest mismatch")
+				}
+				if err := writeBatchFile(filepath.Join(root, "protocol-materials", name), data); err != nil {
+					return err
+				}
+			}
+		}
 		if err := writeBatchFile(filepath.Join(root, "enrollment.json"), config.enrollmentData); err != nil {
 			return err
 		}

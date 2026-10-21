@@ -107,7 +107,7 @@ func runBatch(ctx context.Context, args []string, stdout, stderr io.Writer) int 
 		Directory: filepath.Join(config.Directory, "campaign"), Plan: plan, Backend: backend,
 		Execute:  runner.CampaignExecutor(config.Execution.TrustedLocal),
 		NewModel: func(task.Target) (budget.ProfiledModel, error) { return deepseek.New(clientConfig) },
-		Prepare:  prepareBatchEnrollment(config),
+		Prepare:  prepareBatchEnrollment(config, backend),
 	})
 	if record.Directory != "" {
 		fmt.Fprintln(stdout, "Summary:", filepath.Join(record.Directory, "summary.md"))

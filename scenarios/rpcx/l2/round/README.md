@@ -33,6 +33,31 @@ go run ./scenarios/rpcx/l2/cmd/summarize -config /absolute/path/request.json
 
 Manifest 的 `schema_version=1`、`id`、`kind`、`campaign_id`、`plan_sha256` 和 `targets` 必填。每个 targets 项包含 `id/profile_id/build_config/baseline_sha256/spec_sha256/reference_version/reference_sha256/tool_sha256`，均应取固定发布材料的实际身份；不能用占位摘要执行。生成有效请求的完整开发示例见可选的 `TestPublishedCampaignAcceptance`。
 
+## v2 协议契约
+
+v1 继续读取原开发记录。v2 的 Enrollment 和 Manifest 都必须携带 `protocol`，可使用原两个开发 kind 或 `formal_evaluation`。当前只支持三个已见 L2 Profile、`split=development`、每 Target 一次尝试；尚无可用的独立留出 Profile。formal kind 是协议绑定格式，不是 M5 完成标志，不能代表未见样本。用合成服务检查这一格式也不算真实模型效果。
+
+| protocol 字段 | 约束与用途 |
+| --- | --- |
+| `id` | 宿主发布的版本化协议标识；实质变更另起版本 |
+| `split` / `attempts_per_target` | 当前仅 development / 1；未接入的 heldout 和多次尝试拒绝 |
+| `plan_settings_sha256` | 使用 `PlanSettingsSHA256(plan)` 计算，冻结实际计划中的模型能力、输入、顺序、两级额度、Agent 限制、时限、并发与资源归属策略 |
+| `execution` | 实际 `execution.Info`；Docker 必须是 sha256 镜像 ID 和明确 CPU/内存/PID 限额；在准备屏障比较真实后端，不靠标签猜镜像 |
+| `reviewers` | 精确的 Target ID → 预定 Reviewer；缺人、空值或额外 Target 拒绝；不证明此人实际签署 |
+| `materials` | protocol/dataset/implementation/environment 四项，每项含绝对 path 和实际 SHA-256，单文件为 1 MiB 以内的非空说明或身份清单；不在此直接塞整个源码包 |
+
+准备顺序：宿主先审查实际协议和四份材料，使用已核实的模型能力及计划构造设置摘要，再发布 v2 Enrollment；之后沿用 batch 的 enrollment 文件/摘要引用。`--check` 在无凭证、无网络时检查静态任务及材料，并不确认尚未查询的实际 Profile/后端。实际启动取得新能力声明、初始化后端后，在任务接纳前比较设置与后端，再发布材料快照、Enrollment、Manifest 和 Request。材料加载后原文件的变动不会替换已固定副本。
+
+设置摘要只排除动态 Campaign ID 和本次查询时间；不排除能力响应原文摘要。服务即使仅改变 JSON 空白也会使能力身份不同而停止生成，接受这项保守拒绝成本；不能把旧响应当作本次仍然有效的能力。镜像/限额在 execution 字段另行绑定。整个源码、当前二进制和说明是否一致仍由可信宿主在冻结时核实，局部设置摘要不是完整环境证明。
+
+v2 汇总要求批次根目录中的 `enrollment.json`、`round-manifest.json`、`execution.json` 和 `protocol-materials/{protocol,dataset,implementation,environment}`。它从这些发布副本重新关联实际 Plan，核对 Request 指向的 Manifest 原文字节，复核四份材料及后端身份；不能仅改一份事后清单来重标旧 Campaign。原材料的绝对路径仅作来源记录，离线重算不再读取它们；迁移时保留批次根目录与 campaign 子目录关系，并重写新 Request 的路径。
+
+生成前使用今天的宿主发布认证参考版本；离线重算使用归档的固定参考/工具材料，不强迫历史工具等于今天的发布。缺协议材料属于身份缺失，不发布指标；缺候选参考或实际复核仍保持未知。带结论的复核必须匹配预定 Reviewer；正式 kind 不接受 calibration 复核。原门禁判定、分母、未知区间和成本规则不变。支持 Campaign v1 及带已知 writer 协议的 v2 终态记录；这项格式检查不替代 `harness audit`。
+
+完整机制与拒绝路径见 [protocol_test.go](protocol_test.go)、[CLI 联调](../../../../cmd/harness/protocol_test.go)和[工作记录](../../../../docs/worklog/2026-10-21-evaluation-contract.md)。本能力不提供来源真实性签名、自动独立性认证、留出准备或模型调用授权。实际留出、复核角色和完整协议尚未齐备时，M5 仍保持未冻结、未启动。
+
+## 汇总与指标
+
 关联先核对 plan、Campaign/Target 索引、Run 终态、原报告/验证的候选与规范绑定，以及实际候选快照；再核对参考的同一 Target/Run/候选/基线/规范和预定工具/数据、材料与命令双日志，最后调用 `evaluation.Assess`。它不会仅凭一份 pass 字符串计成功，也不会用新参考覆盖原 verdict。原来源文件按摘要归档到 inputs，sources 记录原路径和实际副本；读取结束前再次检查文件、树及副本是否漂移。tools 保存本汇总包实际生产源码，ToolSHA256 只表示这些材料，不等于全 Harness 或依赖环境身份。
 
 - 缺报告、参考、复核、日志或账本：保留 Target、原判定和缺口。缺交付材料不计潜在自动成功；缺成本为 null，不能按零消费。已引用 Run ID 仍在 R 中，缺 run.json 另标 run_record_missing，不宣称已认证该 Run 的完整终态。

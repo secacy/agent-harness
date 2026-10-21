@@ -25,6 +25,8 @@ M3.4 已完成[样本设计与选择](worklog/2026-10-19-m3-4-sample-selection.m
 
 [生成前的计划与纳入绑定](worklog/2026-10-20-pre-generation-enrollment.md)记录静态 Enrollment 与动态 Manifest 的边界、Campaign 准备屏障和零任务接纳的失败语义。纳入清单固定参考身份，完整实验协议、预算与真实生成仍按 M3.4 推进。
 
+[v2 评测协议契约](worklog/2026-10-21-evaluation-contract.md)在原链路上绑定计划设置、实际后端、四份材料快照及预定复核人，汇总重查生成前副本；旧开发格式保持兼容。当前仅用已见开发夹具和本机模拟服务验证，一次尝试、development 分区；不认证留出独立性或实际签署，不表示正式 M5 已启动。
+
 [首轮开发实验协议 v0.1.0](experiments/l2-dev-eval-v0.1.0/README.md)已固定实际三仓配置、750 万 Token 总额度、源码/二进制/能力依据及参考与复核规则，随后获授权执行唯一真实批次；[发布工作记录](worklog/2026-10-20-l2-protocol-release.md)说明预算取舍、容量漂移拒绝和离线验收。原三项 NeedsAttention 保留，独立自动参考均 pass；本轮没有自动放行，错误放行率无定义，另暴露 6 个审核定位链接缺陷。后续[按实际模块的源码定位修复](worklog/2026-10-20-review-source-links.md)已通过呈现回归及原三仓报告只读消费，旧报告保持原样。[六项未知检查的根因与支持范围评审](worklog/2026-10-20-needs-attention-review.md)已完成；随后[Workouts 导入顺序归一](worklog/2026-10-20-workouts-import-order.md)通过正反例、冻结矩阵及三组 Docker 开发校准，原判定和正式指标保持不变。[Goddd mock/context 有限适配](worklog/2026-10-20-goddd-context-adaptation.md)已接入固定变体与可追溯的适配选择，旧校准及新正反例通过；该单元真实候选副本的测试保留通过，但 proxying.go 的范围缺口当时仍为 NeedsAttention。原实验记录与指标保持不变。后续[命名期限常量及构造器读取证明](worklog/2026-10-20-goddd-routing-scope.md)已接入局部节点证据与完整剩余结构比较；原样候选副本在新 Docker 校准中八项检查通过，得到 ReadyForReview。旧 NeedsAttention、原实验指标及人类复核状态保持，新增结果仅属于已见开发校准。
 
 [Translation 剩余支持范围设计](worklog/2026-10-20-translation-boundary-support.md)已完成评审和最小原型，按最新交付优先级暂缓实施。当前以[交付说明](DELIVERY.md)关联已有能力、原实验与剩余项；[交付收敛记录](worklog/2026-10-20-delivery-focus.md)保留固定支持范围的取舍。最新 [M3 收尾验收评审](worklog/2026-10-20-m3-closeout-review.md)确认五项条件已有证据、两项部分满足；三仓受托复核已完成，原人员口径与独立留出缺口继续披露。M4.1 按已明确的并行边界实现，不冒充 M3 验收或移交；[核心模块](../internal/audit/README.md)说明当前 API、报告与覆盖边界。
@@ -56,3 +58,5 @@ M3.4 已完成[样本设计与选择](worklog/2026-10-19-m3-4-sample-selection.m
 **结果与证据**：区分设计完成、模块测试通过和端到端能力验收。记录已验证的事实、尚未验证的假设及已知限制，不将模拟结果或局部测试结论扩大为整体能力证明。
 
 **维护要求**：优先更新现有文档，避免同一事项在多处重复维护。保留重要失败记录和决策变更历史；普通代码修改由 Git 历史记录即可。
+
+**提交节奏**：已有授权范围内，按可验收工作单元提交相关代码、测试和文档，不按文件或微小函数拆分，也不等待整个里程碑验收。历史 worklog 中“未暂存、未提交”等描述只记录当时状态，不是后续禁止提交的要求；代码提交与里程碑验收分别判断。

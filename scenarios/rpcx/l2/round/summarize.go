@@ -20,8 +20,11 @@ import (
 var identifier = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$`)
 
 func validateManifest(m Manifest) error {
-	if m.SchemaVersion != 1 || !identifier.MatchString(m.ID) || !identifier.MatchString(m.CampaignID) || !slices.Contains([]string{Calibration, Development}, m.Kind) || !digest(m.PlanSHA256) || len(m.Targets) == 0 {
+	if !identifier.MatchString(m.ID) || !identifier.MatchString(m.CampaignID) || !digest(m.PlanSHA256) || len(m.Targets) == 0 {
 		return errors.New("valid round identity, kind, plan digest and targets are required")
+	}
+	if err := validateProtocol(m.SchemaVersion, m.Kind, m.Targets, m.Protocol); err != nil {
+		return err
 	}
 	return validatePins(m.Targets)
 }
@@ -95,10 +98,17 @@ func Summarize(ctx context.Context, req Request) (out Report, err error) {
 	if gate.Overlap(req.CampaignDir, req.EvidenceDir) || gate.Overlap(req.ManifestPath, req.EvidenceDir) {
 		return out, errors.New("round output overlaps source inputs")
 	}
+	if manifest.Protocol != nil {
+		for _, name := range []string{"enrollment.json", "round-manifest.json", "protocol-materials", "execution.json"} {
+			if gate.Overlap(filepath.Join(filepath.Dir(req.CampaignDir), name), req.EvidenceDir) {
+				return out, errors.New("round output overlaps protocol inputs")
+			}
+		}
+	}
 	if err = os.Mkdir(req.EvidenceDir, 0755); err != nil {
 		return out, err
 	}
-	out = Report{SchemaVersion: 1, Version: Version, ID: manifest.ID, Kind: manifest.Kind, CampaignID: manifest.CampaignID, ManifestSHA256: gate.Digest(raw), PlanSHA256: manifest.PlanSHA256, StartedAt: time.Now().UTC(), Valid: true, Sources: map[string]Source{}}
+	out = Report{SchemaVersion: manifest.SchemaVersion, Version: Version, ID: manifest.ID, Kind: manifest.Kind, Protocol: cloneProtocol(manifest.Protocol), CampaignID: manifest.CampaignID, ManifestSHA256: gate.Digest(raw), PlanSHA256: manifest.PlanSHA256, StartedAt: time.Now().UTC(), Valid: true, Sources: map[string]Source{}}
 	for _, pin := range manifest.Targets {
 		out.Targets = append(out.Targets, unknownResult(pin.ID))
 	}
@@ -150,10 +160,19 @@ func Summarize(ctx context.Context, req Request) (out Report, err error) {
 	if !exists {
 		return out, fmt.Errorf("%w: campaign plan is required", ErrInvalid)
 	}
+	if manifest.Protocol != nil {
+		planJSON, _, e := reader.read(filepath.Join(req.CampaignDir, "plan.json"), manifest.PlanSHA256)
+		if e != nil {
+			return out, e
+		}
+		if e = verifyProtocol(reader, manifest, planJSON, req.CampaignDir, out.ManifestSHA256); e != nil {
+			return out, e
+		}
+	}
 	if plan.ID != manifest.CampaignID || len(plan.Targets) != len(manifest.Targets) {
 		return out, fmt.Errorf("%w: campaign plan membership mismatch", ErrInvalid)
 	}
-	if manifest.Kind == Development && plan.Profile.Provider == "controlled" {
+	if manifest.Kind != Calibration && plan.Profile.Provider == "controlled" {
 		return out, fmt.Errorf("%w: controlled model campaign must remain development_calibration", ErrInvalid)
 	}
 	for i, pin := range manifest.Targets {
@@ -246,7 +265,7 @@ func Summarize(ctx context.Context, req Request) (out Report, err error) {
 				out.Targets[i].Gaps = append(out.Targets[i].Gaps, "reference_unusable_without_delivery")
 				continue
 			}
-			if e = attachReference(reader, &out.Targets[i], pin, ref, manifest.Kind); e != nil {
+			if e = attachReference(reader, &out.Targets[i], pin, ref, manifest.Kind, manifest.Protocol); e != nil {
 				return out, e
 			}
 		} else if result.CandidateSHA256 != "" {

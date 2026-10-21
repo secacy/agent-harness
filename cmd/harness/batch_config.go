@@ -34,6 +34,7 @@ type batchConfig struct {
 	Targets              []batchTarget   `json:"targets"`
 	Enrollment           *round.Artifact `json:"enrollment,omitempty"`
 	enrollmentData       []byte
+	enrollmentMaterials  map[string][]byte
 }
 
 type batchModel struct {
@@ -180,7 +181,7 @@ func loadBatchConfig(path string) (batchConfig, campaign.Plan, error) {
 		if err != nil {
 			return config, plan, err
 		}
-		config.enrollmentData, err = readBatchEnrollment(config, plan.Targets)
+		config.enrollmentData, err = readBatchEnrollment(&config, plan.Targets)
 		if err != nil {
 			return config, plan, err
 		}

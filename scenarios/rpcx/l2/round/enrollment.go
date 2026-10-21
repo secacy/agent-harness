@@ -3,7 +3,6 @@ package round
 import (
 	"errors"
 	"fmt"
-	"slices"
 
 	"github.com/secacy/agent-harness/internal/campaign"
 	"github.com/secacy/agent-harness/scenarios/rpcx/gate"
@@ -16,14 +15,22 @@ type Enrollment struct {
 	ID            string      `json:"id"`
 	Kind          string      `json:"kind"`
 	Targets       []TargetPin `json:"targets"`
+	Protocol      *Protocol   `json:"protocol,omitempty"`
 }
 
 // Validate 核对输入顺序和宿主参考发布；不接受候选或既有门禁结论。
 func (e Enrollment) Validate(targets []campaign.Target) error {
-	if e.SchemaVersion != 1 || !identifier.MatchString(e.ID) || !slices.Contains([]string{Calibration, Development}, e.Kind) || len(e.Targets) == 0 {
+	return e.validate(targets, true)
+}
+
+func (e Enrollment) validate(targets []campaign.Target, published bool) error {
+	if !identifier.MatchString(e.ID) || len(e.Targets) == 0 {
 		return errors.New("valid enrollment identity, kind and targets are required")
 	}
 	if err := validatePins(e.Targets); err != nil {
+		return err
+	}
+	if err := validateProtocol(e.SchemaVersion, e.Kind, e.Targets, e.Protocol); err != nil {
 		return err
 	}
 	if len(targets) != len(e.Targets) {
@@ -34,12 +41,14 @@ func (e Enrollment) Validate(targets []campaign.Target) error {
 		if pin.ID != t.ID || pin.ProfileID != t.ProfileID || pin.BuildConfig != t.BuildConfig || pin.BaselineSHA256 != t.Repository.SHA256 || pin.SpecSHA256 != t.Specification.SHA256 {
 			return fmt.Errorf("enrollment input or ordering mismatch: %s", pin.ID)
 		}
-		identity, err := evaluation.PublishedIdentity(pin.ReferenceVersion)
-		if err != nil {
-			return err
-		}
-		if pin.SpecSHA256 != identity.SpecSHA256 || pin.ReferenceSHA256 != identity.ReferenceSHA256 || pin.ToolSHA256 != identity.ToolSHA256 {
-			return fmt.Errorf("enrollment reference identity mismatch: %s", pin.ID)
+		if published {
+			identity, err := evaluation.PublishedIdentity(pin.ReferenceVersion)
+			if err != nil {
+				return err
+			}
+			if pin.SpecSHA256 != identity.SpecSHA256 || pin.ReferenceSHA256 != identity.ReferenceSHA256 || pin.ToolSHA256 != identity.ToolSHA256 {
+				return fmt.Errorf("enrollment reference identity mismatch: %s", pin.ID)
+			}
 		}
 	}
 	return nil
@@ -47,6 +56,10 @@ func (e Enrollment) Validate(targets []campaign.Target) error {
 
 // Bind 只对实际落盘计划的原文取摘要，不预测其序列化或查询时间。
 func (e Enrollment) Bind(planJSON []byte) (Manifest, error) {
+	return e.bind(planJSON, true)
+}
+
+func (e Enrollment) bind(planJSON []byte, published bool) (Manifest, error) {
 	var plan campaign.Plan
 	if err := Decode(planJSON, &plan); err != nil {
 		return Manifest{}, err
@@ -54,14 +67,17 @@ func (e Enrollment) Bind(planJSON []byte) (Manifest, error) {
 	if err := plan.Profile.Validate(); err != nil {
 		return Manifest{}, err
 	}
-	if err := e.Validate(plan.Targets); err != nil {
+	if err := e.validate(plan.Targets, published); err != nil {
 		return Manifest{}, err
 	}
-	if e.Kind == Development && plan.Profile.Provider == "controlled" {
+	if e.Kind != Calibration && plan.Profile.Provider == "controlled" {
 		return Manifest{}, errors.New("controlled model enrollment must remain development_calibration")
 	}
+	if err := e.Protocol.validatePlan(plan); err != nil {
+		return Manifest{}, err
+	}
 	manifest := Manifest{SchemaVersion: e.SchemaVersion, ID: e.ID, Kind: e.Kind,
-		CampaignID: plan.ID, PlanSHA256: gate.Digest(planJSON), Targets: append([]TargetPin(nil), e.Targets...)}
+		CampaignID: plan.ID, PlanSHA256: gate.Digest(planJSON), Targets: append([]TargetPin(nil), e.Targets...), Protocol: cloneProtocol(e.Protocol)}
 	if err := validateManifest(manifest); err != nil {
 		return Manifest{}, err
 	}

@@ -62,6 +62,9 @@ func markdown(report Report) []byte {
 	if report.Kind == Calibration {
 		fmt.Fprintln(&s, "开发校准结果，不代表真实模型迁移效果。")
 	}
+	if report.Protocol != nil {
+		fmt.Fprintf(&s, "\n协议：%s；分区：%s；每任务 %d 次尝试。协议绑定不认证样本独立性或人员签署，不表示 M5 已验收。\n", report.Protocol.ID, report.Protocol.Split, report.Protocol.AttemptsPerTarget)
+	}
 	fmt.Fprintln(&s, "\n| Target | Run 状态 | 原判定 | 自动参考 | 完整参考 |\n| --- | --- | --- | --- | --- |")
 	for _, r := range report.Targets {
 		fmt.Fprintf(&s, "| %s | %s | %s | %s | %s |\n", r.TargetID, r.RunStatus, r.Verdict, r.Automatic, r.Reference)

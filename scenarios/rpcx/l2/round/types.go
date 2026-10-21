@@ -9,7 +9,7 @@ import (
 	"github.com/secacy/agent-harness/scenarios/rpcx/l2/evaluation"
 )
 
-const Version = "rpcx-l2-round-v1"
+const Version = "rpcx-l2-round-v2"
 const Calibration = "development_calibration"
 const Development = "development_evaluation"
 
@@ -21,6 +21,7 @@ type Manifest struct {
 	CampaignID    string      `json:"campaign_id"`
 	PlanSHA256    string      `json:"plan_sha256"`
 	Targets       []TargetPin `json:"targets"`
+	Protocol      *Protocol   `json:"protocol,omitempty"`
 }
 
 type TargetPin struct {
@@ -131,6 +132,7 @@ type Report struct {
 	Version           string            `json:"version"`
 	ID                string            `json:"id"`
 	Kind              string            `json:"kind"`
+	Protocol          *Protocol         `json:"protocol,omitempty"`
 	CampaignID        string            `json:"campaign_id"`
 	CampaignStatus    campaign.Status   `json:"campaign_status,omitempty"`
 	ManifestSHA256    string            `json:"manifest_sha256"`

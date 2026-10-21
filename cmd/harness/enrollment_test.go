@@ -169,7 +169,7 @@ func TestEnrollmentPublicationFailureReturnsError(t *testing.T) {
 	if err := os.Mkdir(filepath.Join(config.Directory, "round-manifest.json"), 0700); err != nil {
 		t.Fatal(err)
 	}
-	if err := prepareBatchEnrollment(config)(context.Background(), campaign.Artifact{Path: path, SHA256: gate.Digest(raw)}); err == nil {
+	if err := prepareBatchEnrollment(config, nil)(context.Background(), campaign.Artifact{Path: path, SHA256: gate.Digest(raw)}); err == nil {
 		t.Fatal("publication failure accepted")
 	}
 	if _, err := os.Stat(filepath.Join(config.Directory, "round-request.json")); !os.IsNotExist(err) {
