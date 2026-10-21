@@ -1,0 +1,165 @@
+{
+  "id": "l2-fixed-eval-v0_1_0",
+  "concurrency": 2,
+  "execution_concurrency": 2,
+  "budget": {
+    "max_calls": 160,
+    "max_tokens": 10000000
+  },
+  "profile": {
+    "provider": "deepseek",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "model": "deepseek-flash",
+    "context_tokens": 1048576,
+    "max_output_tokens": 4096,
+    "source_sha256": "b86388abe65929c84de3825eee299b8d78bae23e82e300239f3c788569eb5f39",
+    "verified_at": "2026-10-19T18:38:42.884492Z"
+  },
+  "targets": [
+    {
+      "input": {
+        "id": "goddd",
+        "profile_id": "rpcx-goddd-t3-v1",
+        "build_config": "default",
+        "repository": {
+          "directory": "/Users/can/src/golang/agent-harness-new/scenarios/rpcx/l2/data/rpcx-l2-goddd-v1/fixtures/goddd",
+          "sha256": "3f2f404c1947f4076dfcc1f54c03fc08a7475a44f30db8398848ef48dda7a610"
+        },
+        "dependencies": {
+          "rpcx-v1": {
+            "directory": "/Users/can/src/golang/agent-harness-new/scenarios/rpcx/l2/data/rpcx-l2-goddd-v1/fixtures/rpcx-v1",
+            "sha256": "3494436826b66504e9d1f28fa22fa22db4f927d0ee43309ab92b2868e5c6d24b"
+          },
+          "rpcx-v2": {
+            "directory": "/Users/can/src/golang/agent-harness-new/scenarios/rpcx/l2/data/rpcx-l2-goddd-v1/fixtures/rpcx-v2",
+            "sha256": "c8b687c6964c5659391144f0c74934e36a5c0462c438bc8ed886bcdeafb5357c"
+          }
+        },
+        "specification": {
+          "path": "/Users/can/src/golang/agent-harness-new/scenarios/rpcx/goddd/specs/v0.3.0.md",
+          "sha256": "917575e0f4fc571f6f72c743ffded00771da838144371435ab0edfb61b578610"
+        }
+      },
+      "budget": {
+        "max_calls": 40,
+        "max_tokens": 2500000
+      },
+      "agent_limits": {
+        "MaxModelCalls": 40,
+        "MaxToolCalls": 80
+      },
+      "timeout_ns": 600000000000
+    },
+    {
+      "input": {
+        "id": "translation",
+        "profile_id": "rpcx-translation-t3-v1",
+        "build_config": "all-required",
+        "repository": {
+          "directory": "/Users/can/src/golang/agent-harness-new/scenarios/rpcx/l2/data/rpcx-l2-translation-v1/fixtures/translation",
+          "sha256": "e520d248568e98e6a91556041a27ed23e916198436678e561c590d2756b57784"
+        },
+        "dependencies": {
+          "rpcx-v1": {
+            "directory": "/Users/can/src/golang/agent-harness-new/scenarios/rpcx/l2/data/rpcx-l2-translation-v1/fixtures/rpcx-v1",
+            "sha256": "3494436826b66504e9d1f28fa22fa22db4f927d0ee43309ab92b2868e5c6d24b"
+          },
+          "rpcx-v2": {
+            "directory": "/Users/can/src/golang/agent-harness-new/scenarios/rpcx/l2/data/rpcx-l2-translation-v1/fixtures/rpcx-v2",
+            "sha256": "c8b687c6964c5659391144f0c74934e36a5c0462c438bc8ed886bcdeafb5357c"
+          }
+        },
+        "specification": {
+          "path": "/Users/can/src/golang/agent-harness-new/scenarios/rpcx/translation/specs/v0.4.0.md",
+          "sha256": "d45937d461cf056a82aba50741a27ba3c991c73967047e0d4e723cc70feb5e5f"
+        }
+      },
+      "budget": {
+        "max_calls": 40,
+        "max_tokens": 2500000
+      },
+      "agent_limits": {
+        "MaxModelCalls": 40,
+        "MaxToolCalls": 80
+      },
+      "timeout_ns": 600000000000
+    },
+    {
+      "input": {
+        "id": "workouts",
+        "profile_id": "rpcx-workouts-t3-v1",
+        "build_config": "default",
+        "repository": {
+          "directory": "/Users/can/src/golang/agent-harness-new/scenarios/rpcx/l2/data/rpcx-l2-workouts-v1/fixtures/trainings",
+          "sha256": "4f269c1ee06787cd3b08cfc68de33eb9a6ac9afb3ac2922738f8b15b3659d670"
+        },
+        "dependencies": {
+          "common": {
+            "directory": "/Users/can/src/golang/agent-harness-new/scenarios/rpcx/l2/data/rpcx-l2-workouts-v1/fixtures/common",
+            "sha256": "761bbbcbc890a042e6d4c6cab2da56b205412097e903dd49d2b8d060badb519f"
+          },
+          "rpcx-v1": {
+            "directory": "/Users/can/src/golang/agent-harness-new/scenarios/rpcx/l2/data/rpcx-l2-workouts-v1/fixtures/rpcx-v1",
+            "sha256": "3494436826b66504e9d1f28fa22fa22db4f927d0ee43309ab92b2868e5c6d24b"
+          },
+          "rpcx-v2": {
+            "directory": "/Users/can/src/golang/agent-harness-new/scenarios/rpcx/l2/data/rpcx-l2-workouts-v1/fixtures/rpcx-v2",
+            "sha256": "c8b687c6964c5659391144f0c74934e36a5c0462c438bc8ed886bcdeafb5357c"
+          }
+        },
+        "specification": {
+          "path": "/Users/can/src/golang/agent-harness-new/scenarios/rpcx/workouts/specs/v0.5.0.md",
+          "sha256": "789d30540799249d0f5d96b3ba921b7e00d4cbc1e457491a2a79eba89829a526"
+        }
+      },
+      "budget": {
+        "max_calls": 40,
+        "max_tokens": 2500000
+      },
+      "agent_limits": {
+        "MaxModelCalls": 40,
+        "MaxToolCalls": 80
+      },
+      "timeout_ns": 600000000000
+    },
+    {
+      "input": {
+        "id": "ghcli",
+        "profile_id": "rpcx-ghcli-t3-v1",
+        "build_config": "default",
+        "repository": {
+          "directory": "/Users/can/src/golang/agent-harness-new/scenarios/rpcx/l2/data/rpcx-l2-ghcli-v1/fixtures/ghcli",
+          "sha256": "c299869d906bc9bb084e1cad4c35d8b6820879488536117ba9bdacd0f7ab131c"
+        },
+        "dependencies": {
+          "rpcx-v1": {
+            "directory": "/Users/can/src/golang/agent-harness-new/scenarios/rpcx/l2/data/rpcx-l2-ghcli-v1/fixtures/rpcx-v1",
+            "sha256": "3494436826b66504e9d1f28fa22fa22db4f927d0ee43309ab92b2868e5c6d24b"
+          },
+          "rpcx-v2": {
+            "directory": "/Users/can/src/golang/agent-harness-new/scenarios/rpcx/l2/data/rpcx-l2-ghcli-v1/fixtures/rpcx-v2",
+            "sha256": "c8b687c6964c5659391144f0c74934e36a5c0462c438bc8ed886bcdeafb5357c"
+          }
+        },
+        "specification": {
+          "path": "/Users/can/src/golang/agent-harness-new/scenarios/rpcx/ghcli/specs/v0.6.0.md",
+          "sha256": "6e3a87056ec102536b52e1ffc340dbd8dd541d8d28589c555b9b08bafc1e40e8"
+        }
+      },
+      "budget": {
+        "max_calls": 40,
+        "max_tokens": 2500000
+      },
+      "agent_limits": {
+        "MaxModelCalls": 40,
+        "MaxToolCalls": 80
+      },
+      "timeout_ns": 600000000000
+    }
+  ],
+  "resources": {
+    "protocol": "docker-intent-v1",
+    "context": "orbstack",
+    "engine_id": "95b87743-1537-475b-8696-249766a578a8"
+  }
+}

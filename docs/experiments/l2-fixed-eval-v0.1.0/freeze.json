@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "protocol_id": "l2-fixed-eval-v0_1_0",
+  "files": {
+    "README.md": "1fe76086d0276673be6f5940e8fb8f07d0d08d57ea92fd1423861c443fee9519",
+    "batch.json": "f6488b9b84dd699903c805f05db2acdb7945be15438692e8a30e8a29920ff185",
+    "capabilities-observed.json": "9743d744c58468765cb1d8c478700183e7687a87ebc754efc939451a421a3f11",
+    "dataset.json": "4ae861b880d52dd985c6859fea4ba465b21354897421f694d3a0005eb4223f26",
+    "enrollment.json": "633b0901518b0fd8df499467adc1b2a08306f6502bf19598d1930c176cb711f6",
+    "environment.json": "1d8678af36548f4b3ab9c40be4237cf9bf721cb0e768657a2af6e25669cbf5d7",
+    "expected-plan.json": "c8bce15ea871e12e0e9825194bd0f665a19b4e4ef3c34702d6d45b7812d4cd7b",
+    "implementation.json": "0dd1156e57fbb56b1ce35afdd2760b29c7e8d8c5df3c8c205539561c23203c60",
+    "models-observed.json": "b86388abe65929c84de3825eee299b8d78bae23e82e300239f3c788569eb5f39",
+    "reviewers.json": "71af8c44045af9a897976d2f41e33fb101961a7f68694115f53e76a29424c612",
+    "source-files.json": "ad1fb3771fa3a330573dd0fad72575e58f045fcc9ecd2c5212e007384da8c88e"
+  }
+}

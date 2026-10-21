@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "method": "assistant",
+  "review_kind": "candidate_review",
+  "reviewers": {
+    "goddd": "codex:/root",
+    "translation": "codex:/root",
+    "workouts": "codex:/root",
+    "ghcli": "codex:/root"
+  },
+  "role": "current main assistant; protocol preparer and execution coordinator; distinct from each Run DeepSeek generator conversation",
+  "relationship": "same development context for previous samples; GHCLI parent metadata-only prior to generation; shared filesystem/model-family constraints; no independent human or blind-review claim",
+  "sections": {
+    "test_preservation": "compare changed tests, assertions, helper/skip/build tags and actual events",
+    "change_coverage": "review every production diff and call chain against pinned spec; unsupported changes remain unknown",
+    "delivery_evidence": "check report statements, configuration/log provenance, candidate identities and unresolved issues"
+  },
+  "recording": "actual reviewer, RFC3339 activity time, reason, file/spec/log locations; no prefilled conclusions; unknown without evidence",
+  "fallback": "no silent substitution; unavailable reviewer is a recorded deviation and unresolved result"
+}

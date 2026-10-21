@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "parent_revision": "5c3a30a1db59728a6201cbc755e6699da750fc08",
+  "source_file_count": 762,
+  "source_sha256": "a896ce0130022accebbd0043b0a813965338b1886a5368b4f2dc1f709523d4f5",
+  "total_bytes": 53635200,
+  "source_scope": [
+    "cmd/",
+    "internal/",
+    "scenarios/",
+    "scripts/",
+    "go.mod",
+    "go.sum (if present)"
+  ],
+  "source_algorithm": "SHA256 of compact UTF-8 JSON object {repository-relative-path: file-SHA256}, sorted by path; no final newline; tracked and unignored source only; excludes docs, runs, credentials and metadata directories",
+  "source_files": "source-files.json",
+  "build": {
+    "go_version": "go version go1.26.5 darwin/arm64",
+    "goos": "darwin",
+    "goarch": "arm64",
+    "cgo_enabled": 1,
+    "arguments": [
+      "go",
+      "build",
+      "-trimpath",
+      "-buildvcs=false"
+    ],
+    "network": {
+      "GOPROXY": "off",
+      "GOSUMDB": "off",
+      "GOWORK": "off",
+      "GOTOOLCHAIN": "local",
+      "GOFLAGS": "-mod=readonly"
+    },
+    "built_from": "exported snapshot/source"
+  },
+  "binaries": {
+    "harness": {
+      "path": "runs/l2-fixed-eval-v0.1.0-preparation/snapshot/bin/harness",
+      "sha256": "df976b9efc5438bd4b415d87a8524fb1a9500e52b5e96ca0880fe31be5bc84f8",
+      "size": 62811298
+    },
+    "summarize": {
+      "path": "runs/l2-fixed-eval-v0.1.0-preparation/snapshot/bin/summarize",
+      "sha256": "79de374c7cc4f8e31c7a29f13adc62c5adcb44f11218b908a39d7a2974f5a552",
+      "size": 54550194
+    }
+  },
+  "archive": {
+    "path": "runs/l2-fixed-eval-v0.1.0-preparation/implementation.tar.gz",
+    "sha256": "3578c240dce8e95fcc2bcae144cb1addbd463cd8e818d8da59fbf643d9246629",
+    "size": 154587555,
+    "scope": "source, offline inputs and dependencies, source file manifest, build settings and two binaries; protocol documents separately versioned in Git"
+  }
+}
