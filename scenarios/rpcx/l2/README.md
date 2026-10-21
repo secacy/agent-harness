@@ -18,7 +18,9 @@
 
 用户随后提出使用全新 Agent，现另行开展 [Agent 隔离准备试点](../../../docs/worklog/2026-10-21-agent-isolated-preparation.md)。准备者不继承主调优对话，仅回报允许元数据；完整新材料不进入现有开发夹具或主 Agent 上下文。试点单列 fresh_agent_preparation，不改原选择清单或冒充独立人员保管，也不自动计入可运行 L2 数量。
 
-[首阶段回执](agent-preparation-v0.1.0.json)记录一个库级协议候选的 prepared_baseline：准备者禁网构建及所选 54 项测试/子测试通过，另保留一个未执行的外部服务测试套件。主流程只核对公开元数据，没有读取完整材料或重跑。应用业务代表性、独立参考与宿主 Profile 仍待接入，不能把基线状态当作 L2 准入或迁移成功。
+[首阶段回执](agent-preparation-v0.1.0.json)记录一个库级协议候选的 prepared_baseline：准备者禁网构建及所选 54 项测试/子测试通过，另保留一个未执行的外部服务测试套件。主流程只核对公开元数据，没有读取完整材料或重跑。该回执只代表准备阶段，不能把基线状态当作 L2 准入、独立参考/Profile 完成或迁移成功。
+
+[准入决定](agent-admission-v0.1.0.json)现为 supplementary_only：该准备版本不进入原定 L2 业务样本的参考/Profile 接入。隔离评审发现应用代表性和出站适配保真不符，相关断言覆盖及运行契约仍有未知；不是仅按库标签拒绝，也不是推翻原基线测试事实。完整材料和原回执保留，后续应用选源应先检查适用性，不将本候选加入正常效果分母。
 
 [首轮开发评测工作](../../../docs/worklog/2026-10-19-l2-development-evaluation.md)采用三个 Target 各一次尝试，独立行为参考结合源码/交付复核；参考未知与确认错误分列。[三场景单候选参考](evaluation/README.md)及[真实批次](../../../docs/experiments/2026-10-20-rpcx-l2-real-model-01.md)已完成：三项原判定均为 NeedsAttention，自动参考均 pass，S/N=0/3、A=0，错误放行率无定义。Goddd、Translation 的实际人员复核与 Workouts 的助手补充已分列，见[阶段收尾](../../../docs/worklog/2026-10-20-m3-closeout-review.md)。[轮次汇总](round/README.md)现支持 v2 协议绑定及一次尝试的身份关联、未知区间和成本分列；独立留出与完整正式评测仍待准备。
 

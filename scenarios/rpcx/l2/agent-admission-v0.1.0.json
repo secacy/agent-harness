@@ -1,0 +1,122 @@
+{
+  "schema_version": 1,
+  "version": "rpcx-agent-admission-v0.1.0",
+  "purpose": "Admission decision metadata for the isolated-agent preparation pilot; not a candidate quality verdict or formal evaluation result.",
+  "fixed_harness_commit": "b7c5ed0157262baf36280a54e8c1b9288e26ab83",
+  "assignment_id": "rpcx-agent-admission-01",
+  "assignment_sha256": "2207f92b249681df89138377ba126f53f8d05df831dc0ba7727c36d94771f6ba",
+  "public_assessment_sha256": "5b49d3bc20d51956b0e39ae98d66dc1d4d0426821236f13081b15024ead3d028",
+  "preparation_receipt": "scenarios/rpcx/l2/agent-preparation-v0.1.0.json",
+  "criteria_fixed_before_private_inspection": [
+    {
+      "id": "source_and_group",
+      "required": true,
+      "question": "Fixed source/version/license/provenance and a different origin group from already seen development sources?"
+    },
+    {
+      "id": "business_representativeness",
+      "required": true,
+      "question": "Does the retained slice preserve an existing application/domain use case and meaningful original behavior assertions, beyond SDK/protocol mechanics? A library label alone is not decisive; inspect retained behavior."
+    },
+    {
+      "id": "outbound_boundary_fidelity",
+      "required": true,
+      "question": "Does U→B adapt an existing outbound operation while preserving observable meaning and surrounding control/error behavior, rather than replacing the core protocol under test or inventing a new outbound path to force rpcx use?"
+    },
+    {
+      "id": "migration_relevance",
+      "required": true,
+      "question": "Do actual production calls in frozen B exercise rpcx-v1 and meaningful ctx/timeout/interface migration, with verifiable response/error behavior? Baseline compilation alone is insufficient."
+    },
+    {
+      "id": "original_assertions",
+      "required": true,
+      "question": "Are relevant original tests/assertions retained and actually executed against the adapted production path? Identify whether excluded tests uniquely cover that path; test file byte identity alone does not prove coverage."
+    },
+    {
+      "id": "offline_baseline_and_identity",
+      "required": true,
+      "question": "Do stored build/test evidence and immutable hashes establish a usable offline baseline, with exclusions explicit? No new migration execution required."
+    },
+    {
+      "id": "isolation_scope",
+      "required": false,
+      "question": "Does preparation stay metadata-only to the parent, without inheritance or migration tuning? Do not claim independent human or model-training novelty."
+    }
+  ],
+  "decision_rule": "Admit for reference preparation only if all required criteria supported. Confirmed mismatch => supplementary_only with substantive reason codes. Missing evidence => insufficient_evidence, not semantic failure. No automatic L2 count or formal heldout admission.",
+  "reviewer_task": "/root/isolated_admission_reviewer",
+  "reviewer_attribution": "Fresh conversation reviewer distinct from the original preparer. Shared model family and filesystem; no independent human or parent private-source review.",
+  "preparation_receipt_sha256": "48bda5feffff2db3ef3d6ef40a73b4e554571f5b977142b297f97aea69fb6bc2",
+  "baseline_tree_sha256": "5f50f5953e6df2428de5edc9098c8e10c4335db1c6d198318c9c1deee59f4d3e",
+  "provenance_manifest_sha256": "16593eccf8a40badc8c6826af94cda9205a52bd0a4ae9c6da6bf796dbbdc621c",
+  "reviewer_role": "fresh_agent",
+  "parent_history_inherited": false,
+  "decision": "supplementary_only",
+  "criterion_results": [
+    {
+      "id": "source_and_group",
+      "status": "supported",
+      "reason_code": "PINNED_SOURCE_PROVENANCE_AND_DISTINCT_GROUP",
+      "reason": "固定来源、许可、来源组与快照身份均有一致证据。"
+    },
+    {
+      "id": "business_representativeness",
+      "status": "mismatch",
+      "reason_code": "RETAINED_BEHAVIOR_LIMITED_TO_PROTOCOL_MECHANICS",
+      "reason": "保留行为及断言集中于协议机制，未保留超出协议层的应用业务用例。"
+    },
+    {
+      "id": "outbound_boundary_fidelity",
+      "status": "mismatch",
+      "reason_code": "OBSERVABLE_RESPONSE_AND_ERROR_SEMANTICS_CHANGED",
+      "reason": "适配仍调用既有出站操作，但改变了可观察响应与错误处理，影响周围控制流程。"
+    },
+    {
+      "id": "migration_relevance",
+      "status": "unknown",
+      "reason_code": "REAL_INTERFACE_SURFACE_WITH_UNVERIFIED_RUNTIME_CONTRACT",
+      "reason": "实际生产路径包含目标接口，但上下文、超时及错误契约缺少完整既有运行证据。"
+    },
+    {
+      "id": "original_assertions",
+      "status": "unknown",
+      "reason_code": "PARTIAL_PATH_COVERAGE_WITH_UNIQUE_EXTERNAL_EXCLUSIONS",
+      "reason": "部分原始断言确实经过适配生产路径；排除项承载独有变体，相关覆盖证据不完整。"
+    },
+    {
+      "id": "offline_baseline_and_identity",
+      "status": "supported",
+      "reason_code": "FROZEN_HASHES_AND_STORED_OFFLINE_EVIDENCE_CONSISTENT",
+      "reason": "只读摘要核验与既有离线构建、测试记录一致，排除范围明确。"
+    },
+    {
+      "id": "isolation_scope",
+      "status": "supported",
+      "reason_code": "PROCEDURAL_AGENT_ISOLATION_WITH_EXPLICIT_LIMITS",
+      "reason": "按独立会话与元数据边界评审；共享模型和文件系统的局限已明确。"
+    }
+  ],
+  "private_assessment_sha256": "8c2fdf20abadc9cca083ba7427d4e712b387a5fcb36571b8f62e754ce85ef5db",
+  "private_evidence_manifest_sha256": "21a00771dd453791eb1f1deda979577463e4d2698e6686c3a267aaffcd16f277",
+  "private_assessment_location": "runs/m5-agent-preparation-01/private/admission-review-01/assessment.json",
+  "private_evidence_manifest_location": "runs/m5-agent-preparation-01/private/admission-review-01/evidence-manifest.json",
+  "validation_method": {
+    "method": "只读源码比较、摘要与结构核验及既有原始日志核对",
+    "baseline_or_validator_rerun": false,
+    "candidate_code_executed": false,
+    "network_or_downloads": false,
+    "stored_runtime_evidence_attribution": "preparer_self_report_and_stored_logs"
+  },
+  "baseline_unchanged": true,
+  "limitations": [
+    "保留行为未达到固定的应用业务代表性判据，不能自动计入L2或正式heldout。",
+    "新隔离评审Agent、原准备者及主流程之间仅有会话和程序性文件边界；共享模型家族和文件系统，不是真人双盲或独立人员评审。",
+    "离线运行证据归属原准备者；本轮未重跑，排除变体及部分运行契约仍缺少证据。"
+  ],
+  "runtime_profile_registered": false,
+  "formal_evaluation_started": false,
+  "counts_as_l2_business_sample": false,
+  "counts_as_formal_heldout": false,
+  "next_action": "Do not begin reference/candidate/Profile work for this baseline as an L2 business sample. Retain preparation evidence as supplementary only. A new selection requires these eligibility criteria before preparation, not a success-rate-based choice."
+}
