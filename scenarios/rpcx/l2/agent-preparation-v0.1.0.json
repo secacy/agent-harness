@@ -1,0 +1,107 @@
+{
+  "schema_version": 1,
+  "version": "rpcx-agent-preparation-v0.1.0",
+  "purpose": "Isolated-agent preparation metadata only; not an admitted dataset, runnable target or independent-human heldout result.",
+  "assignment_id": "rpcx-agent-preparer-01",
+  "fixed_harness_commit": "c7701ecd80544ebec62d46d5aeb2dee3132b90a7",
+  "assignment_sha256": "9ff7edce568c171801ce82d64e37d29160885a857ffd13ce70861837485fba13",
+  "public_preparation_sha256": "dc24ffe3f9c749fdf28be9ae9f63c5289a32d603734fe5f0f83a8d749b431ccb",
+  "preparer": {
+    "role": "fresh_agent",
+    "task": "/root/fresh_sample_preparer",
+    "parent_history_inherited": false,
+    "source_visibility_to_tuning_agent": "metadata_only",
+    "independent_human": false,
+    "model_training_visibility": "unknown",
+    "isolation": "separate conversation and procedural file boundary; shared filesystem and model family"
+  },
+  "status": "prepared_baseline",
+  "source_kind": "library",
+  "actual_source": {
+    "repository": "https://github.com/icholy/digest",
+    "commit": "104e41263110fbc4690a1c0d6b309cac6e597e56",
+    "origin_group": "icholy-digest",
+    "license": "MIT"
+  },
+  "newly_surveyed_sources": [
+    {
+      "repository": "https://github.com/containrrr/shoutrrr",
+      "commit": "ccf81390b700948f85ce1c79f6de9ee75c68d9e5",
+      "origin_group": "shoutrrr",
+      "license": "MIT"
+    },
+    {
+      "repository": "https://github.com/icholy/digest",
+      "commit": "104e41263110fbc4690a1c0d6b309cac6e597e56",
+      "origin_group": "icholy-digest",
+      "license": "MIT"
+    }
+  ],
+  "baseline_tree_sha256": "5f50f5953e6df2428de5edc9098c8e10c4335db1c6d198318c9c1deee59f4d3e",
+  "provenance_manifest_sha256": "16593eccf8a40badc8c6826af94cda9205a52bd0a4ae9c6da6bf796dbbdc621c",
+  "baseline_frozen_before_any_migration_work": true,
+  "migration_work_started": false,
+  "environment_requirements": {
+    "go_minimum": "1.23.0",
+    "validated_go": "1.26.5",
+    "offline_dependencies_vendored": true,
+    "docker_required_for_recorded_validation": true
+  },
+  "preparer_reported_validation": {
+    "configurations": 1,
+    "container_attempts": 2,
+    "backend": "docker",
+    "network": "none",
+    "offline_validation": true,
+    "dependencies_downloaded_during_preparation": true,
+    "image": "golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd",
+    "limits": {
+      "cpus": 2,
+      "memory_bytes": 2147483648,
+      "pids": 128,
+      "tmpfs_bytes": 805306368,
+      "read_only_root": true,
+      "capabilities_dropped": "ALL",
+      "no_new_privileges": true
+    },
+    "build": {
+      "executed": true,
+      "passed": true,
+      "exit_code": 0
+    },
+    "original_tests_byte_identical": true,
+    "post_validation_tree_matches_frozen": true,
+    "sdk_identity_matches": true,
+    "self_created_containers_reclaimed": true,
+    "tests_executed": true,
+    "tests_passed": true,
+    "test_counts": {
+      "original_test_files_retained": 6,
+      "original_top_level_tests_retained": 14,
+      "added_tests": 0,
+      "excluded_top_level_tests_from_execution": 1,
+      "excluded_fixed_subtests_from_execution": 3,
+      "executed_top_level_tests": 13,
+      "executed_test_events_including_subtests": 54,
+      "passed_test_events": 54,
+      "failed_test_events": 0,
+      "packages_passed": 2
+    }
+  },
+  "validation_attribution": "Executed and reported by the preparer; tuning agent checked public metadata only and did not independently reexecute or inspect private material.",
+  "l2_admission": "not_assessed",
+  "runtime_profile_registered": false,
+  "formal_evaluation_started": false,
+  "limitations": [
+    "Separate agent conversation and procedural file access boundary only; shared model family and filesystem, no OS security isolation; not independent human preparation.",
+    "Library-level protocol logic slice; application business representativeness and L2 admission remain unassessed.",
+    "Finite prepared baseline only; source boundary adaptation has scope limitations recorded privately; no production suitability claimed.",
+    "Original externally networked test suite retained but excluded from offline execution; examples without output directives compile only.",
+    "Public dependency downloads occurred during preparation; actual baseline build and selected original tests ran offline.",
+    "No migration implementation, oracle, model request, paid generation, runtime profile registration, or formal evaluation was performed."
+  ],
+  "private_artifacts": "runs/m5-agent-preparation-01/private",
+  "public_receipt": "runs/m5-agent-preparation-01/public/preparation.json",
+  "counts_as_original_heldout_slot": false,
+  "preparer_platform_cost": "not_measured; not added to any prior Campaign usage"
+}
