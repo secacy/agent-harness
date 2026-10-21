@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -33,6 +34,24 @@ type runState struct {
 	agent       *agent.Result
 	validation  *checks.Evaluation
 	hostBackend *l2.ModuleBackend
+	observer    func(runCheckpoint, Record)
+}
+
+var runIdentifier = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$`)
+
+type runCheckpoint string
+
+const (
+	baselinePassed  runCheckpoint = "baseline_passed"
+	candidateFixed  runCheckpoint = "candidate_fixed"
+	reportPublished runCheckpoint = "report_published"
+)
+
+// 包内观察点用于在持久化边界暂停真实子进程；公共入口不配置观察函数。
+func (r *runState) observe(point runCheckpoint) {
+	if r.observer != nil {
+		r.observer(point, r.record)
+	}
 }
 
 func (r *runState) backend() execution.Executor {
@@ -44,7 +63,11 @@ func (r *runState) backend() execution.Executor {
 
 // Run 每次创建新目录。候选被拒绝仍可正常完成，调用方必须检查 Verdict。
 // 模型失败、预算耗尽或取消时保留部分修改；当前不续跑，也不自动重试。
-func Run(parent context.Context, config Config) (record Record, err error) {
+func Run(parent context.Context, config Config) (Record, error) {
+	return runWithObserver(parent, config, nil)
+}
+
+func runWithObserver(parent context.Context, config Config, observer func(runCheckpoint, Record)) (record Record, err error) {
 	if err := parent.Err(); err != nil {
 		return record, err
 	}
@@ -74,13 +97,22 @@ func Run(parent context.Context, config Config) (record Record, err error) {
 	if err := os.MkdirAll(config.RunsDir, 0755); err != nil {
 		return record, err
 	}
-	dir, err := os.MkdirTemp(config.RunsDir, "rpcx-agent-")
+	var dir string
+	if config.RunID == "" {
+		dir, err = os.MkdirTemp(config.RunsDir, "rpcx-agent-")
+	} else {
+		if !runIdentifier.MatchString(config.RunID) {
+			return record, fmt.Errorf("%w: invalid preallocated run ID", ErrInvalidConfig)
+		}
+		dir = filepath.Join(config.RunsDir, config.RunID)
+		err = os.Mkdir(dir, 0700)
+	}
 	if err != nil {
 		return record, err
 	}
 	now := time.Now().UTC()
 	r := runState{
-		config: config, profile: p,
+		config: config, profile: p, observer: observer,
 		record: Record{
 			SchemaVersion: 2, ID: filepath.Base(dir), TargetID: config.Target.ID, Directory: dir,
 			Status: StatusRunning, Phase: PhasePreparing, StartedAt: now, UpdatedAt: now,
@@ -100,6 +132,20 @@ func Run(parent context.Context, config Config) (record Record, err error) {
 	if err := writeJSON(r.path("run.json"), r.record); err != nil {
 		return record, err
 	}
+	if config.ResourceOwner != nil {
+		owner := *config.ResourceOwner
+		owner.RunID = r.record.ID
+		rel, relErr := filepath.Rel(owner.Root, r.record.Directory)
+		if relErr != nil {
+			return record, relErr
+		}
+		owner.RunDirectory = filepath.ToSlash(rel)
+		r.config.Backend, err = execution.WithResourceOwner(config.Backend, owner)
+		if err != nil {
+			return record, err
+		}
+		config.Backend = r.config.Backend
+	}
 	if err := r.prepare(ctx); err != nil {
 		return record, err
 	}
@@ -109,6 +155,7 @@ func Run(parent context.Context, config Config) (record Record, err error) {
 	if err := r.checkBaseline(ctx); err != nil {
 		return record, err
 	}
+	r.observe(baselinePassed)
 	if err := r.transition(ctx, PhaseGenerating); err != nil {
 		return record, err
 	}
@@ -127,6 +174,7 @@ func Run(parent context.Context, config Config) (record Record, err error) {
 	if err := r.checkInputs(ctx); err != nil {
 		return record, err
 	}
+	r.observe(candidateFixed)
 	evaluate := checks.Evaluate
 	if r.profile.Verifier == goddd.VerifierVersion {
 		evaluate = goddd.Evaluate
@@ -446,6 +494,9 @@ func (r *runState) finish(parent context.Context, runErr error) error {
 		}
 		if reviewErr != nil {
 			reviewErr = fmt.Errorf("publish review: %w", reviewErr)
+		}
+		if reportErr == nil && reviewErr == nil {
+			r.observe(reportPublished)
 		}
 		return errors.Join(reportErr, reviewErr)
 	}

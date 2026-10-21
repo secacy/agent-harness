@@ -20,8 +20,9 @@ type Request struct {
 	Args         []string
 	Directory    string
 	ReadOnlyDirs []string
-	CacheDir     string // 仅本地后端使用；容器缓存随命令销毁。
-	MaxBytes     int    // stdout 和 stderr 各自的上限，默认 4 MiB。
+	CacheDir     string         // 仅本地后端使用；容器缓存随命令销毁。
+	MaxBytes     int            // stdout 和 stderr 各自的上限，默认 4 MiB。
+	Owner        *ResourceOwner // 由宿主绑定的执行器覆盖，Agent 不能设置归属。
 }
 
 type Result struct {

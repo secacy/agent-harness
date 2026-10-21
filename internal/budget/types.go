@@ -47,9 +47,10 @@ type Totals struct {
 }
 
 type Account struct {
-	Limits Limits `json:"limits"`
-	RunID  string `json:"run_id,omitempty"`
-	Totals Totals `json:"totals"`
+	Limits Limits   `json:"limits"`
+	RunID  string   `json:"run_id,omitempty"`
+	RunIDs []string `json:"run_ids,omitempty"`
+	Totals Totals   `json:"totals"`
 }
 
 type CallState string
@@ -70,6 +71,7 @@ type Call struct {
 	State          CallState    `json:"state"`
 	Usage          *agent.Usage `json:"usage,omitempty"`
 	Outcome        string       `json:"outcome,omitempty"`
+	RecoveryID     string       `json:"recovery_id,omitempty"`
 	CreatedAt      time.Time    `json:"created_at"`
 	UpdatedAt      time.Time    `json:"updated_at"`
 }
@@ -84,16 +86,18 @@ type Rejection struct {
 }
 
 type Snapshot struct {
-	SchemaVersion int                `json:"schema_version"`
-	CampaignID    string             `json:"campaign_id"`
-	Revision      int64              `json:"revision"`
-	Profile       Profile            `json:"profile"`
-	Limits        Limits             `json:"limits"`
-	Totals        Totals             `json:"totals"`
-	Targets       map[string]Account `json:"targets"`
-	Calls         []Call             `json:"calls"`
-	Rejections    []Rejection        `json:"rejections"`
-	HaltReason    string             `json:"halt_reason,omitempty"`
+	SchemaVersion    int                `json:"schema_version"`
+	CampaignID       string             `json:"campaign_id"`
+	Revision         int64              `json:"revision"`
+	Profile          Profile            `json:"profile"`
+	Limits           Limits             `json:"limits"`
+	Totals           Totals             `json:"totals"`
+	Targets          map[string]Account `json:"targets"`
+	Calls            []Call             `json:"calls"`
+	Rejections       []Rejection        `json:"rejections"`
+	HaltReason       string             `json:"halt_reason,omitempty"`
+	RecoveryIDs      []string           `json:"recovery_ids,omitempty"`
+	RecoveryRevision int64              `json:"recovery_revision,omitempty"`
 }
 
 // Denied 表示调用尚未准入，原因与供应商执行错误分开记录。

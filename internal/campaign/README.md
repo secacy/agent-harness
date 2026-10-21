@@ -2,6 +2,10 @@
 
 `Run(ctx, Config)` 独占创建一个新 Campaign，并为每个 Target 调用一次宿主提供的 `Execute`。包不导入 rpcx，不操作候选、不判定业务质量；rpcx 使用 [CampaignExecutor](../../scenarios/rpcx/runner/campaign.go) 连接现有 Runner。
 
+新建 Campaign 发布 v2 记录及 `writer_protocol=flock-v1`，从计划写入前到收尾完成始终持有 [writer](../writer/README.md) 的固定文件锁。v2 仍是每 Target 单 Run；预算和 Run 格式不变。旧 v1 继续支持只读审计，当前 [恢复检查](../recovery/README.md)不会将它升级或启动重跑。
+
+恢复准备数据类型在 checkpoint.go：RecoveryCheckpoint 封存原文和来源摘要，After 保存 budget v2 与 Target 历史；RecoveryHead 为单一提交标记。它们不改变当前 Record、TargetRecord 或运行预算的含义。已有目录仍不由 Run 重新打开；检查点提交与任务激活分开，详见 [M4.2b](../../docs/worklog/2026-10-20-m4-recovery.md#11-m42b恢复控制检查点)。
+
 这是通用 Go API；[harness batch](../../docs/command.md#受预算约束的批次入口)负责具体模型与 rpcx 宿主组装。该命令在生成前查询当前供应商模型上界、保存材料，再进入本模块；不能在配置中填入估计上界。命令机制已通过本机模拟 API 联调；随后[首轮三仓真实开发批次](../../docs/experiments/2026-10-20-rpcx-l2-real-model-01.md)已按冻结协议完成，三项 Completed / NeedsAttention，独立自动参考通过但实际人工复核未完成。受控模型联调另见 [campaign_test.go](../../scenarios/rpcx/runner/campaign_test.go)。
 
 ## 组装职责
@@ -33,6 +37,7 @@ rpcx 的组装关系为：`Config.Execute = runner.CampaignExecutor(trustedLocal
 
 ```text
 <Directory>/
+  .writer.lock
   plan.json
   campaign.json
   budget/budget.json
@@ -60,3 +65,11 @@ env GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly G
 设置 `HARNESS_DOCKER_TEST=1` 后可运行 `TestCampaignDockerKilledExecutionIsolation`：先取得单独运行参照，再 SIGKILL 精确匹配本次挂载源的自有容器，断言容器已清理、故障任务零模型调用，其余正确候选和检查结果与参照相同。它杀的是执行容器，不是 goroutine、独立 worker 或 Harness 进程。
 
 三个不同仓库的确定性验收使用 `HARNESS_HETEROGENEOUS_ACCEPTANCE=1 go test ./scenarios/rpcx/runner -run '^TestCampaignHeterogeneousDelivery$'`；可选设置 `HARNESS_HETEROGENEOUS_DOCKER=1` 运行 `TestCampaignHeterogeneousDockerDelivery`。测试采用已冻结的 Goddd、Translation、Workouts 参考补丁作为脚本编辑，分别比较单独与混合批次，并注入 Translation 基线失败；结果和限制见 [工作记录](../../docs/worklog/2026-10-19-m3-4-heterogeneous-campaign.md)。
+
+## 受控恢复的首次计划契约
+
+Plan.Recovery 可选，冻结总尝试上限（包含首次）和绝对 GenerationDeadline。首次运行也受该期限限制。没有该字段的旧计划不获得第二次尝试；已有输入、限额和 Profile 不因恢复更换。
+
+RecoveryReceipts 与 ValidateRecoveryBudget 供组装和审计共用数据规则；Activation/RecoveryResult 独立于旧 Record 格式。恢复 Services.RunID 必须按收据独占创建，首次为空。恢复 API 在 [recovery.Execute](../recovery/README.md#激活与受控重跑)，本包的 Run 仍只创建全新 Campaign。当前恢复单代串行；只读重入终态，不自动重复未完成分配。
+
+Plan.Resources 可选冻结 Docker 资源协议、context 和 engine 身份；发布计划后、接纳任务前创建注册表。Services.ResourceOwner 是 Run 尚未分配时的模板，Runner 填入真实 ID/路径再绑定后端。跟踪模式下共享 ResourceGuard 和命令槽位，缺失归属拒绝执行，回收结果未知后本代不再接纳新命令；原有限并发不变。新 batch Docker 入口自动组装该声明，旧材料不回填。具体记录与恢复清理见 [execution](../execution/README.md#docker-资源归属)。

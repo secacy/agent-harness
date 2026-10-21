@@ -92,6 +92,11 @@ func runBatch(ctx context.Context, args []string, stdout, stderr io.Writer) int 
 		if err != nil {
 			return batchError(err, stderr)
 		}
+		policy, policyErr := backend.(*execution.Docker).ResourcePolicy(ctx)
+		if policyErr != nil {
+			return batchError(policyErr, stderr)
+		}
+		plan.Resources = &policy
 	}
 	if err := saveBatchMaterials(config, capabilities, backend); err != nil {
 		return batchError(err, stderr)

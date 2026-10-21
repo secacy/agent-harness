@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"regexp"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -23,17 +24,18 @@ var identifier = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$`)
 
 type waiter struct{ target, run, input string }
 
-// Ledger 是单进程单写者。已经存在的目录永不重新打开或重置额度。
+// Ledger 是单进程单写者；首次和恢复代次均独占创建，不能重开重置额度。
 type Ledger struct {
-	mu      sync.Mutex
-	path    string
-	state   Snapshot
-	persist func(Snapshot) error
-	changed chan struct{}
-	queue   []*waiter
-	fault   error
-	ctx     context.Context
-	cancel  context.CancelCauseFunc
+	mu       sync.Mutex
+	path     string
+	state    Snapshot
+	persist  func(Snapshot) error
+	changed  chan struct{}
+	queue    []*waiter
+	fault    error
+	ctx      context.Context
+	cancel   context.CancelCauseFunc
+	deadline time.Time
 }
 
 // Validate 只检查材料格式和整数边界，上界的真实性由可信宿主核实。
@@ -95,6 +97,7 @@ func Create(config Config) (*Ledger, error) {
 
 func cloneSnapshot(s Snapshot) Snapshot {
 	s.Targets = copyTargets(s.Targets)
+	s.RecoveryIDs = append([]string(nil), s.RecoveryIDs...)
 	s.Calls = append([]Call{}, s.Calls...)
 	for i := range s.Calls {
 		s.Calls[i].Usage = copyUsage(s.Calls[i].Usage)
@@ -105,6 +108,7 @@ func cloneSnapshot(s Snapshot) Snapshot {
 func copyTargets(in map[string]Account) map[string]Account {
 	out := make(map[string]Account, len(in))
 	for k, v := range in {
+		v.RunIDs = append([]string(nil), v.RunIDs...)
 		out[k] = v
 	}
 	return out
@@ -140,6 +144,11 @@ func (l *Ledger) halt(err error) {
 
 // commit 调用方持锁；先持久化候选状态，再发布内存状态。
 func (l *Ledger) commit(next Snapshot) error {
+	if l.state.Revision == math.MaxInt64 {
+		err := fmt.Errorf("%w: ledger revision overflows", ErrIntegrity)
+		l.halt(err)
+		return err
+	}
 	next.Revision = l.state.Revision + 1
 	if l.fault != nil {
 		next.HaltReason = l.fault.Error()
@@ -171,6 +180,12 @@ func (l *Ledger) bind(target, run string) error {
 		return errors.New("target is already bound to another run")
 	}
 	next := cloneSnapshot(l.state)
+	if next.SchemaVersion == 2 {
+		if slices.Contains(account.RunIDs, run) {
+			return errors.New("historical run cannot receive a new model binding")
+		}
+		account.RunIDs = append(account.RunIDs, run)
+	}
 	account.RunID = run
 	next.Targets[target] = account
 	return l.commit(next)
@@ -233,6 +248,9 @@ func (l *Ledger) reserve(ctx context.Context, target, run, input string) (Call, 
 	for {
 		if err := ctx.Err(); err != nil {
 			return Call{}, err
+		}
+		if !l.deadline.IsZero() && !time.Now().Before(l.deadline) {
+			return Call{}, context.DeadlineExceeded
 		}
 		if l.fault != nil {
 			return Call{}, errors.Join(ErrHalted, l.fault)

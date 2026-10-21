@@ -54,6 +54,11 @@ func NewModel(ledger *Ledger, target, run string, model agent.Model) (*Model, er
 func (m *Model) Reference() Reference { return m.reference }
 
 func (m *Model) Complete(ctx context.Context, messages []agent.Message, tools []agent.ToolSpec) (reply agent.Reply, err error) {
+	if !m.ledger.deadline.IsZero() {
+		var stop context.CancelFunc
+		ctx, stop = context.WithDeadline(ctx, m.ledger.deadline)
+		defer stop()
+	}
 	if err = ctx.Err(); err != nil {
 		return reply, err
 	}

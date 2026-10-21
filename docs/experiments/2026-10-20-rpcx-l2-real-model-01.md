@@ -106,3 +106,7 @@ M3 保持实现中：有了首轮真实开发观察，但完整人类复核、�
 ## 后续实际人工复核（2026-10-20）
 
 secacy 已确认 Goddd 的测试保留 pass、变更覆盖 pass、交付依据 fail；最后一项因原审核文档两处发现项源码断链，不代表业务迁移错误。记录按用户确认另存，来源与时间依据见[复核接入记录](../worklog/2026-10-20-goddd-human-review.md#实际复核接入2026-10-20)。新请求与汇总位于 runs/goddd-human-review-01/completed-review-01/round-request.json、completed-round-01/；完整参考为 1 fail（delivery）和 2 inconclusive（仍缺复核）。本节是后续观察，以上原批次、参考、汇总及统计保持原样，未覆盖旧文件。原三项 NeedsAttention、自动成功 0/3、错误放行率无定义及原成本均不改；M3 仍待其余两仓人工复核与实际留出准备。
+
+随后 secacy 确认 [Translation 的双配置实际复核](../worklog/2026-10-20-translation-human-review.md#实际人工复核与接入2026-10-20)：测试保留/变更覆盖 pass，交付依据因原三处发现项源码断链为 fail。最新 Request 与汇总另存于 runs/translation-human-review-01/completed-review-01/round-request.json、completed-round-01/，同时保留 Goddd 的原人员记录；完整参考变为 2 fail（均 delivery）和 1 inconclusive（Workouts 缺复核）。原运行、旧汇总、候选质量、指标及成本仍不改，未重跑候选或模型。M3 当前尚缺 Workouts 实际人工复核与独立留出准备。
+
+其后依用户明确委托完成 [Workouts 助手评审](../worklog/2026-10-20-workouts-assistant-review.md)，测试保留与变更覆盖 pass，原一处发现项导航断链使交付依据 fail。该记录是 development_calibration，不是人员签署；单独的 runs/workouts-assistant-review-01/supplemental-round/ 纳入两份人员记录和这一份助手记录，三项均记 delivery 类 fail。它是事后补充校准，不能作为本实验原正式汇总已补齐人工的依据；原 2 fail / 1 inconclusive、NeedsAttention、分母/指标及成本均保持，严格人员与独立留出缺口继续披露。

@@ -13,13 +13,18 @@ import (
 // CampaignExecutor 将通用批次服务接到现有 Runner，不改变质量门禁。
 // 本地执行仍须由宿主明确授权；原模型仅交给 Runner 的预算绑定步骤。
 func CampaignExecutor(trustedLocal bool) campaign.Execute {
+	return campaignExecutorWithObserver(trustedLocal, nil)
+}
+
+func campaignExecutorWithObserver(trustedLocal bool, observer func(runCheckpoint, Record)) campaign.Execute {
 	return func(ctx context.Context, target campaign.Target, services campaign.Services) (campaign.Attempt, error) {
-		record, runErr := Run(ctx, Config{
-			Target: &target.Input, RunsDir: services.RunsDir,
+		record, runErr := runWithObserver(ctx, Config{
+			Target: &target.Input, RunsDir: services.RunsDir, RunID: services.RunID,
 			Model: services.Model, ModelName: services.Budget.Ledger.Snapshot().Profile.Model,
 			Budget: &services.Budget, Limits: target.Limits, Timeout: target.Timeout,
 			Backend: services.Backend, TrustedLocal: trustedLocal,
-		})
+			ResourceOwner: services.ResourceOwner,
+		}, observer)
 		status := campaign.Status(record.Status)
 		if status == "" {
 			status = campaign.Failed

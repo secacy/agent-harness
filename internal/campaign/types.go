@@ -19,12 +19,20 @@ var (
 )
 
 type Plan struct {
-	ID                   string         `json:"id"`
-	Concurrency          int            `json:"concurrency"`
-	ExecutionConcurrency int            `json:"execution_concurrency"`
-	Budget               budget.Limits  `json:"budget"`
-	Profile              budget.Profile `json:"profile"`
-	Targets              []Target       `json:"targets"`
+	ID                   string                    `json:"id"`
+	Concurrency          int                       `json:"concurrency"`
+	ExecutionConcurrency int                       `json:"execution_concurrency"`
+	Budget               budget.Limits             `json:"budget"`
+	Profile              budget.Profile            `json:"profile"`
+	Targets              []Target                  `json:"targets"`
+	Recovery             *RecoveryPolicy           `json:"recovery,omitempty"`
+	Resources            *execution.ResourcePolicy `json:"resources,omitempty"`
+}
+
+// RecoveryPolicy 必须在首次执行前冻结；缺省不授予第二次尝试。
+type RecoveryPolicy struct {
+	MaxAttempts        int       `json:"max_attempts"`
+	GenerationDeadline time.Time `json:"generation_deadline"`
 }
 
 type Target struct {
@@ -36,10 +44,12 @@ type Target struct {
 
 // Services 只交给可信宿主适配器；适配器必须在绑定 Run 后包装模型。
 type Services struct {
-	RunsDir string
-	Model   budget.ProfiledModel
-	Budget  budget.Target
-	Backend execution.Executor
+	RunsDir       string
+	RunID         string // 恢复收据预分配的身份；首次执行为空，由 Runner 分配。
+	Model         budget.ProfiledModel
+	Budget        budget.Target
+	Backend       execution.Executor
+	ResourceOwner *execution.ResourceOwner
 }
 
 type Execute func(context.Context, Target, Services) (Attempt, error)
@@ -99,15 +109,16 @@ type TargetRecord struct {
 }
 
 type Record struct {
-	SchemaVersion int        `json:"schema_version"`
-	ID            string     `json:"id"`
-	Directory     string     `json:"directory"`
-	Status        Status     `json:"status"`
-	PlanSHA256    string     `json:"plan_sha256"`
-	StartedAt     time.Time  `json:"started_at"`
-	FinishedAt    *time.Time `json:"finished_at,omitempty"`
-	Summary       Artifact   `json:"summary"`
-	Error         string     `json:"error,omitempty"`
+	SchemaVersion  int        `json:"schema_version"`
+	WriterProtocol string     `json:"writer_protocol,omitempty"`
+	ID             string     `json:"id"`
+	Directory      string     `json:"directory"`
+	Status         Status     `json:"status"`
+	PlanSHA256     string     `json:"plan_sha256"`
+	StartedAt      time.Time  `json:"started_at"`
+	FinishedAt     *time.Time `json:"finished_at,omitempty"`
+	Summary        Artifact   `json:"summary"`
+	Error          string     `json:"error,omitempty"`
 }
 
 type Counts struct {

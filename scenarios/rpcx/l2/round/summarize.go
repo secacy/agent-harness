@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/secacy/agent-harness/internal/campaign"
+	"github.com/secacy/agent-harness/internal/writer"
 	"github.com/secacy/agent-harness/scenarios/rpcx/gate"
 	"github.com/secacy/agent-harness/scenarios/rpcx/runner"
 )
@@ -170,7 +171,8 @@ func Summarize(ctx context.Context, req Request) (out Report, err error) {
 		out.Issues = append(out.Issues, Issue{Code: "missing_campaign", Detail: "campaign terminal record missing"})
 		return out, nil
 	}
-	if record.SchemaVersion != 1 || record.ID != plan.ID || record.PlanSHA256 != manifest.PlanSHA256 || !slices.Contains([]campaign.Status{campaign.Completed, campaign.Failed, campaign.Cancelled}, record.Status) || record.FinishedAt == nil {
+	supportedRecord := record.SchemaVersion == 1 && record.WriterProtocol == "" || record.SchemaVersion == 2 && record.WriterProtocol == writer.Protocol
+	if !supportedRecord || record.ID != plan.ID || record.PlanSHA256 != manifest.PlanSHA256 || !slices.Contains([]campaign.Status{campaign.Completed, campaign.Failed, campaign.Cancelled}, record.Status) || record.FinishedAt == nil {
 		return out, fmt.Errorf("%w: campaign identity or terminal state mismatch", ErrInvalid)
 	}
 	out.CampaignStatus = record.Status

@@ -2,6 +2,10 @@
 
 本包为单进程中的多个 Target 提供共享额度。`Create` 独占创建一个新的账本目录，`NewModel` 将一个已注册 Target、唯一 Run 和模型配置绑定。模型包装器在真实 Complete 前保存预留，调用返回后保存结算，再将回复或错误交回 Agent。
 
+恢复准备另提供纯函数 `ValidateSnapshot` 和 `RecoverSnapshot`：逐调用重算 v1/v2 两级账目，再将 reserved 原额转 unknown、保留原 call/Run 身份并记录恢复 ID。v2 的 RunIDs 表示历史绑定，RunID 表示当前准入绑定；检查点转换时关闭后者。RecoveryRevision 限制同一恢复 ID 的幂等重入，不能在新活动之后借旧 ID 跳过转换。返回值和输入均为独立副本。
+
+这些函数不打开账本、不写磁盘、不授权模型。当前 `Create` 和运行账本仍发布 v1、每 Target 单 Run；[recovery.Prepare](../recovery/README.md#恢复准备检查点)仅在不可变检查点中保存 v2 状态。后续激活必须完整继承该状态及限额，不能用空账本替代。
+
 预算按请求次数和输入加输出 Token 计量。每次保守预留 `ContextTokens + MaxOutputTokens`；缓存命中输入仍属于输入，不重复叠加缓存统计。批次与 Target 都需满足：
 
 ```text
@@ -35,7 +39,7 @@ ledger, err := budget.Create(budget.Config{
 
 检查错误后，已有 rpcx Runner 可设置 `Config.Budget = &budget.Target{Ledger: ledger, ID: "orders"}`。Runner 在创建实际 Run 后包装模型，inputs/task.json、artifacts/report.json 和 review.md 保存账本引用及模型配置摘要。共享账本位于 Agent 工具可见目录外；不将其余额副本当作不会变化的 Run 事实。
 
-也可在已经具有 Run ID 的宿主中直接调用 `NewModel(ledger, targetID, runID, model)`，将返回值作为 agent.Model。两种接法选择一种，不能重复包装。一个 Target 在此版本只绑定一个 Run，已有账本目录不能重新打开、重置或恢复。
+也可在已经具有 Run ID 的宿主中直接调用 `NewModel(ledger, targetID, runID, model)`，将返回值作为 agent.Model。两种接法选择一种，不能重复包装。首次账本每 Target 只绑定一个 Run；已有目录不能重新打开或重置。恢复在新代次继承账目，见下文。
 
 ## 持久化与故障
 
@@ -43,6 +47,14 @@ budget.json 使用 schema_version=1，包含 Profile、两级限制和汇总、�
 
 每次写入先创建同目录临时文件，再同步文件、rename、同步目录，成功后才发布内存状态。创建账本目录后也同步父目录。单次持久化结果不确定即关闭新增准入；在途调用仍尝试结算，失败时原持久化预留继续保守占用。结算不依赖已取消的 Run context；同步文件 I/O 本身不能由 context 强制中止，不用后台遗留写操作伪装超时保证。
 
-Snapshot 返回独立副本；Done/Err 供未来 Campaign 观察共同故障。当前没有打开旧账本、恢复、重试、跨进程共享或离线审计命令；这些属于 M4。Token 保证以供应商遵守上界、宿主客户端不绕过包装器为前提，不等于金额账单封顶。
+Snapshot 返回独立副本；Done/Err 供未来 Campaign 观察共同故障。原账本没有打开已有目录或跨进程共享的接口；M4 单代激活与独立审计见下文。Token 保证以供应商遵守上界、宿主客户端不绕过包装器为前提，不等于金额账单封顶。
 
 验证命令见[预算测试](../../docs/command.md#m31-模型预算与单-run-接入)。设计和取舍见 [M3 工作记录](../../docs/worklog/2026-10-19-m3-batch-runtime.md)。
+
+## 恢复代次账本
+
+`Activate(directory, seed, deadline)` 在持有原 Campaign 写锁的宿主中，独占创建 budget v2 账本。seed 必须是已校验、无 halt/在途预留/当前绑定的恢复状态，所有已知费用、未知占用、历史调用及两级上限完整继承。它不重开目录或重置额度。持久化收据后才 BindRun；历史 Run 不能再次绑定，新绑定追加 RunIDs。
+
+`CanAdmit` 只检查下一请求余额，不预留或保证未来额度；实际调用继续由 Model 原子预留与结算。绝对 deadline 同时限制准入和在途模型 context；请求截止后用量未知仍保留 Q。当前没有重新打开已激活账本的 API，再次中断需停止，不能反复 Activate。同批次恢复组装见 [recovery](../recovery/README.md#激活与受控重跑)。
+
+macOS/Linux 的包测试还会启动自有子进程，在真实 reserve 快照同步后或结算快照写入前通过管道暂停，再核对 PID 并 SIGKILL。余额充足和耗尽各作对照，验证 RecoverSnapshot/Activate 继承未知占用、旧 Run 不再绑定、重复结算与冲突封闭；不调用供应商，不代表完整 Campaign 验收。可用 `HARNESS_BUDGET_CRASH_ARTIFACTS` 保存四份原快照与证据；[设计与结果](../../docs/worklog/2026-10-21-m4-persistence-windows.md)。

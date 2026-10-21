@@ -81,6 +81,11 @@ func within(parent, child string) bool {
 }
 
 // 完成判断只认磁盘终态。失败的部分材料可以保留，但不能携带质量结论。
+// CheckAttempt 供持有原 Campaign 写锁的恢复编排复用相同的结果核验。
+func CheckAttempt(root, runsDir, targetID string, attempt Attempt, runErr error) (Attempt, error) {
+	return checkAttempt(root, runsDir, targetID, attempt, runErr)
+}
+
 func checkAttempt(root, runsDir, targetID string, attempt Attempt, runErr error) (Attempt, error) {
 	invalid := func(reason string) (Attempt, error) {
 		return Attempt{Status: Failed, FailureCode: "invalid_result"}, fmt.Errorf("%w: %s", ErrResult, reason)

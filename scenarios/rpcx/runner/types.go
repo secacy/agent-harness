@@ -26,14 +26,16 @@ type Config struct {
 	ScenarioDir string
 	SpecVersion string // 为空时保留 v0.1.0；新场景必须显式选择。
 	RunsDir     string
+	RunID       string // 可信宿主预分配的收据身份，目录仍必须独占创建。
 	Model       agent.Model
 	ModelName   string
 	Budget      *budget.Target
 	Limits      agent.Limits
 	Timeout     time.Duration
 	// 仅使用宿主后端时启用，不能与容器后端同时设置。
-	TrustedLocal bool
-	Backend      execution.Executor
+	TrustedLocal  bool
+	Backend       execution.Executor
+	ResourceOwner *execution.ResourceOwner
 }
 
 type Status string

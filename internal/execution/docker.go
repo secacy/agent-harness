@@ -27,8 +27,9 @@ type DockerConfig struct {
 }
 
 type Docker struct {
-	binary string
-	info   Info
+	binary  string
+	info    Info
+	context string
 }
 
 func NewDocker(ctx context.Context, config DockerConfig) (*Docker, error) {
@@ -85,29 +86,67 @@ func (d *Docker) Run(ctx context.Context, req Request) (result Result, err error
 	if err := ctx.Err(); err != nil {
 		return result, err
 	}
-	var random [12]byte
+	var random [16]byte
 	if _, err := rand.Read(random[:]); err != nil {
 		return result, err
 	}
 	name := "harness-" + hex.EncodeToString(random[:])
+	var intent *ResourceIntent
+	if req.Owner != nil {
+		owned, prepared, prepareErr := d.prepareResource(ctx, req, args, hex.EncodeToString(random[:]))
+		if prepareErr != nil {
+			return result, prepareErr
+		}
+		d, intent, name = owned, &prepared, prepared.Name
+	}
 	// 即使 create 请求被取消，也使用预先生成的名称回收可能已创建的容器。
 	defer func() {
 		cleanupCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 10*time.Second)
 		defer cancel()
+		if intent != nil {
+			if cleanupErr := d.finishResource(cleanupCtx, *intent); cleanupErr != nil {
+				err = errors.Join(err, ErrResourcesUnknown, fmt.Errorf("reconcile owned container: %w", cleanupErr))
+			}
+			return
+		}
 		_, removeErr := d.control(cleanupCtx, "rm", "--force", "--volumes", name)
 		if removeErr != nil && !missingContainer(removeErr) {
 			err = errors.Join(err, fmt.Errorf("remove container %s: %w", name, removeErr))
 		}
 	}()
-	data, err := d.control(ctx, append([]string{"create", "--name", name, "--label", "agent-harness.execution=true"}, args...)...)
+	create := []string{"create", "--name", name, "--label", "agent-harness.execution=true"}
+	if intent != nil {
+		if err := publishResource(filepath.Join(intent.Owner.Root, "resources", intent.CommandID, "dispatch.json"), ResourceDispatch{1, ResourceDigest(*intent)}); err != nil {
+			return result, err
+		}
+		for _, key := range []string{"agent-harness.intent", "agent-harness.owner", "agent-harness.command", "agent-harness.registry"} {
+			create = append(create, "--label", key+"="+intentLabels(*intent)[key])
+		}
+	}
+	data, err := d.control(ctx, append(create, args...)...)
 	if err != nil {
 		return result, err
 	}
 	result.ContainerID = strings.TrimSpace(string(data))
+	if intent != nil {
+		if !containerID.MatchString(result.ContainerID) {
+			return result, errors.New("Docker create did not return a full container ID")
+		}
+		if err := publishResource(filepath.Join(intent.Owner.Root, "resources", intent.CommandID, "created.json"), ResourceCreated{1, ResourceDigest(*intent), result.ContainerID}); err != nil {
+			return result, err
+		}
+		// 启动前也认证服务返回的资源，不以随机名称代替归属验证。
+		if c, found, err := d.inspectResource(ctx, *intent); err != nil || !found || c.ID != result.ContainerID {
+			return result, errors.Join(errors.New("created container failed ownership verification"), err)
+		}
+	}
 	commandCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	stdout, stderr := outputs(req.MaxBytes, cancel)
 	command := exec.CommandContext(commandCtx, d.binary, "start", "--attach", name)
+	if d.context != "" {
+		command = exec.CommandContext(commandCtx, d.binary, "--context", d.context, "start", "--attach", name)
+	}
 	command.Stdout, command.Stderr, command.WaitDelay = stdout, stderr, time.Second
 	startErr := command.Run()
 	result.Stdout, result.Stderr = stdout.bytes(), stderr.bytes()
@@ -230,7 +269,11 @@ func (d *Docker) control(parent context.Context, args ...string) ([]byte, error)
 	ctx, cancel := context.WithTimeout(parent, 30*time.Second)
 	defer cancel()
 	stdout, stderr := outputs(1024*1024, cancel)
-	command := exec.CommandContext(ctx, d.binary, args...)
+	commandArgs := args
+	if d.context != "" {
+		commandArgs = append([]string{"--context", d.context}, args...)
+	}
+	command := exec.CommandContext(ctx, d.binary, commandArgs...)
 	command.Stdout, command.Stderr, command.WaitDelay = stdout, stderr, time.Second
 	err := command.Run()
 	if stdout.exceeded() || stderr.exceeded() {

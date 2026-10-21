@@ -13,6 +13,7 @@ import (
 
 	"github.com/secacy/agent-harness/internal/budget"
 	"github.com/secacy/agent-harness/internal/execution"
+	"github.com/secacy/agent-harness/internal/writer"
 )
 
 var identifier = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$`)
@@ -34,6 +35,12 @@ func validate(config Config) (Config, []budget.ProfiledModel, error) {
 	}
 	if err = p.Profile.Validate(); err != nil {
 		return config, nil, err
+	}
+	if p.Recovery != nil && (p.Recovery.MaxAttempts < 1 || !p.Recovery.GenerationDeadline.After(time.Now())) {
+		return config, nil, errors.New("recovery policy requires positive attempts and a future generation deadline")
+	}
+	if p.Resources != nil && (p.Resources.Validate() != nil || config.Backend.Info().Kind != execution.KindDocker) {
+		return config, nil, errors.New("resource policy requires a Docker backend and verified engine identity")
 	}
 	p.Profile.VerifiedAt = p.Profile.VerifiedAt.UTC()
 	config.Directory, err = canonical(config.Directory)
@@ -111,7 +118,13 @@ func Run(ctx context.Context, config Config) (record Record, summary Summary, er
 	if err = mkdir(root); err != nil {
 		return record, summary, fmt.Errorf("%w: %w", ErrControl, err)
 	}
-	record = Record{SchemaVersion: 1, ID: p.ID, Directory: root, Status: Running, StartedAt: time.Now().UTC()}
+	lease, err := writer.Create(root)
+	if err != nil {
+		return record, summary, fmt.Errorf("%w: %w", ErrControl, err)
+	}
+	// 最后释放锁，覆盖下方所有终态发布、预算结算与执行回收。
+	defer func() { err = errors.Join(err, lease.Close()) }()
+	record = Record{SchemaVersion: 2, WriterProtocol: writer.Protocol, ID: p.ID, Directory: root, Status: Running, StartedAt: time.Now().UTC()}
 	planRef, err := writeJSON(filepath.Join(root, "plan.json"), p)
 	if err != nil {
 		return record, summary, fmt.Errorf("%w: %w", ErrControl, err)
@@ -133,6 +146,11 @@ func Run(ctx context.Context, config Config) (record Record, summary Summary, er
 			err = errors.Join(err, saveRecord())
 		}
 	}()
+	if p.Resources != nil {
+		if err = execution.CreateResourceRegistry(root, execution.ResourceRegistry{SchemaVersion: 1, CampaignID: p.ID, PlanSHA256: record.PlanSHA256, Policy: *p.Resources}); err != nil {
+			return record, summary, fmt.Errorf("%w: resource registry: %w", ErrControl, err)
+		}
+	}
 	if config.Prepare != nil {
 		planRef.Path = filepath.Join(root, "plan.json")
 		if err = config.Prepare(ctx, planRef); err != nil {
@@ -173,9 +191,18 @@ func Run(ctx context.Context, config Config) (record Record, summary Summary, er
 	if err != nil {
 		return record, summary, fmt.Errorf("%w: %w", ErrControl, err)
 	}
-	backend, _ := execution.NewLimited(config.Backend, p.ExecutionConcurrency)
+	commandBackend := config.Backend
+	if p.Resources != nil {
+		commandBackend = execution.NewResourceGuard(commandBackend)
+	}
+	backend, _ := execution.NewLimited(commandBackend, p.ExecutionConcurrency)
 	workCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
+	if p.Recovery != nil {
+		var deadlineCancel context.CancelFunc
+		workCtx, deadlineCancel = context.WithDeadline(workCtx, p.Recovery.GenerationDeadline)
+		defer deadlineCancel()
+	}
 	results := make(chan result, min(p.Concurrency, len(p.Targets)))
 	active, next := 0, 0
 	var controlErr error
@@ -203,6 +230,9 @@ func Run(ctx context.Context, config Config) (record Record, summary Summary, er
 				targetCtx, stop := context.WithTimeout(workCtx, p.Targets[i].Timeout)
 				defer stop()
 				services := Services{RunsDir: filepath.Join(targetDir(i), "runs"), Model: models[i], Budget: budget.Target{Ledger: ledger, ID: p.Targets[i].Input.ID}, Backend: backend}
+				if p.Resources != nil {
+					services.ResourceOwner = &execution.ResourceOwner{Root: root, Registry: execution.ResourceRegistry{SchemaVersion: 1, CampaignID: p.ID, PlanSHA256: record.PlanSHA256, Policy: *p.Resources}, TargetID: p.Targets[i].Input.ID}
+				}
 				attempt, runErr := config.Execute(targetCtx, p.Targets[i], services)
 				results <- result{i, attempt, runErr}
 			}()
@@ -227,7 +257,7 @@ func Run(ctx context.Context, config Config) (record Record, summary Summary, er
 		// 已取消后只等结果，避免一直选中关闭的 Done 通道。
 		var done, halted <-chan struct{}
 		if workCtx.Err() == nil {
-			done, halted = ctx.Done(), ledger.Done()
+			done, halted = workCtx.Done(), ledger.Done()
 		}
 		select {
 		case <-done:
@@ -264,9 +294,9 @@ func Run(ctx context.Context, config Config) (record Record, summary Summary, er
 	}
 	controlErr = errors.Join(controlErr, summaryErr)
 	record.Status = Completed
-	if ctx.Err() != nil {
+	if workCtx.Err() != nil {
 		record.Status = Cancelled
-		err = ctx.Err()
+		err = workCtx.Err()
 	}
 	if controlErr != nil {
 		record.Status = Failed

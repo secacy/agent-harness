@@ -17,17 +17,23 @@
 
 本地文档由根目录 `.gitignore` 排除。
 
-整体开发路线、阶段交付与验收边界以[里程碑](MILESTONES.md)为准；本轮阶段顺序及预算、判定、评测边界的取舍见[路线规划记录](worklog/2026-10-18-milestone-roadmap.md)。当前推进 [M3 具体设计](worklog/2026-10-19-m3-batch-runtime.md)，预算的长期约束见 [ADR-006](adr/006-campaign-budget-reservations.md)。任务输入与宿主验证配置的边界见 [ADR-007](adr/007-host-owned-task-profiles.md)。
+整体开发路线、阶段交付与验收边界以[里程碑](MILESTONES.md)为准；阶段顺序及预算、判定、评测边界的取舍见[路线规划记录](worklog/2026-10-18-milestone-roadmap.md)。[M3 实施与交付](worklog/2026-10-19-m3-batch-runtime.md)已有声明范围证据，总体验收仍待；与其并行推进的 M4 已交付范围内的只读审计、单代受控重跑和 Docker 精确清理。[M4 收尾核对](worklog/2026-10-21-m4-closeout-review.md)逐项保留剩余故障窗口和评测冻结缺口，不据模块通过宣布整体完成。预算的长期约束见 [ADR-006](adr/006-campaign-budget-reservations.md)，任务输入与宿主验证配置的边界见 [ADR-007](adr/007-host-owned-task-profiles.md)。
 
 M3.4 已完成[样本设计与选择](worklog/2026-10-19-m3-4-sample-selection.md)及 [Goddd 离线基线与共用 L2 SDK](worklog/2026-10-19-goddd-baseline.md)。三个开发来源、当前准备状态与待独立准备的留出名额见 [L2 说明](../scenarios/rpcx/l2/README.md)；[Goddd 新规范、Profile、三类判定和 Runner 接入](worklog/2026-10-19-goddd-evidence-gate.md)已完成开发校准；[Translation 双配置离线基线](worklog/2026-10-19-translation-baseline.md)及[双配置迁移门禁/Runner](worklog/2026-10-19-translation-evidence-gate.md)已接入，[Workouts 多模块离线基线](worklog/2026-10-19-workouts-baseline.md)也已准备，[Workouts 迁移规范、门禁和确定性 Docker Runner](worklog/2026-10-19-workouts-evidence-gate.md)已接入。[三个异构 Target 的确定性 Campaign](worklog/2026-10-19-m3-4-heterogeneous-campaign.md)已通过；后续真实批次及独立自动参考已完成，结果与剩余人类复核缺口见下文。
 
-当前的[开发评测工作](worklog/2026-10-19-l2-development-evaluation.md)记录参考独立性的取舍、三仓判据、一次尝试口径及未知结果处理；Goddd、Translation 双配置与 Workouts 回调的单候选自动参考及待复核记录已实现；[轮次离线汇总](../scenarios/rpcx/l2/round/README.md)已完成机制与既有受控三仓 Campaign 的关联验收；[预算批次入口](worklog/2026-10-20-budgeted-batch-cli.md)已通过本机模拟 API 验收；[真实能力查询及预算准入复核](worklog/2026-10-20-l2-experiment-preparation.md#授权后实查模型能力与预算准入)已完成；[首轮真实开发实验](experiments/2026-10-20-rpcx-l2-real-model-01.md)已按冻结协议完成生成、自动参考与汇总，人类复核仍待完成。
+当前的[开发评测工作](worklog/2026-10-19-l2-development-evaluation.md)记录参考独立性的取舍、三仓判据、一次尝试口径及未知结果处理；Goddd、Translation 双配置与 Workouts 回调的单候选自动参考及待复核记录已实现；[轮次离线汇总](../scenarios/rpcx/l2/round/README.md)已完成机制与既有受控三仓 Campaign 的关联验收；[预算批次入口](worklog/2026-10-20-budgeted-batch-cli.md)已通过本机模拟 API 验收；[真实能力查询及预算准入复核](worklog/2026-10-20-l2-experiment-preparation.md#授权后实查模型能力与预算准入)已完成；[首轮真实开发实验](experiments/2026-10-20-rpcx-l2-real-model-01.md)已按冻结协议完成生成、自动参考与汇总；后续两份实际人员记录和一份受托助手评审已分列，原人员口径缺口见 M3 收尾评审。
 
 [生成前的计划与纳入绑定](worklog/2026-10-20-pre-generation-enrollment.md)记录静态 Enrollment 与动态 Manifest 的边界、Campaign 准备屏障和零任务接纳的失败语义。纳入清单固定参考身份，完整实验协议、预算与真实生成仍按 M3.4 推进。
 
 [首轮开发实验协议 v0.1.0](experiments/l2-dev-eval-v0.1.0/README.md)已固定实际三仓配置、750 万 Token 总额度、源码/二进制/能力依据及参考与复核规则，随后获授权执行唯一真实批次；[发布工作记录](worklog/2026-10-20-l2-protocol-release.md)说明预算取舍、容量漂移拒绝和离线验收。原三项 NeedsAttention 保留，独立自动参考均 pass；本轮没有自动放行，错误放行率无定义，另暴露 6 个审核定位链接缺陷。后续[按实际模块的源码定位修复](worklog/2026-10-20-review-source-links.md)已通过呈现回归及原三仓报告只读消费，旧报告保持原样。[六项未知检查的根因与支持范围评审](worklog/2026-10-20-needs-attention-review.md)已完成；随后[Workouts 导入顺序归一](worklog/2026-10-20-workouts-import-order.md)通过正反例、冻结矩阵及三组 Docker 开发校准，原判定和正式指标保持不变。[Goddd mock/context 有限适配](worklog/2026-10-20-goddd-context-adaptation.md)已接入固定变体与可追溯的适配选择，旧校准及新正反例通过；该单元真实候选副本的测试保留通过，但 proxying.go 的范围缺口当时仍为 NeedsAttention。原实验记录与指标保持不变。后续[命名期限常量及构造器读取证明](worklog/2026-10-20-goddd-routing-scope.md)已接入局部节点证据与完整剩余结构比较；原样候选副本在新 Docker 校准中八项检查通过，得到 ReadyForReview。旧 NeedsAttention、原实验指标及人类复核状态保持，新增结果仅属于已见开发校准。
 
-[Translation 剩余支持范围设计](worklog/2026-10-20-translation-boundary-support.md)已完成评审和最小原型，按最新交付优先级暂缓实施。当前以[交付说明](DELIVERY.md)关联已有能力、原实验与剩余项；[交付收敛记录](worklog/2026-10-20-delivery-focus.md)保留固定支持范围的取舍。最新 [M3 收尾验收评审](worklog/2026-10-20-m3-closeout-review.md)确认五项条件已有证据、两项部分满足；主线为实际人工复核与留出准备，不直接转入 M4。
+[Translation 剩余支持范围设计](worklog/2026-10-20-translation-boundary-support.md)已完成评审和最小原型，按最新交付优先级暂缓实施。当前以[交付说明](DELIVERY.md)关联已有能力、原实验与剩余项；[交付收敛记录](worklog/2026-10-20-delivery-focus.md)保留固定支持范围的取舍。最新 [M3 收尾验收评审](worklog/2026-10-20-m3-closeout-review.md)确认五项条件已有证据、两项部分满足；三仓受托复核已完成，原人员口径与独立留出缺口继续披露。M4.1 按已明确的并行边界实现，不冒充 M3 验收或移交；[核心模块](../internal/audit/README.md)说明当前 API、报告与覆盖边界。
+
+[M4.2a 写者排他与只读检查](worklog/2026-10-20-m4-recovery.md#10-m42a写者排他与只读恢复检查)及 [M4.2b 恢复检查点](worklog/2026-10-20-m4-recovery.md#11-m42b恢复控制检查点)已在声明范围验收；[recovery.Prepare](../internal/recovery/README.md#恢复准备检查点)保存原文、累计预算与尝试历史，单一 head 提交后仍不激活新 Run。写者规则见 [ADR-008](adr/008-campaign-writer-ownership.md)，不可变检查点取舍见 [ADR-009](adr/009-immutable-recovery-checkpoints.md)。[M4.2c 受控完整重跑](worklog/2026-10-21-m4-controlled-rerun.md)已打通单代激活、累计预算与新 Run 交付；新尝试须有首次计划中的次数/期限授权，再次中断只审计并阻塞。旧格式写恢复、付费恢复和连续多代仍未开放。
+
+[M4.3 资源归属与清理](worklog/2026-10-21-m4-resource-ownership.md)记录创建前意图、engine/Run 绑定、精确 ID 清理、未知创建阻塞及真实 Docker 强杀后单代重跑；长期取舍见 [ADR-010](adr/010-docker-resource-ownership.md)。审计只核对记录，实时检查与清理在原 Campaign 锁内完成。[正式评测草案](experiments/m5-evaluation-draft.md)记录一次尝试、独立参考/复核、分母和未知处理；实际留出及其他冻结材料未齐备，当前不是冻结协议或执行命令。
+
+[M4 持久化窗口补充](worklog/2026-10-21-m4-persistence-windows.md)区分 Runner 完整恢复和预算组件强杀：基线后/候选验证前的新 Run 交付保留旧成果，预留后未调用/响应后未结算的账目保留整笔未知占用。[真实 Docker 连接中断](worklog/2026-10-21-m4-docker-connection.md)又覆盖清理前、清理后、检查点后三次断连，验证阻塞及恢复同一引擎后新 Run 交付；不停止共享 daemon，不等同 daemon 重启。正式冻结仍待，M4 总体验收保持未通过。
 
 ## 记录原则
 

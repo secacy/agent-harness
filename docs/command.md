@@ -421,3 +421,111 @@ go test -race ./scenarios/rpcx/l2/round
 ```
 
 覆盖零分母、未知区间、缺文件、跨 Run/候选/规范、重复引用、原失败/未启动任务、费用只计一次及输入/归档漂移。可选的已有三仓受控 Campaign 校准会对既有候选运行参考，需显式设置环境变量，见轮次说明；不读取 .env 或调用模型 API。
+
+
+## 只读审计已有 Campaign
+
+先停止原 Campaign 的写者，选择尚不存在、与源目录互不包含的报告目录：
+
+```sh
+go build -o runs/harness ./cmd/harness
+runs/harness audit --campaign runs/<campaign>/campaign --output runs/<new-audit-dir>
+```
+
+当前 campaign-audit-v5 支持 Campaign v1/v2、根账本 budget v1、rpcx Run v2，以及两种 demo-orders、Goddd、Translation、Workouts Profile；另检查 recoveries 中的恢复检查点（包含 budget v2）和提交标记。Campaign v2 仍为单 Run，核对写锁协议声明及原始锁文件，但不检测写者活性。输入可以迁移到新位置；记录里的旧来源/命令路径只作元数据核对，不回到旧机器取材料。输出 audit.json、sources.json、audit.md，最后发布带文件摘要的 published.json。缺少最终标记不能算报告完整发布。
+
+原生退出码：0 为一致性完整通过；1 为确定违规（即使同时有缺口）；2 为参数/目录配置错误；3 为审计无法完成、来源变化或操作失败；130 为取消。终端同时显示 execution_state、违规/缺口/观察数。合法初始化或发布中断可以退出 0 并显示 incomplete，不能据此恢复运行或释放预算。`go run` 会包装程序退出码；需要判断精确退出码时使用编译后的二进制。
+
+审计不需要密钥，不初始化模型或 Docker，不执行仓库命令，不重算质量 verdict。pass 表示声明范围内记录和材料自洽，不代表迁移正确、审核链接有效或历史来源已认证；补丁只核对原字节摘要，未重放。未引用缓存与其他评测材料不在覆盖内。新审计报告不会覆盖原 Run、原质量判定或账本。已完成五个受控 Unix SIGKILL 窗口及正常完成对照；恢复按 M4 后续单元推进，见[设计与实现记录](worklog/2026-10-20-m4-readonly-audit.md)。
+
+
+### 真实进程中断验收
+
+在 macOS/Linux 上显式开启（需本地 Go 和 Git，运行已知可信夹具）：
+
+```sh
+HARNESS_CRASH_ACCEPTANCE=1 HARNESS_CRASH_OUTPUT="$PWD/runs/m4-crash-check" \
+  go test -race ./scenarios/rpcx/runner \
+  -run '^TestAudit(SIGKILLCheckpoints|UninterruptedCampaignControl)$' -count=1 -timeout=15m
+```
+
+该命令运行独立测试宿主中的真实 Campaign/Runner/预算与本地离线验证；模型为进程内替身，没有供应商请求。父进程经专用管道确认持久化边界和自己启动的 PID 后发送 SIGKILL，核对信号退出，再做两次只读审计；另有正常完成对照。每个案例创建新目录，默认普通测试跳过这些入口。本机本轮约需 3 分钟，时间不作为性能指标。
+
+五个窗口是初始化、基线通过、底层受控模型等待回复、report/review 已发布但 Run 未终态、Run 已终态但 Target 未更新；检查未决预留与已完成成果保留。它们不代替掉电、实际供应商请求、Docker 遗留资源或自动恢复验收。实现取舍和原始证据见[工作记录](worklog/2026-10-20-m4-readonly-audit.md#12-m41c真实进程中断验收)。
+
+### 写者排他与恢复前置检查
+
+macOS/Linux 上运行：
+
+```sh
+HARNESS_WRITER_ARTIFACTS="$PWD/runs/m4-writer-check" \
+  go test -race ./internal/writer ./internal/recovery ./internal/campaign ./internal/audit -count=1 -timeout=3m
+```
+
+测试会向自己创建并确认身份的辅助进程发送 SIGSTOP/SIGKILL，核对同一锁的排他与释放、子命令不继承，以及真实 Campaign 中断后的检查不改源。模型是受控替身，没有供应商调用或实际重跑；每次保留新子目录。新建 Campaign 自动持写锁，现有命令无需新增参数。recovery.Check 目前只有 Go API，必须由可信宿主提供资源静止检查；没有恢复/强制接管命令。范围见 [M4.2a 工作记录](worklog/2026-10-20-m4-recovery.md#10-m42a写者排他与只读恢复检查)。
+
+### 恢复检查点验收
+
+macOS/Linux 上运行恢复发布故障与控制层进程测试：
+
+```sh
+HARNESS_RECOVERY_ARTIFACTS="$PWD/runs/m4-prepare-check" \
+  go test -race ./internal/budget ./internal/recovery ./internal/audit ./internal/campaign -count=1 -timeout=4m
+```
+
+显式运行实际离线 rpcx 中断与检查点准备（需要本地 Go/Git、可信夹具）：
+
+```sh
+HARNESS_RECOVERY_ACCEPTANCE=1 HARNESS_RECOVERY_ARTIFACTS="$PWD/runs/m4-rpcx-prepare" \
+  go test -race ./scenarios/rpcx/runner \
+  -run '^TestRecoveryRPCXInterruptedCheckpoints$' -count=1 -timeout=10m
+```
+
+两组测试只向自己创建并确认身份的子进程发送 SIGKILL；rpcx 对照在模型在途、报告发布后及 Run 终态后停止，确认预留转未知仍占原额、未终态不采纳、完整终态可采纳。每个案例使用新目录，没有真实供应商请求或 Agent 重跑。Prepare 只有 Go API，需要可信资源静止能力；Prepared 仅表示检查点已提交，原根目录仍描述旧尝试。可用前述 `harness audit` 检查含检查点的目录，没有生成恢复命令。实施取舍与结果见 [M4.2b 工作记录](worklog/2026-10-20-m4-recovery.md#11-m42b恢复控制检查点)。
+
+### 受控完整重跑验收
+
+恢复执行只有 Go API `recovery.Execute`，没有真实付费恢复命令。首次计划必须预先冻结 RecoveryPolicy；旧单次实验不可原地升级或追加额度。独立审计使用既有 harness audit，同时输出原根 execution_state 与恢复代次 recovery_execution_state。
+
+```sh
+# 核心机制包括预算预留/结算、恢复激活/账本/启动/结果发布的自有子进程 SIGKILL。
+HARNESS_BUDGET_CRASH_ARTIFACTS="$PWD/runs/m4-budget-windows" \
+HARNESS_RECOVERY_ARTIFACTS="$PWD/runs/m4-recovery-core" \
+  go test -race ./internal/budget ./internal/campaign ./internal/recovery ./internal/audit -count=1 -timeout=4m
+
+# 真实本地离线 Go 基线/门禁、受控编辑模型、六个自有子进程 SIGKILL 场景。
+HARNESS_RECOVERY_ACCEPTANCE=1 HARNESS_RECOVERY_ARTIFACTS="$PWD/runs/m4-recovery-rpcx" \
+  go test -race ./scenarios/rpcx/runner -run '^TestRecoveryRPCXControlledRerun$' -count=1 -timeout=12m
+```
+
+此验收仅操作自己启动并核对 PID 的进程；使用可信本地代码和固定迁移编辑，不读取 .env，不请求供应商。新 Run 从原认证输入创建，测试原样本仍是开发机制证据，不新增真实模型效果数据。完整结果可只读重入；分配后再次中断会阻塞，不再次运行。[方案、结果与限制](worklog/2026-10-21-m4-controlled-rerun.md)。
+
+六场景包括基线后、候选固定但验证前、模型在途、报告后、Run 终态后及预算耗尽。预算包另在 reserve 快照同步后、结算快照写入前精确暂停，两个窗口各有余额充足/耗尽对照；恢复转换和新账本准入是预算组件验收，不能称为这两个点的完整 rpcx 恢复实验。[窗口实施记录](worklog/2026-10-21-m4-persistence-windows.md)。
+
+### Docker 资源清理验收
+
+需要已运行的本机 Docker 与现有固定镜像，不自动拉取镜像，不需要模型密钥。新 batch 的 Docker 模式在首次计划中保存资源协议；旧单次批次不能补写协议取得恢复权限。当前清理只有 `recovery.CleanupResources` Go API，没有删除全局容器或付费恢复命令。
+
+```sh
+go test -race ./internal/execution ./internal/audit ./internal/campaign ./internal/recovery -count=1 -timeout=5m
+
+HARNESS_RESOURCE_ACCEPTANCE=1 HARNESS_RECOVERY_ARTIFACTS="$PWD/runs/m4-docker-resources" \
+  go test -race ./scenarios/rpcx/runner -run '^TestDockerCampaignResourceCleanupAndRecovery$' -count=1 -timeout=12m
+```
+
+第一组含本机受控 Docker CLI 替身的创建响应丢失、迟到创建、归属不匹配、引擎不可用与删除失败；不把这些视为真实 daemon 故障注入。第二组实际创建受限容器和一个公共标签邻居，核对自身子进程 PID 后 SIGKILL Harness，验证活写者拒绝清理、遗留容器阻止恢复、按精确 ID 清理且邻居不变、重复清理、实时检查及新 Run 从基线迁移/验证。固定编辑模型只检验机制，不是模型自主效果。
+
+`harness audit` 只读显示 resource_state，并明确未连接 Docker；实际恢复必须在原锁内实时检查。创建已发出但无完成见证且查不到时保持未知，不能用反复清理或等待时长解锁。[设计与结果](worklog/2026-10-21-m4-resource-ownership.md)。
+
+### 真实 Docker 客户端连接故障验收
+
+需要运行中的本机 Unix socket Docker endpoint 和既有固定镜像。测试使用独立临时 DOCKER_CONFIG/context，切换自有 socket 别名，使真实 CLI 连接失败；共享引擎继续运行。不会复制用户凭证、改变全局 context 或拉取镜像。
+
+```sh
+HARNESS_DOCKER_CONNECTION_ACCEPTANCE=1 HARNESS_RECOVERY_ARTIFACTS="$PWD/runs/m4-docker-connection" \
+  go test -race ./scenarios/rpcx/runner -run '^TestDockerConnectionFailureCleanupAndRecovery$' -count=1 -timeout=12m
+```
+
+该场景复用宿主强杀/邻居保留/精确清理/新 Run 全链路，在清理前、清理成功后及检查点后三次断连；分别断言未停止诊断、Prepare 拒绝及 Execute 零分配/零模型组装。恢复后重新实时核对相同 engine，旧成果不变。它只验证新连接不可用及恢复，不是 daemon 重启或在途连接中断实验。[实施与证据](worklog/2026-10-21-m4-docker-connection.md)。
+
+资源命令并发的实际 Docker 对照可单独运行：`HARNESS_DOCKER_TEST=1 go test -race ./internal/execution -run '^TestOwnedDockerConcurrentCommandCleanup$' -count=1`。该命令运行四个短命令并核对各自回收；设置 HARNESS_RECOVERY_ARTIFACTS 可保留逐命令记录。受控 CLI 故障替身需要本机 Python 3。

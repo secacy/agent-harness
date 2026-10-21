@@ -66,3 +66,19 @@ env GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly G
 `CampaignExecutor(trustedLocal)` 将显式 Target 接到 [internal/campaign](../../../internal/campaign/README.md)。共享账本、模型和有界 Executor 由 Campaign 注入；Runner 继续拥有输入认证、基线检查、实际 Run ID、生成前预算绑定、独立门禁和完整交付。Campaign 只索引原报告，不重新判定质量。
 
 批次取消会传到排队命令和在途命令；单任务失败不取消其他任务。真实 Docker 强杀对照仅杀所属执行容器，不代表 worker/Harness 中断恢复。当前通过 Go API 联调，没有新增付费 batch CLI，Goddd、Translation 与 Workouts 可使用各自新 Profile；其余仓库仍须单独接入。
+
+
+## 只读归档审计
+
+`InspectRun` 为 [audit 核心](../../../internal/audit/README.md)提供五种已发布 Profile 的只读检查，核对归档输入、候选、基线命令、报告/验证/证据及预算绑定。历史验证器材料按归档摘要核对，不要求等于当前源码；不运行候选、不重判质量。适用边界、失败发布与真实归档验收见[工作记录](../../../docs/worklog/2026-10-20-m4-readonly-audit.md#11-m41brpcx-归档证据与审计命令)。
+
+已提供 `harness audit --campaign <root> --output <new-dir>`，在模型与执行后端初始化之前分派；原目录必须已停写，新目录接收报告。该命令不执行恢复或清理。源码树/日志/报告一致性 pass 也不消除原 NeedsAttention 或审核材料缺陷。
+
+
+[真实中断验收](../../../docs/worklog/2026-10-20-m4-readonly-audit.md#12-m41c真实进程中断验收)覆盖五个受控 Unix 检查点及正常完成对照；测试宿主运行同一 Campaign/Runner/预算代码并实际执行离线 Go 检查。公共 Run/CampaignExecutor 使用 nil 观察函数；包内观察点只给测试建立精确暂停边界。原生审计命令对当时六份材料的结果与 API 相同。后续已支持原计划授权下的单代新账本/新 Run 恢复，仍不打开旧工作区或自动重试。
+
+恢复宿主可通过 Services.RunID 指定已持久化的收据身份；CampaignExecutor 传给 Config.RunID，Runner 只允许受限 ID 且独占创建目录。默认单 Run 入口仍自动分配身份，不能打开旧工作区。恢复审计由宿主传入固定 BudgetPath，区分根预算 v1 与恢复代次 v2，核对同一 Campaign/Target/Run 与材料摘要。受控强杀和完整重跑入口见 [M4.2c](../../../docs/worklog/2026-10-21-m4-controlled-rerun.md)。
+
+[持久化窗口补充](../../../docs/worklog/2026-10-21-m4-persistence-windows.md)增加基线后与候选固定但验证前的强杀/新 Run 对照。candidate_fixed 位于候选摘要计算及输入复核之后、独立验证调用之前；此时磁盘仍是 Running/Validating，候选 pin 未发布。测试管道中的摘要仅用于核实注入窗口，不作为审计完成依据，也不改 Run 格式。
+
+有 Campaign 资源模板时，Runner 在首份 run.json 发布后填入实际 Run ID 和相对路径，再绑定命令后端；基线、工具和验证均复用它。resources 控制目录由宿主分配且不挂载给候选，Run 自身格式不变。[真实 Docker 中断、清理与重跑验收](../../../docs/worklog/2026-10-21-m4-resource-ownership.md)。
