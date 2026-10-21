@@ -411,7 +411,7 @@ func readTarget(reader *reader, root string, pin TargetPin, target campaign.Targ
 	if binding == nil || binding.TargetID != pin.ID || binding.RunID != run.ID || binding.CampaignID != campaignID {
 		return out, fmt.Errorf("%w: run budget identity missing", ErrInvalid)
 	}
-	module := map[string]string{"rpcx-goddd-t3-v1": "goddd", "rpcx-translation-t3-v1": "translation", "rpcx-workouts-t3-v1": "trainings"}[pin.ProfileID]
+	module := map[string]string{"rpcx-goddd-t3-v1": "goddd", "rpcx-translation-t3-v1": "translation", "rpcx-workouts-t3-v1": "trainings", "rpcx-ghcli-t3-v1": "ghcli"}[pin.ProfileID]
 	if module == "" {
 		return out, fmt.Errorf("%w: unsupported L2 profile", ErrInvalid)
 	}

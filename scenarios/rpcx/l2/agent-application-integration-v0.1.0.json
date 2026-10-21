@@ -1,0 +1,678 @@
+{
+  "schema_version": 1,
+  "version": "rpcx-agent-application-integration-v0.1.0",
+  "status": "accepted_for_declared_calibration_scope",
+  "purpose": "Fixed single-repository Harness integration and independent reference calibration; no real model effect or formal evaluation admission.",
+  "implementation_base_commit": "e7177a0def3c90ec39e12c5ecb27e6c273a4a03b",
+  "dataset_version": "rpcx-l2-ghcli-v1",
+  "profile_id": "rpcx-ghcli-t3-v1",
+  "public_receipts_sha256": {
+    "runtime_revision_03": "904e49693f3b740624fe2b56ef535297618bd691a8c34026bc206f6f08b5bf17",
+    "runtime_source_manifest": "85cd0f2481319d2da42a94c004f8463b7360496705c46a217614dc4740168cba",
+    "reference_revision_04": "9c41bcb7cd6fdcb481652051140010f99a81fe50789882ca5cd0458c606327a8",
+    "controlled_matrix": "f140224ce91aaf2e3ef78cb7f75101c7d5cf54b783a25c3c8e41ff0f8b41f11f",
+    "closure": "b462edbbc71d2f666e6900476a198ab38c361cb1a76964ee04e62c24f1567397",
+    "project_regression": "01e8a7b38758d50e41732271b3ce383a01d54c2e1870f9910e06ffb3d8d6338d",
+    "independent_final_review": "dbd847526e7cfd0cdc6878d3ff231e5c5fa6e5fa5c21ad17e0c84b1e5a711553"
+  },
+  "runtime": {
+    "schema_version": 1,
+    "revision": 3,
+    "status": "implementation_frozen_after_infrastructure_feedback_without_business_controls",
+    "frozen_at": "2026-10-21T13:24:57.718664+00:00",
+    "assignment_sha256": "a8c1f82db234f567c48462ae4d4637b732803e9630a04789b84e6adb65820d18",
+    "verifier_version": "rpcx-ghcli-evidence-v1",
+    "profile_id": "rpcx-ghcli-t3-v1",
+    "dataset_version": "rpcx-l2-ghcli-v1",
+    "source_count": 25,
+    "source_sha256": "a609176f395c6a1a8c76ed70f05965e20a7830ad1f24ff705f890a2213319ced",
+    "source_manifest_sha256": "85cd0f2481319d2da42a94c004f8463b7360496705c46a217614dc4740168cba",
+    "api": [
+      "ghcli.Evaluate(context.Context, checks.EvaluationRequest) (checks.Evaluation, error)",
+      "ghcli.HostMaterialsSHA256() (string, error)",
+      "ghcli.PrepareBackend(context.Context, string, execution.Executor) (*l2.ModuleBackend, error)",
+      "runner.TargetFromGHCLI(string, string, string) (task.Target, error)",
+      "runner.ProfileGHCLI"
+    ],
+    "boundaries": {
+      "reference_or_control_read": false,
+      "calibration_results_seen": false,
+      "generation_backend": "docker_required",
+      "baseline_command_seconds": 30,
+      "gate_command_seconds": 90,
+      "audit_file_limit_changed": false,
+      "audit_total_limit_changed": false,
+      "ordinary_tool_tree_limit_changed": false,
+      "paid_model_calls": 0,
+      "network_downloads": 0,
+      "git_commits": 0,
+      "infrastructure_feedback_seen": true,
+      "business_controls_or_reference_read": false,
+      "business_calibration_verdicts_seen": false,
+      "semantic_probes_changed": false,
+      "typed_proof_rules_changed": false,
+      "business_change_scope_changed": false,
+      "shared_scope_extension": [
+        "scenarios/rpcx/gate/files.go",
+        "scenarios/rpcx/gate/files_test.go"
+      ]
+    },
+    "verification": {
+      "directed_unit": "passed_four_packages_0.383s_1.179s_1.290s_5.697s",
+      "directed_race": "passed_four_packages_2.248s_3.281s_3.438s_17.232s",
+      "go_vet": "passed_revision_03",
+      "diff_check": "passed_revision_03",
+      "related_quality_checks_testintegrity": "passed_three_packages_0.397s_40.258s_1.383s",
+      "full_runner_or_docker_matrix_repeated": false,
+      "prior_receipts_and_failures_preserved": true
+    },
+    "private_evidence": "runs/m5-application-runtime-01/private",
+    "safe_generic_review_files": [
+      "scenarios/rpcx/runner/audit_bundle.go",
+      "scenarios/rpcx/runner/run.go",
+      "scenarios/rpcx/runner/profile.go"
+    ],
+    "source_manifest": "runs/m5-application-runtime-01/public/source-identity-03.json",
+    "previous_runtime_sha256": "86e7609cdea42bc6f1cc078153b3b9c7fea33eb8a7e585224b5365acf41a9213",
+    "previous_source_sha256": "7a752441211fbd25cd0dc12bbec9259fb3733ac35a2760e34ef9fad383f147ee",
+    "revision_reason": [
+      "Bind host-assigned rule identifiers to actual migration specification paragraph/line locations or host-policy JSON pointers, and archive a mapping referenced by every check.",
+      "Recognize a single toolchain module directive as its own identity key; preserve exact baseline/candidate comparison and propagate authenticated expected-module parse errors."
+    ],
+    "source_changed_existing_file_count": 3,
+    "source_added_file_count": 7
+  },
+  "reference": {
+    "schema_version": 1,
+    "status": "frozen_ready_for_calibration",
+    "assignment_sha256": "af0d61960b0f7109706a5d164dba1c748d049cfe50f17ef33243503af5e4c717",
+    "dataset_version": "rpcx-l2-ghcli-v1",
+    "runtime_profile": "rpcx-ghcli-t3-v1",
+    "reference_version": "rpcx-l2-reference-ghcli-data-v2",
+    "report_version": "rpcx-l2-reference-ghcli-v2",
+    "schema2_enabled": false,
+    "source_sha256": "01550ffc74e3052474eeeec4e0666912503d6753a5267c1fb34b290f7c6ff8c8",
+    "tests_sha256": "1b3a6ddb45b45b65ae2cfdbe4a010c3e062b85a37ec24dc0f5ad9b812703b156",
+    "data_sha256": "c14b00410a24c8cdb077d4fd81ba4c84f6ddf4771b37288638cb525927c47b7f",
+    "source_file_count": 9,
+    "test_file_count": 7,
+    "reference_file_count": 5,
+    "identity": {
+      "version": "rpcx-l2-reference-ghcli-data-v2",
+      "spec_sha256": "6e3a87056ec102536b52e1ffc340dbd8dd541d8d28589c555b9b08bafc1e40e8",
+      "reference_sha256": "feb693bc5eb75aa1876bcf7ddc5bde5b8d28bedca92ff9b32fd0f7dea88acf8f",
+      "tool_sha256": "04348c6a5236ee54f3d9cb2f4082c8b5e8f4b8f58f077a1fb7ada2c0242d1bd1"
+    },
+    "api": "EvaluateGHCLI(context.Context, Request) (Report, error)",
+    "automatic_section_count": 6,
+    "review_section_count": 3,
+    "paid_model_calls": 0,
+    "network_downloads": 0,
+    "actual_docker_calibration": "pending_isolated_calibrator",
+    "interface_verification": "passed",
+    "preserved_failed_attempt_count": 4,
+    "isolation": "procedural_shared_filesystem_and_model_family",
+    "freeze_revision": 4,
+    "package_regression": "pass",
+    "finalized_at": "2026-10-21T13:26:12.646464+00:00",
+    "freeze_manifest_sha256": "ff909700cac852f65def0485498676eabf6aa396d8e80d437f2138f71afce432",
+    "frozen_materials_unchanged": true,
+    "published_identity_unchanged": false,
+    "package_verification": {
+      "package_count": 1,
+      "terminal_test_events": {
+        "pass": 104,
+        "fail": 0,
+        "skip": 3
+      },
+      "adapter_terminal_test_events": {
+        "pass": 26,
+        "fail": 0,
+        "skip": 0
+      },
+      "package_terminal": "pass",
+      "elapsed_seconds": 124.766,
+      "vet": "pass",
+      "verification_sha256": "c993c34605ba86b7d5ee3137259256cebecf7ff095f23e85cbe3a40f46589d76",
+      "raw_event_log_sha256": "033f6115bb04b2f09eb95fa107f337ec777f119dd59787c6e59f92b483b1a633",
+      "post_shared_stability_subset": {
+        "pass": 3,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "prior_failure_records_preserved": true,
+    "source_modified_during_resume": true,
+    "reference_data_changed": true,
+    "reference_assertions_changed": true,
+    "standard_specification_artifact": "materials/spec.md",
+    "dependency_artifact_paths": [
+      "modules.json",
+      "modules.bundle/bundle.json",
+      "modules.bundle/modules-000.tar.gz.part",
+      "modules.bundle/modules-001.tar.gz.part",
+      "modules.bundle/modules-002.tar.gz.part",
+      "modules.bundle/modules-003.tar.gz.part",
+      "modules.bundle/modules-004.tar.gz.part"
+    ],
+    "dependency_artifact_count": 7,
+    "artifacts_use_actual_prepared_host_archives": true,
+    "artifacts_hashes_rechecked_after_execution": true,
+    "reference_scope_review": "corrected_to_published_http_request_boundary",
+    "calibration_open": false,
+    "scope_review_sha256": "7f88f7f367bacd430f8fefb8854e39e6fa8dfcd9a461a5751408127af78780ce",
+    "tool_freeze_sha256": "227120231041db68cd34988fd6e8e54030a637796bfb968dfc3e32433dbb91cd",
+    "archived_reference_file_count": 5,
+    "published_specification_unchanged": true,
+    "published_dataset_unchanged": true,
+    "old_reference_data_unchanged": true,
+    "rule_revision_basis": "Published specification paragraphs 2 and 3 require preserving the existing HTTP request parent context and response ownership, not a new upstream command propagation chain.",
+    "normative_parent_context_boundary": "existing HTTP request",
+    "response_body_parent_cancellation_checked": true,
+    "upstream_command_parent_value": "diagnostic_only_excluded_from_automatic_acceptance",
+    "command_order_errors_and_actual_expiry": "remain_automatic",
+    "thresholds_changed": false,
+    "archived_reference_version": "rpcx-l2-reference-ghcli-data-v1",
+    "current_api_reexecutes_archived_v1": false,
+    "identity_comparison_with_revision_03": {
+      "spec_unchanged": true,
+      "reference_unchanged": false,
+      "tool_unchanged": false,
+      "complete_identity_unchanged": false
+    },
+    "revision_03_identity_note": "The earlier unchanged-identity field referred only to specification and reference data. ToolSHA256 changed in revision 03, so the complete PublishedIdentity was not unchanged.",
+    "verification_scope": "Interface authentication, artifact layout and complete dependency references, evidence drift, published identity/review binding, archived data preservation, and syntax/scope of new request-boundary probes. Does not claim actual new candidate Docker probe execution."
+  },
+  "closure": {
+    "schema_version": 1,
+    "status": "complete_for_development_calibration_scope",
+    "kind": "development_calibration",
+    "assignment_sha256": "0bb425daa70b5759ad23a05ade626e23e2f358c7ffadd62bab7cbcdf647f45f3",
+    "runtime": {
+      "revision": 3,
+      "source_sha256": "a609176f395c6a1a8c76ed70f05965e20a7830ad1f24ff705f890a2213319ced"
+    },
+    "reference": {
+      "revision": 4,
+      "data_version": "rpcx-l2-reference-ghcli-data-v2",
+      "report_version": "rpcx-l2-reference-ghcli-v2",
+      "source_sha256": "01550ffc74e3052474eeeec4e0666912503d6753a5267c1fb34b290f7c6ff8c8",
+      "reference_sha256": "feb693bc5eb75aa1876bcf7ddc5bde5b8d28bedca92ff9b32fd0f7dea88acf8f",
+      "tool_sha256": "04348c6a5236ee54f3d9cb2f4082c8b5e8f4b8f58f077a1fb7ada2c0242d1bd1"
+    },
+    "fixed_matrix_sha256": "21b0c2427795bb1cc7e31ebc101f570de67a95bfab0ff645bae383f883b5a0a6",
+    "portable_package": {
+      "archive_sha256": "b9357de8ed8ca89536bfac6f3bae4ded791b8224bba2e07cae0378afec6f27dd",
+      "manifest_sha256": "97b311abea2eb49523aaaf127c134e58675aa2b30bbc15da2aa9721fbf196d13",
+      "file_count": 346,
+      "bytes": 487373,
+      "source_verified_execution": true,
+      "relative_inputs": true
+    },
+    "counts": {
+      "fixed_groups": 5,
+      "completed_final_campaigns": 5,
+      "single_target_campaigns": 5,
+      "runtime_verdicts": {
+        "ReadyForReview": 1,
+        "Rejected": 3,
+        "NeedsAttention": 1
+      },
+      "reference_automatic": {
+        "pass": 2,
+        "fail": 3
+      },
+      "commands": 119,
+      "model_calls": 15,
+      "known_tokens": 300,
+      "sentinel_commands": 10,
+      "paid_model_calls": 0,
+      "network_downloads": 0,
+      "all_recorded_run_attempts": 8,
+      "preserved_interrupted_run_attempts": 1,
+      "preserved_other_diagnostic_run_attempts": 2
+    },
+    "groups": [
+      {
+        "group": "control-1",
+        "candidate_sha256": "dfc895ee9cb16a3e367f90bb2ccdc91ecc83e9e51ca8490b82986d29c173c03b",
+        "run_sha256": "60257587a9095e868bcf0ac2eb526d8b1b17241f1804c0f0fe3ec5c15fb92cf9",
+        "campaign_sha256": "177000f7d987c216fbe3fe0bfde86a6a9e28740ff699d4d0228430d0401a6b2c",
+        "reference_sha256": "a4378201de467382885e62ee4f5e83f5692ef1ddcdf611f4e31802acd1a80bd4",
+        "audit_sha256": "3aca03f224dcb6cf37cd6bff7b9f80758dac53d3e2ad2065d3a3893da8e4ff71",
+        "round_sha256": "ac5e640128a6cf0a54750172f905e7c1450e7daebea38f4f1c19f7748a7e8680",
+        "result_sha256": "60d0a9332780129b0e6a4b7539a5e99e86245d1f6929360a86cb9942e5013a9f",
+        "runtime_verdict": "ReadyForReview",
+        "reference_automatic": "pass",
+        "round_reference": "inconclusive",
+        "audit": "pass",
+        "audit_complete": true,
+        "round_valid": true,
+        "round_complete": true,
+        "dependency_artifact_sources": 7,
+        "commands": 25,
+        "exact_cleanup_confirmed": 25,
+        "sentinel_commands": 2,
+        "patch_replay_same_candidate": true,
+        "review_links_verified": 86,
+        "reference_expiry": "pass",
+        "observed_actual_expiry_seconds": [
+          30.03,
+          30.03,
+          30.03
+        ]
+      },
+      {
+        "group": "control-2",
+        "candidate_sha256": "78103693a2b265aadd4b8b84717d986337ad1698db2eddf5910b98e10b831b49",
+        "run_sha256": "fa5cff4f2024be5b9ad309b862f8fa6d183fb33771c63907350b43393803b7ac",
+        "campaign_sha256": "7e6646096bdeeecde3a68129c20d8380e0d9cbcebcb89326f51e73db02ccd317",
+        "reference_sha256": "a668e58030aec86530d1d8fb29c044628f49140c9d99c1acdc89e50193fa54ed",
+        "audit_sha256": "1ea275853bd0a940e3042c3debe3ca006691127454e3bec004cb3848a78e0c82",
+        "round_sha256": "a13977460cf7211d621c06fc4c988a5b12b223c0fa0a0ea31e56c1ef5c363e20",
+        "result_sha256": "7db468af36b8b3902d2c6c5fd96977fc4fb423f6764a4d0ef142d988d8aa5bc7",
+        "runtime_verdict": "Rejected",
+        "reference_automatic": "fail",
+        "round_reference": "fail",
+        "audit": "pass",
+        "audit_complete": true,
+        "round_valid": true,
+        "round_complete": true,
+        "dependency_artifact_sources": 7,
+        "commands": 23,
+        "exact_cleanup_confirmed": 23,
+        "sentinel_commands": 2,
+        "patch_replay_same_candidate": true,
+        "review_links_verified": 106,
+        "reference_expiry": "inconclusive",
+        "observed_actual_expiry_seconds": []
+      },
+      {
+        "group": "control-3",
+        "candidate_sha256": "66305dfcae2a3d92af670fe20cf96b5e919714c6741a07a1cca1498e4131d1af",
+        "run_sha256": "77c69948f6d4776ae1a15f3b8827fd7e01d05399c8fce05da953d5cf6400e7ca",
+        "campaign_sha256": "eb9f2631b1b89a0b56f19701fc51aec1959a6f3dabf2239295d53038666d0cd9",
+        "reference_sha256": "42ed1057a1dc0f9456a84f014429d4960add2965de284215ca8baa22e9b1c4eb",
+        "audit_sha256": "aaa5e20f10255272dcea19edb3b70f0698de8b4fe449986971f496fe2e1c3f51",
+        "round_sha256": "d1ab98499cd098c37f925764fe53d8389f53d50bc0d230ce567aef33ce157d7a",
+        "result_sha256": "63d7733c110f473c44caf5b3e5128c7645eb657a6cf542fb32d27ad77f3bc809",
+        "runtime_verdict": "Rejected",
+        "reference_automatic": "fail",
+        "round_reference": "fail",
+        "audit": "pass",
+        "audit_complete": true,
+        "round_valid": true,
+        "round_complete": true,
+        "dependency_artifact_sources": 7,
+        "commands": 23,
+        "exact_cleanup_confirmed": 23,
+        "sentinel_commands": 2,
+        "patch_replay_same_candidate": true,
+        "review_links_verified": 98,
+        "reference_expiry": "inconclusive",
+        "observed_actual_expiry_seconds": [
+          30.03
+        ]
+      },
+      {
+        "group": "control-4",
+        "candidate_sha256": "71b79dea523da49b5bd84db85613a44a6b2288179eae4aa500a5d9d8dab9d499",
+        "run_sha256": "a7a0f5feff12383f7901e434c71e415124914ea1977da62ccca0f794c67308da",
+        "campaign_sha256": "f747067f30a2940fdb0ee5fcb3777bc09a44c4c1dd9f025fcf4fca1c151e8829",
+        "reference_sha256": "7c287b9acdbd20f28d4773a7fe28f32f11ca35bf565fabe7f68047feb03bd38b",
+        "audit_sha256": "8d418723add91321175026e4ee9171b4cb480b362a7cdbd73e9b3de0118fcd60",
+        "round_sha256": "d33d28bd3c580a75e9b460ce2b9767aab70e60f900e64e8e8869e9c4e7f991ba",
+        "result_sha256": "c724bab26156a84a41c8eea72ee8bca90d0073c34ef5183614553c1cd3c6cc7f",
+        "runtime_verdict": "Rejected",
+        "reference_automatic": "fail",
+        "round_reference": "fail",
+        "audit": "pass",
+        "audit_complete": true,
+        "round_valid": true,
+        "round_complete": true,
+        "dependency_artifact_sources": 7,
+        "commands": 23,
+        "exact_cleanup_confirmed": 23,
+        "sentinel_commands": 2,
+        "patch_replay_same_candidate": true,
+        "review_links_verified": 98,
+        "reference_expiry": "inconclusive",
+        "observed_actual_expiry_seconds": []
+      },
+      {
+        "group": "control-5",
+        "candidate_sha256": "7cd828cbb0b42e4c3e7d335dab5231192d905320a842422d1d36f1ed96cb6579",
+        "run_sha256": "0438bd63df12b6bed519917716feee7f8adf8a64e7e814e0c5d987b92aa816f9",
+        "campaign_sha256": "c8cc0f65f013bf7a0a580d6e074ec317336ed794aeb10f5cbe6f4b95026902eb",
+        "reference_sha256": "8f7379010b26f6cc87591acf1feeda38315e9644130ee51aa70007e10bf3abe4",
+        "audit_sha256": "4c93d4dfdeb532d7154cdce14e8f2059273a960db91df028ed37ce733b9b3413",
+        "round_sha256": "573565a94b9824a6d0eaf7774ad8d35aed3d4425ae73da6655dd5c0244affac0",
+        "result_sha256": "21e62b799d18f89fc8ba203800d2da99eef1516ad857cdf77b71da7b55415ee5",
+        "runtime_verdict": "NeedsAttention",
+        "reference_automatic": "pass",
+        "round_reference": "inconclusive",
+        "audit": "pass",
+        "audit_complete": true,
+        "round_valid": true,
+        "round_complete": true,
+        "dependency_artifact_sources": 7,
+        "commands": 25,
+        "exact_cleanup_confirmed": 25,
+        "sentinel_commands": 2,
+        "patch_replay_same_candidate": true,
+        "review_links_verified": 86,
+        "reference_expiry": "pass",
+        "observed_actual_expiry_seconds": [
+          30.03,
+          30.03,
+          30.04
+        ]
+      }
+    ],
+    "engineering_interruptions": {
+      "original_run_record_not_rewritten": true,
+      "completed_first_two_groups_not_repeated": true,
+      "continuation_receipt_sha256": "d35ae3455423988d163c74a2bf99ab300b271b5228eb706bf911753cf153eda3",
+      "all_attempt_identities_sha256": "ff839054f853808624b8a59d3eeaeedb07bb0ed5b88ecccf6d5748866b2fb9dd",
+      "initial_diagnostic_receipt_sha256": "475fdb6cf4abf967e5d8028eb79434bbcae55814aa94b0cd64d2e33072e0f320"
+    },
+    "boundaries": {
+      "schema2_enabled": false,
+      "heldout_enabled": false,
+      "m5_started": false,
+      "human_review_filled": false,
+      "model_effect_estimated": false,
+      "procedural_isolation": "shared filesystem and model family",
+      "original_failures_preserved": true,
+      "gate_or_reference_changed_by_calibrator": false
+    },
+    "verification": {
+      "new_layout_actual_30_second_expiry": true,
+      "all_original_tests_preserved": true,
+      "full_candidate_patch_replay": true,
+      "real_host_markers_and_container_absence": true,
+      "all_seven_reference_dependency_artifacts_consumed_by_round": true,
+      "reader_limits_unchanged": true,
+      "real_chunk_tamper_rejected_on_private_copy": true,
+      "reference_request_negative_checks": {
+        "cases": 9,
+        "rejected": 9,
+        "execution_calls": 0,
+        "exit_code": 0
+      },
+      "ordinary_regression": {
+        "status": "passed",
+        "report_sha256": "01e8a7b38758d50e41732271b3ce383a01d54c2e1870f9910e06ffb3d8d6338d",
+        "exit_code": 0
+      },
+      "final_exact_cleanup": {
+        "recorded_ids": 141,
+        "all_absent": true,
+        "label_inventory_empty": true,
+        "evidence_sha256": "f31f4c3d1ca161e463d68f242e380b693d227ae9d1255a4b88cc3a512ccdf5f5"
+      },
+      "example_sync": {
+        "changed_fields": 4,
+        "current_templates_only": true,
+        "evidence_sha256": "b1a60f917a8a719167765a9ca442dc3e76d4ed92a4223c4bcdf7c7992ee33f93"
+      }
+    },
+    "final_regression": {
+      "unique": 37,
+      "passed": 31,
+      "failed": 0,
+      "no_test_files": 6,
+      "skipped_other": 0
+    },
+    "final_test_cases": {
+      "unique_terminal_cases_including_subtests": 1658,
+      "passed": 1601,
+      "failed": 0,
+      "skipped": 57,
+      "terminal_event_counts": {
+        "pass": 1601,
+        "skip": 57
+      }
+    },
+    "final_source_identities": {
+      "scenarios/rpcx/l2/round/protocol.go": "65679bd0c6c4d64d7fe6c7167f261c4cabb2841cd14832f729c1a14efc3725c2",
+      "scenarios/rpcx/l2/round/reference.go": "aff8a70b9467df42747567e7391ff2f14905c93a0b0c402428686bd732933d7c",
+      "scenarios/rpcx/l2/round/summarize.go": "248e3cbfabcfa9b6b6fec48d8043f18af78dadf77caa03db7ad27b17a709ccea",
+      "scenarios/rpcx/l2/round/ghcli_test.go": "26f65f557483b7f3ad7fe43f0b26bed16c9726bc35f892d58cdfa1ee061c5fc5",
+      "scenarios/rpcx/l2/round/reference_bundle.go": "502e9d99dace22e633eb643ccc0e67dc6c94797831d1a35570b8789cd9c73307",
+      "scenarios/rpcx/l2/round/reference_bundle_test.go": "05b78087e410ef52dd6b8208ec03408397d41da79936d186a01e75ce4b8609c6",
+      "scenarios/rpcx/runner/ghcli_acceptance_test.go": "fa9deb90faea6f2fca2544359d5066d0d173bc8b21f9d9b82f99d4ec8cda8232",
+      "examples/rpcx-l2-enrollment.json": "33d2cb2fbfacfa1e3dc24c720c1ab790388141a301d54a485068d2e755d20922",
+      "examples/rpcx-l2-batch.json": "5467424c463df6aabcdc612fcf3cc20388a202cb185311898bd5ff4d96ea63e5"
+    }
+  },
+  "prior_revision_receipts_sha256": {
+    "runs/m5-application-runtime-01/public/runtime.json": "f133e66a862465c364f07d75ff67772af9a1ed61c6b27e1f8b211aa4782f9004",
+    "runs/m5-application-runtime-01/public/runtime-02.json": "86e7609cdea42bc6f1cc078153b3b9c7fea33eb8a7e585224b5365acf41a9213",
+    "runs/m5-application-runtime-01/public/runtime-03.json": "904e49693f3b740624fe2b56ef535297618bd691a8c34026bc206f6f08b5bf17",
+    "runs/m5-application-reference-adapter-01/public/adapter-02.json": "5f291453421fbfaafeb9d7632286c55e7ecf35724db521ae553219f20a73fa22",
+    "runs/m5-application-reference-adapter-01/public/adapter-03.json": "888d1316dad126b3a5b52a654d7f21061fa7cdfa34ef0e4066cb5d864303f568",
+    "runs/m5-application-reference-adapter-01/public/adapter-04.json": "9c41bcb7cd6fdcb481652051140010f99a81fe50789882ca5cd0458c606327a8",
+    "runs/m5-application-integration-review-01/public/assessment-interim-01.json": "ae6463fded67c30df48795aa5fd9053748c114b6b6cb76576c1837afe912a09b",
+    "runs/m5-application-closure-01/public/first-runtime-diagnostic.json": "475fdb6cf4abf967e5d8028eb79434bbcae55814aa94b0cd64d2e33072e0f320",
+    "runs/m5-application-closure-01/public/matrix-02.json": "4fbfc1651415f0fec35e6406a024924bc71dec3796dc761a053d8856e590c41d"
+  },
+  "isolation": {
+    "runtime_reference_separate_author_contexts": true,
+    "parent_visibility": "metadata_and_generic_host_code_only",
+    "runtime_business_controls_seen": false,
+    "runtime_infrastructure_feedback_seen": true,
+    "reference_spec_scope_correction": true,
+    "calibrator_and_readonly_reviewer_have_seen_controls": true,
+    "security_boundary": "procedural_shared_filesystem_and_model_family",
+    "independent_human_holdout_satisfied": false
+  },
+  "admission": {
+    "schema1_development_calibration": true,
+    "schema2_formal": false,
+    "heldout": false,
+    "m5_started": false,
+    "paid_model_calls": 0,
+    "real_model_effect_estimated": false
+  },
+  "project_regression": {
+    "schema_version": 1,
+    "status": "passed",
+    "command": "go test -json -p 1 ./internal/... ./scenarios/rpcx/... ./cmd/...",
+    "attempts": 1,
+    "exit_code": 0,
+    "special_acceptance_flags_enabled": false,
+    "localhost_mock_permission": "authorized_escalation",
+    "packages": {
+      "unique": 37,
+      "passed": 31,
+      "failed": 0,
+      "no_test_files": 6,
+      "skipped_other": 0
+    },
+    "tests": {
+      "unique_terminal_cases_including_subtests": 1658,
+      "passed": 1601,
+      "failed": 0,
+      "skipped": 57,
+      "terminal_event_counts": {
+        "pass": 1601,
+        "skip": 57
+      }
+    },
+    "elapsed_event_seconds": 722.802,
+    "raw_jsonl_sha256": "7b261ee71c471c210942e797669f40d3cfcceb8ca0e8c5ab35bffdd85015c7cb",
+    "reference_binding_negatives": {
+      "cases": 9,
+      "rejected": 9,
+      "backend_calls": 0,
+      "raw_jsonl_sha256": "949bf93e6d7c82c0c1a73c76b1218d2e71768d2ae4b3d325d8cb5e80abb52725"
+    },
+    "current_example_digest_sync": {
+      "fields": 4,
+      "old_new_evidence_sha256": "b1a60f917a8a719167765a9ca442dc3e76d4ed92a4223c4bcdf7c7992ee33f93",
+      "historical_protocols_changed": false
+    },
+    "paid_model_calls": 0,
+    "network_downloads": 0,
+    "matrix_repeated_for_regression": false
+  },
+  "independent_final_review": {
+    "schema_version": 1,
+    "status": "final_read_only_review_complete",
+    "outcome": "accepted_for_declared_calibration_scope",
+    "final": true,
+    "assignment_sha256": "d02da0793dd34dd89f45c09be26f4b59ca7e525a7e44bbee7a59379896260191",
+    "reviewer": "/root/application_integration_reviewer",
+    "review_mode": "Independent source and existing actual evidence inspection; no candidate execution or implementation changes",
+    "frozen_identities": {
+      "runtime_revision": 3,
+      "runtime_receipt_sha256": "904e49693f3b740624fe2b56ef535297618bd691a8c34026bc206f6f08b5bf17",
+      "runtime_source_sha256": "a609176f395c6a1a8c76ed70f05965e20a7830ad1f24ff705f890a2213319ced",
+      "reference_revision": 4,
+      "reference_receipt_sha256": "9c41bcb7cd6fdcb481652051140010f99a81fe50789882ca5cd0458c606327a8",
+      "reference_source_sha256": "01550ffc74e3052474eeeec4e0666912503d6753a5267c1fb34b290f7c6ff8c8",
+      "reference_data_sha256": "feb693bc5eb75aa1876bcf7ddc5bde5b8d28bedca92ff9b32fd0f7dea88acf8f",
+      "reference_tool_sha256": "04348c6a5236ee54f3d9cb2f4082c8b5e8f4b8f58f077a1fb7ada2c0242d1bd1",
+      "spec_sha256": "6e3a87056ec102536b52e1ffc340dbd8dd541d8d28589c555b9b08bafc1e40e8",
+      "source_test_data_entries_checked": 46,
+      "source_identity_mismatches": 0
+    },
+    "evidence_receipts": {
+      "closure_sha256": "b462edbbc71d2f666e6900476a198ab38c361cb1a76964ee04e62c24f1567397",
+      "matrix_sha256": "f140224ce91aaf2e3ef78cb7f75101c7d5cf54b783a25c3c8e41ff0f8b41f11f",
+      "regression_sha256": "01e8a7b38758d50e41732271b3ce383a01d54c2e1870f9910e06ffb3d8d6338d",
+      "portable_manifest_sha256": "97b311abea2eb49523aaaf127c134e58675aa2b30bbc15da2aa9721fbf196d13",
+      "private_report_sha256": "e8ace33def19efd509fa508b10ae934c6a503567c3d62cb012c1a7bd98e60e2c",
+      "actual_verification_sha256": "0356dcaad7effbb05d952b8987ad4a5ba00d1a69b359b68d53a8e6d67e1bbfc1"
+    },
+    "actual_calibration": {
+      "groups": 5,
+      "single_target_campaigns": 5,
+      "runtime_verdicts": {
+        "ReadyForReview": 1,
+        "Rejected": 3,
+        "NeedsAttention": 1
+      },
+      "reference_automatic": {
+        "pass": 2,
+        "fail": 3
+      },
+      "reference_final_with_missing_reviews": {
+        "inconclusive": 2,
+        "fail": 3
+      },
+      "runtime_evidence_records_verified": 165,
+      "reference_artifacts_verified": 138,
+      "round_sources_and_archived_copies_verified": 623,
+      "audit_bound_files_verified": 1910,
+      "review_link_targets_verified": 474,
+      "commands": 119,
+      "final_command_cleanup_confirmations": 119,
+      "generation_container_sentinel_commands": 10,
+      "positive_host_markers": 20,
+      "patch_replays_matching_full_candidate": 5,
+      "complete_consistent_audits": 5,
+      "valid_complete_rounds": 5,
+      "required_dependency_artifacts_consumed_per_round": 7
+    },
+    "expiry": {
+      "new_layout_real_wait_observed": true,
+      "reference_expiry_pass_groups": 2,
+      "reference_expiry_inconclusive_after_behavior_failure_groups": 3,
+      "reference_pass_elapsed_seconds": [
+        30.032470311,
+        30.031789718,
+        30.033543399,
+        30.035084088
+      ],
+      "wrong_case_elapsed_wait_is_not_claimed_semantic_pass": true
+    },
+    "authentication_and_cleanup": {
+      "invalid_request_cases": 9,
+      "rejected_before_backend": 9,
+      "backend_calls": 0,
+      "historical_and_final_unique_container_ids": 141,
+      "exact_id_absence_recorded": 141,
+      "label_inventory_empty": true
+    },
+    "attempt_history": {
+      "all_run_records_verified": 8,
+      "included_final": 5,
+      "interrupted_not_rewritten": 1,
+      "other_diagnostics_preserved": 2,
+      "completed_groups_not_repeated": true
+    },
+    "regression": {
+      "attempts": 1,
+      "exit_code": 0,
+      "unique_packages": 37,
+      "passed_packages": 31,
+      "no_test_file_packages": 6,
+      "failed_packages": 0,
+      "distinct_terminal_tests_and_subtests": 1658,
+      "passed": 1601,
+      "skipped": 57,
+      "failed": 0,
+      "raw_jsonl_sha256": "7b261ee71c471c210942e797669f40d3cfcceb8ca0e8c5ab35bffdd85015c7cb",
+      "current_template_changed_fields": 4,
+      "historical_protocols_changed": false,
+      "matrix_repeated_for_regression": false
+    },
+    "intermediate_findings": {
+      "count": 6,
+      "resolved": 6,
+      "remaining_blocking": 0,
+      "resolution_categories": [
+        "canonical material archive layout",
+        "published task and reference scope consistency with immutable new reference version",
+        "mandatory host artifact registration and actual chunk consumption",
+        "host rule to specification or policy location mapping",
+        "positive host markers with actual container absence",
+        "strict published module syntax and expected-parse error handling"
+      ]
+    },
+    "scope_and_exposure": {
+      "calibration_only": true,
+      "published_specification_unchanged": true,
+      "published_dataset_unchanged": true,
+      "archived_old_reference_preserved": true,
+      "runtime_infrastructure_feedback_seen": true,
+      "development_diagnostic_influence_disclosed": true,
+      "business_support_scope_not_broadened": true,
+      "unsupported_equivalent_stays_needs_attention": true,
+      "missing_candidate_reviews_not_filled": true,
+      "schema2_enabled": false,
+      "heldout_enabled": false,
+      "m5_started": false,
+      "model_effect_estimated": false,
+      "paid_model_calls": 0,
+      "network_downloads": 0,
+      "isolation": "procedural separate role; shared filesystem and model family; not independent human or OS security"
+    },
+    "interim_preservation": {
+      "assessment_sha256": "ae6463fded67c30df48795aa5fd9053748c114b6b6cb76576c1837afe912a09b",
+      "private_report_sha256": "664869510ea49f0d69d0c16ae5fcb5b57433f9928e213f391d613ac0f7d3127a",
+      "original_assessment_not_overwritten": true
+    },
+    "reviewer_actions": {
+      "go_tests_run": 0,
+      "docker_commands_run": 0,
+      "candidate_or_model_execution": 0,
+      "network_requests": 0,
+      "implementation_or_test_edits": 0,
+      "git_mutations": 0
+    },
+    "limitations": [
+      "Bounded source/evidence review of five fixed development controls only.",
+      "No formal evaluation, heldout admission, model effect estimate or independent-human claim.",
+      "Two automatic reference passes remain inconclusive without candidate reviews.",
+      "Reference expiry after confirmed behavior failures remains inconclusive, not pass.",
+      "Historical failed and interrupted attempts remain separate and do not enlarge final group counts."
+    ]
+  },
+  "closure_checkpoint_sha256": {
+    "before_project_regression": "4c3623c0ff2cbd6a1dbf9894f3faf95ba3ff95c9a98ab7b4b4b70a0f19fdbcd9",
+    "final": "b462edbbc71d2f666e6900476a198ab38c361cb1a76964ee04e62c24f1567397"
+  }
+}

@@ -1,0 +1,74 @@
+package delete
+
+import (
+ "context"
+ "errors"
+ "io"
+ "net/http"
+ "strings"
+ "testing"
+ "time"
+)
+
+type harnessTransport func(*http.Request)(*http.Response,error)
+func (f harnessTransport) RoundTrip(r *http.Request)(*http.Response,error){return f(r)}
+type harnessBody struct{ io.Reader; closed bool; closeError error }
+func (b *harnessBody) Close()error{b.closed=true;return b.closeError}
+func harnessViolation(t *testing.T,rule,detail string){t.Helper();t.Errorf("GHCLI_FINDING {\"Rule\":%q,\"Detail\":%q}",rule,detail)}
+
+func TestHarnessApplicationBoundary(t *testing.T){
+ for _,mode:=range []string{"default","short","long","cancelled","transport-error","close-error"}{t.Run(mode,func(t *testing.T){
+  parent:=context.Background();var cancel context.CancelFunc
+  if mode=="short"{parent,cancel=context.WithTimeout(parent,700*time.Millisecond);defer cancel()}
+  if mode=="long"{parent,cancel=context.WithTimeout(parent,time.Minute);defer cancel()}
+  if mode=="cancelled"{parent,cancel=context.WithCancel(parent);cancel()}
+  req,_:=http.NewRequestWithContext(parent,"DELETE","http://example.invalid/resource",strings.NewReader("payload"));req.Header.Set("X-Boundary","preserve")
+  sentinel:=errors.New("boundary transport failure");closeErr:=errors.New("boundary close failure")
+  body:=&harnessBody{Reader:strings.NewReader("response")};if mode=="close-error"{body.closeError=closeErr}
+  var seen context.Context
+  called:=false
+  client:=&http.Client{Transport:harnessTransport(func(r *http.Request)(*http.Response,error){
+   called=true;seen=r.Context()
+   if r.Method!=req.Method||r.URL.String()!=req.URL.String()||r.Header.Get("X-Boundary")!="preserve"{harnessViolation(t,"BEHAVIOR-001","request properties changed")}
+   data,_:=io.ReadAll(r.Body);if string(data)!="payload"{harnessViolation(t,"BEHAVIOR-001","request body changed")}
+   d,ok:=r.Context().Deadline();remaining:=time.Until(d)
+   if !ok||remaining>30*time.Second||remaining<29*time.Second&&mode!="short" {harnessViolation(t,"TIME-001","per-call 30 second deadline not observed")}
+   if mode=="short"{expected,_:=parent.Deadline();if !ok||d!=expected{harnessViolation(t,"CTX-001","short parent deadline lost")}}
+   if mode=="transport-error"{return nil,sentinel}
+   return &http.Response{StatusCode:207,Header:http.Header{"X-Response":[]string{"keep"}},Body:body,Request:r},nil
+  })}
+  response,err:=invokeHTTP(client,req)
+  if mode=="cancelled"{if !errors.Is(err,context.Canceled){harnessViolation(t,"CTX-001","cancelled parent not propagated")};return}
+  if !called{harnessViolation(t,"BEHAVIOR-001","transport was not dispatched");return}
+  if mode=="transport-error"{if !errors.Is(err,sentinel){harnessViolation(t,"BEHAVIOR-001","transport error changed")};select{case <-seen.Done():case <-time.After(100*time.Millisecond):harnessViolation(t,"TIME-002","transport error context not released")};return}
+  if err!=nil||response==nil{harnessViolation(t,"BEHAVIOR-001","response or error changed");return}
+  if response.StatusCode!=207||response.Header.Get("X-Response")!="keep"{harnessViolation(t,"BEHAVIOR-001","response properties changed")}
+  if seen.Err()!=nil||body.closed{harnessViolation(t,"TIME-002","response cancelled before caller consumption")}
+  data,readErr:=io.ReadAll(response.Body);if readErr!=nil||string(data)!="response"{harnessViolation(t,"BEHAVIOR-001","response body read changed")}
+  err=response.Body.Close();if !errors.Is(err,body.closeError){harnessViolation(t,"BEHAVIOR-001","body Close error changed")}
+  if !body.closed{harnessViolation(t,"BEHAVIOR-001","owned body was not closed")}
+  select{case <-seen.Done():case <-time.After(100*time.Millisecond):harnessViolation(t,"TIME-002","body Close did not release context")}
+ })}
+}
+
+func TestHarnessApplicationExpiry(t *testing.T){
+ req,_:=http.NewRequest("DELETE","http://example.invalid/expiry",nil)
+ start:=time.Now()
+ client:=&http.Client{Transport:harnessTransport(func(r *http.Request)(*http.Response,error){
+  select{case <-r.Context().Done():return nil,r.Context().Err();case <-time.After(32*time.Second):return nil,errors.New("bounded observation expired")}
+ })}
+ _,err:=invokeHTTP(client,req)
+ elapsed:=time.Since(start)
+ t.Logf("observed real expiry duration_ns=%d",elapsed.Nanoseconds())
+ if !errors.Is(err,context.DeadlineExceeded)||elapsed<29*time.Second||elapsed>32*time.Second{harnessViolation(t,"TIME-001","actual no-parent expiry was not 30 seconds")}
+}
+
+func TestHarnessApplicationBodyParent(t *testing.T){
+ parent,cancel:=context.WithCancel(context.Background());defer cancel()
+ req,_:=http.NewRequestWithContext(parent,"GET","http://example.invalid/body",nil)
+ var seen context.Context
+ client:=&http.Client{Transport:harnessTransport(func(r *http.Request)(*http.Response,error){seen=r.Context();return &http.Response{StatusCode:200,Body:&harnessBody{Reader:strings.NewReader("body")}},nil})}
+ resp,err:=invokeHTTP(client,req);if err!=nil||resp==nil{harnessViolation(t,"BEHAVIOR-001","body response missing");return};defer resp.Body.Close()
+ if seen.Err()!=nil{harnessViolation(t,"TIME-002","body context ended at dispatch return")}
+ cancel();select{case <-seen.Done():case <-time.After(100*time.Millisecond):harnessViolation(t,"CTX-001","parent cancellation lost while reading body")}
+}

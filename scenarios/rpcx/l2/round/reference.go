@@ -27,7 +27,7 @@ func attachReference(reader *reader, out *Result, pin TargetPin, ref Reference, 
 	if report.TargetID != out.TargetID || report.RunID != out.RunID || report.CandidateSHA256 != out.CandidateSHA256 || report.BaselineSHA256 != pin.BaselineSHA256 || report.SpecSHA256 != pin.SpecSHA256 || report.ReferenceVersion != pin.ReferenceVersion || report.ReferenceSHA256 != pin.ReferenceSHA256 || report.ToolSHA256 != pin.ToolSHA256 {
 		return fmt.Errorf("%w: reference identity mismatch", ErrInvalid)
 	}
-	expectedVersion := map[string]string{"rpcx-goddd-t3-v1": evaluation.Version, "rpcx-translation-t3-v1": evaluation.TranslationVersion, "rpcx-workouts-t3-v1": evaluation.WorkoutsVersion}[pin.ProfileID]
+	expectedVersion := map[string]string{"rpcx-goddd-t3-v1": evaluation.Version, "rpcx-translation-t3-v1": evaluation.TranslationVersion, "rpcx-workouts-t3-v1": evaluation.WorkoutsVersion, "rpcx-ghcli-t3-v1": evaluation.GHCLIVersion}[pin.ProfileID]
 	if expectedVersion == "" || report.Version != expectedVersion {
 		return fmt.Errorf("%w: reference scenario mismatch", ErrInvalid)
 	}
@@ -73,6 +73,16 @@ func attachReference(reader *reader, out *Result, pin TargetPin, ref Reference, 
 		return nil
 	}
 	root := filepath.Dir(ref.Report.Path)
+	if pin.ProfileID == "rpcx-ghcli-t3-v1" {
+		present, e := readGHCLIReferenceBundle(reader, root, report)
+		if e != nil {
+			return e
+		}
+		if !present {
+			out.Gaps = append(out.Gaps, "reference_host_material_missing")
+			return nil
+		}
+	}
 	// 所有引用证据必须仍在，并匹配报告；不凭 reference.json 的 pass 字符串计成绩。
 	for _, entry := range []struct {
 		path, hash string

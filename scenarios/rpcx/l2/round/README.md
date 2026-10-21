@@ -2,6 +2,8 @@
 
 `Summarize(ctx, Request)` 在单候选参考之后读取发布记录，输出新的 `round.json` 和 `summary.md`。当前支持一个 Campaign、每 Target 一次尝试的三个已发布 L2 Profile；不运行模型、候选命令或门禁，不修改原 Campaign/Run/参考/复核。多 Run 恢复及通用离线审计仍归 M4。
 
+GHCLI 新 Profile `rpcx-ghcli-t3-v1` 只支持 schema 1 `development_calibration`，绑定活跃 `rpcx-l2-reference-ghcli-data-v2`；schema 1 的开发评测与 schema 2/heldout 均拒绝。消费参考时必须读取规范、工具、宿主清单、索引和全部声明分片，核对引用集合与实际有序字节/HostSHA，不仅信任报告里的 pass。单文件上界保持 16 MiB；新 Profile 接通不等于正式协议已冻结。实际校准状态见[接入记录](../../../../docs/worklog/2026-10-21-isolated-application-integration.md#9-第二实现单元单仓库-harness-与独立参考闭环)。
+
 输入分两部分：Manifest 固定轮次 kind、Campaign/计划摘要、按计划顺序纳入的 Target 集合，以及 Profile/构建/基线/规范/参考数据/参考工具身份；Request 指向该清单、Campaign 目录、尚不存在的输出目录和可选的逐 Target 参考/复核文件。Request 所有路径为绝对路径，参考/复核文件另带实际 SHA-256。纳入清单不是完整实验协议，也不授权模型调用。真实开发轮次的清单应在生成前固定；开发校准可以在既有受控运行上创建，必须标 `development_calibration`。受控模型 Campaign 不能通过更换 kind 冒充真实评测。
 
 生成前固定静态任务时使用 `Enrollment`：只有 schema_version、id、kind、targets，不填写动态 CampaignID/PlanSHA256。`Validate(plan.Targets)` 核对全部任务的顺序、输入身份和已发布参考的规范/数据/工具摘要；`Bind(planJSON)` 对实际计划原文取摘要并生成原格式 Manifest。它不预测时间或 JSON 格式，不选择候选，也不认证真实供应商或人工复核身份。

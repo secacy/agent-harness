@@ -22,6 +22,8 @@ func PublishedIdentity(version string) (Identity, error) {
 		scenario = godddScenario()
 	case translationDataVersion:
 		scenario = translationScenario()
+	case GHCLIDataVersion:
+		scenario = referenceScenario{dataVersion: GHCLIDataVersion, specSHA256: ghcliSpecSHA256, data: ghcliData}
 	case workoutsDataVersion:
 		scenario = workoutsScenario()
 	default:

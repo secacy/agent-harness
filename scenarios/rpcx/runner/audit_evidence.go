@@ -213,7 +213,10 @@ func (a *runAudit) checkMaterials(v checks.Evaluation) {
 	default:
 		a.pinnedTree("evidence/tool", v.MaterialsSHA256, a.file("artifacts/report.json"))
 	}
-	if a.profile.HostMaterialsSHA256 != "" {
+	if a.profile.ID == ProfileGHCLI {
+		a.checkGHCLIBundle("host-materials/rpcx-ghcli-modules.json", "host-materials/rpcx-ghcli-modules.bundle")
+		a.checkGHCLIBundle("evidence/host-dependencies/modules.json", "evidence/host-dependencies")
+	} else if a.profile.HostMaterialsSHA256 != "" {
 		base := "host-materials/rpcx-" + a.profile.RepositoryName + "-modules"
 		metadata, haveMetadata := a.bytes(base+".json", true)
 		archive, haveArchive := a.bytes(base+".tar.gz", true)

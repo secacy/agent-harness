@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "version": "rpcx-l2-reference-ghcli-data-v1",
+  "spec_sha256": "6e3a87056ec102536b52e1ffc340dbd8dd541d8d28589c555b9b08bafc1e40e8",
+  "files": {
+    "command_expiry_test.go.txt": "f6457fbfdc22b444a9f978044f99f77a4405d5b3f9e92546b51ff09660420659",
+    "probes_test.go.txt": "44784655d8fcd55480f6021a83aa33d05ccf7b153db9764b6e0c851e00b20ef9",
+    "protocol.json": "1fa965109322127ddcf732f03d663bd971d55cb794d1e6120ece26399ad48611",
+    "review.md": "714c33cf9b867ecb9dbb695a41b440cbe57a673237636791638eb0f8a4180deb"
+  }
+}

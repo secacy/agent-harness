@@ -2,6 +2,10 @@
 
 支持 Goddd 的冻结输入与 v0.3.0 规范（`Evaluate`），Translation 的冻结输入与 v0.4.0 规范（`EvaluateTranslation`），以及 Workouts 的冻结输入与 v0.5.0 规范（`EvaluateWorkouts`）。三个入口接收相同的 Request：基线/SDK 根、候选及预先固定的全树摘要、规范、身份和一个尚不存在的证据目录。父目录需已存在，输入与输出互不重叠。本地执行必须显式设置 TrustedLocal；真实候选使用受限 Docker 后端。工具不接收原 gate verdict、校准 expected 或 Agent 自述。
 
+新增 GHCLI 固定切片与 v0.6.0 规范入口 `EvaluateGHCLI`，复用相同 Request/Report/Assess，强制 Docker。活跃数据版本 `rpcx-l2-reference-ghcli-data-v2`、报告版本 `rpcx-l2-reference-ghcli-v2`；v1 原数据与更强的命令上下文条件仅作诊断归档。v2 在公开的 HTTP 请求边界检查父 context 与响应消费生命周期，命令路径保留业务顺序、错误和实际 30 秒到期；未公开的上游父 value 传播不参与自动结论。范围修订、冻结顺序及实际执行状态见[接入记录](../../../../docs/worklog/2026-10-21-isolated-application-integration.md#9-第二实现单元单仓库-harness-与独立参考闭环)。
+
+GHCLI 的规范材料按既有契约保存为 `materials/spec.md`；实际装配的 `modules.json`、`modules.bundle/bundle.json` 和五个分片逐件登记到 Artifacts，并复核执行后身份。Report 另绑定 SDK 与宿主材料摘要。轮次消费端检查必需集合及真实有序字节，不能靠删掉某个引用逃过核对；单文件读取上界保持 16 MiB。
+
 自动检查使用 Go 自身的模块声明解析、保护文件字节比较、基线/候选构建、完整原测试事件和新编写的 HTTP→booking→装饰器→RPC 参考测试。参考生产副本剥离候选测试，分别验证映射与错误/空结果、请求 ctx、较短父期限、取消、逐调用 30 秒与释放，并实际等待约 30 秒到期。等价 helper 或 WithDeadline 写法不按生产 AST 模板拒绝；原断言、未覆盖变更和交付依据由另行复核补齐。
 
 Translation 在同一份候选上分别执行 default 与 rpcx_alternate。每配置保留 Go 实际选择的活动/忽略实现和 mock 参与情况、构建、26 项基线测试/子测试、独立行为与实际到期证据。新测试经真实 usecase、两层 tracing 进入 RPC，检查请求/结果映射、Store 次序和用户身份、取消/期限/错误链，以及 History。保护路径另包括原生成 mock。配置由宿主固定，调用方不能省略 alternate；Configurations 中缺项、标签错配或与顶层聚合不符，Assess 拒绝消费。两配置仍只算一个候选。
@@ -20,7 +24,7 @@ Assess 返回一个新结果，不修改原门禁或参考报告。全部自动�
 
 参考数据由 `data/goddd-v2/freeze.json` 、`data/translation-v2/freeze.json` 与 `data/workouts-v1/freeze.json` 分别固定；Translation v1 保留早期校准身份，v2 改为观察内存字段，避免 JSON 标签引发假违规；Goddd 先前用于校准的 v1 也保留，v2 修正 HTTP 发送时刻与实际 RPC 期限之间的测量边界，并加入发送前延迟对照。报告分别保存 ReferenceVersion、数据摘要和实际工具源码摘要。复用 execution、L2 只读依赖装配和 gate 文件操作，不调用现有三场景 Evaluate、类型分析、测试完整性规则、quality.Decide 或其行为探针。源码边界测试检查直接调用范围；共享 Go/SDK/执行设施和同一作者仍存在共同盲区。
 
-生成前可调用 `PublishedIdentity(referenceVersion)` 取得当前发布的元数据：Version 对应报告的 ReferenceVersion（数据版本），另有 SpecSHA256、ReferenceSHA256、ToolSHA256。它认证冻结材料，使用与参考报告相同的摘要算法，不接受候选、不执行命令、不返回探针正文。当前支持 Goddd data-v2、Translation data-v2、Workouts data-v1；未知发布拒绝。生产工具源码改动会改变 ToolSHA256，已有清单须重新审查固定；历史报告和其归档工具材料保持原身份。
+生成前可调用 `PublishedIdentity(referenceVersion)` 取得当前发布的元数据：Version 对应报告的 ReferenceVersion（数据版本），另有 SpecSHA256、ReferenceSHA256、ToolSHA256。它认证冻结材料，使用与参考报告相同的摘要算法，不接受候选、不执行命令、不返回探针正文。当前支持 Goddd data-v2、Translation data-v2、Workouts data-v1、GHCLI data-v2；未知发布拒绝。生产工具源码改动会改变 ToolSHA256，已有清单须重新审查固定；历史报告和其归档工具材料保持原身份。
 
 机制与身份/未知处理测试：
 

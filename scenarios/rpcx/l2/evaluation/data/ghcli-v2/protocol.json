@@ -1,0 +1,82 @@
+{
+  "created_utc": "2026-10-21T13:19:06.461344+00:00",
+  "assignment_sha256": "af0d61960b0f7109706a5d164dba1c748d049cfe50f17ef33243503af5e4c717",
+  "criteria": [
+    {
+      "id": "original_behavior",
+      "requirement": "Preserve the bounded original application assertions, request/result mapping, error propagation and meaningful control-flow behavior; separate original-test execution from independent reference checks."
+    },
+    {
+      "id": "sdk_v2_contract",
+      "requirement": "Use example.com/rpcx/v2, Dial and the context-bearing Call contract in production with matching local module metadata; protect SDK and supporting sources."
+    },
+    {
+      "id": "request_context",
+      "requirement": "Preserve the existing HTTP request parent context, values, pre-cancellation, in-flight cancellation and shorter deadlines, including during response body consumption. No new upstream command context chain is required."
+    },
+    {
+      "id": "per_call_timeout",
+      "requirement": "Preserve the injected v1 30-second ceiling per actual RPC while respecting shorter parent deadlines. Multiple calls obtain individual ceilings rather than reusing an aging shared deadline."
+    },
+    {
+      "id": "real_default_expiry",
+      "requirement": "Observe actual approximately 30-second waiting through direct dispatch and command production paths with monotonic elapsed time, context/error outcome and an independent watchdog. Existing baseline archives do not substitute for current execution."
+    },
+    {
+      "id": "resources_and_errors",
+      "requirement": "Preserve outbound response/error meaning and resource release. Observe child cancellation/release after return, parent still usable after a completed child call, and no successful continuation when the existing operation fails."
+    },
+    {
+      "id": "reference_independence",
+      "requirement": "New reference implementation derives from declared contract, SDK and original U/B behavior. Do not reuse existing runtime gate, analysis, baseline added probes or other scenario reference implementations; do not consume expected case labels, patches, gate verdict or Agent prose as observations."
+    },
+    {
+      "id": "evidence_binding",
+      "requirement": "Record exact frozen baseline/spec/reference/candidate/production/dependency/SDK identities, exact commands/exits/raw test events, container limits, prior failures and before/after input identity. Expected labels only in external calibration manifest; oracle and answers excluded from future Agent-visible roots."
+    }
+  ],
+  "expiry_tolerance_seconds": [
+    29,
+    35
+  ],
+  "default_deadline_remaining_tolerance_seconds": [
+    29,
+    30.1
+  ],
+  "inflight_and_short_parent_max_seconds": 2,
+  "watchdog_seconds": 45,
+  "original_scope": "Byte-identical retained original test file only, excluding baseline-added tests; complete event identities separately recorded.",
+  "independent_scope": "Production copy without candidate tests, trusted actual SDKs and retained checksum dependency cache. Direct dispatch and command production entrypoints. No case IDs, expected labels, patches or gate verdict supplied to probes.",
+  "baseline_applicability": "The active API evaluates the v2 migration contract only. Historical v1 reference data and execution logs remain diagnostic archives, not a claim that the current API can rerun them.",
+  "checks": [
+    "request/result mapping and delegated read/close errors",
+    "HTTP request parent value, pre-cancellation, in-flight cancellation and shorter deadline",
+    "HTTP request parent cancellation and shorter deadline while consuming the response body",
+    "fresh individual 30-second ceilings for repeated calls and a later parent deadline",
+    "child cancellation after close and transport error; completed child leaves live parent usable",
+    "command operation ordering, error propagation and no successful continuation after failure",
+    "actual default 30-second expiry through direct dispatch and command production entrypoints"
+  ],
+  "revision_policy": "Freeze spec and reference before first execution. Any revisions preserve old artifacts and failure outputs; no weakening to accept mutants.",
+  "limitations": [
+    "Bounded original package, no repository-wide behavior claim",
+    "Manual calibration controls are not model success or effect evidence",
+    "No race detector or production network wire semantics claim"
+  ],
+  "concrete_assertions": {
+    "mapping": "DELETE URL, header and payload preserved; response object identity; delegated read/close sentinel errors",
+    "command": "Existing release lookup shape, operation ordering and output; failure stops further delete/local cleanup/success output. Upstream command context value observation is diagnostic only.",
+    "contexts": "Original request parent value, already canceled parent, cancellation after transport entry, 120ms shorter parent deadline",
+    "freshness": "Two calls separated by 220ms; each remaining deadline 29..30.1 seconds; second deadline advances at least 180ms",
+    "lifecycle": "Response context remains live after dispatch; HTTP request parent cancellation and shorter deadline remain effective while consuming body; close and transport error release child within one second; completed child leaves live parent usable.",
+    "expiry": "Real dispatch waits on transport context Done only; DeadlineExceeded and 29..35 monotonic seconds"
+  },
+  "reference_data_version": "rpcx-l2-reference-ghcli-data-v2",
+  "published_spec_sha256": "6e3a87056ec102536b52e1ffc340dbd8dd541d8d28589c555b9b08bafc1e40e8",
+  "scope_authority": "Published specification paragraphs 2 and 3: existing HTTP request parent context and response ownership, not a newly introduced upstream command propagation chain.",
+  "scope_revision_reason": "The prior reference imposed an unpublished upstream command context value requirement. The new reference excludes that condition from automatic acceptance and retains its observation as diagnostic output only.",
+  "automatic_exclusions": [
+    "Upstream command context value propagation is diagnostic only and is not an acceptance requirement."
+  ],
+  "frozen_before_calibration": true
+}

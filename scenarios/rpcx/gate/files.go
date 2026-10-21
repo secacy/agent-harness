@@ -160,7 +160,7 @@ func ModEntries(data []byte) (map[string]string, error) {
 		}
 		var key, value string
 		switch directive {
-		case "module", "go":
+		case "module", "go", "toolchain":
 			if len(fields) != 1 {
 				return nil, fmt.Errorf("invalid %s entry", directive)
 			}

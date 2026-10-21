@@ -11,6 +11,7 @@ import (
 	"slices"
 
 	"github.com/secacy/agent-harness/internal/task"
+	"github.com/secacy/agent-harness/scenarios/rpcx/ghcli"
 	"github.com/secacy/agent-harness/scenarios/rpcx/goddd"
 	"github.com/secacy/agent-harness/scenarios/rpcx/translation"
 	"github.com/secacy/agent-harness/scenarios/rpcx/workouts"
@@ -21,6 +22,7 @@ const (
 	ProfileT3          = "rpcx-demo-orders-t3-v1"
 	ProfileGoddd       = "rpcx-goddd-t3-v1"
 	ProfileTranslation = "rpcx-translation-t3-v1"
+	ProfileGHCLI       = ghcli.ProfileID
 	ProfileWorkouts    = "rpcx-workouts-t3-v1"
 )
 
@@ -84,16 +86,19 @@ func (p profile) validate(t task.Target) error {
 			return fmt.Errorf("unsupported dependency snapshot: %s", name)
 		}
 	}
-	if !slices.Contains([]string{"rpcx-t1t2-evidence-v1", "rpcx-t3-evidence-v1", goddd.VerifierVersion, translation.VerifierVersion, workouts.VerifierVersion}, p.Verifier) {
+	if !slices.Contains([]string{"rpcx-t1t2-evidence-v1", "rpcx-t3-evidence-v1", goddd.VerifierVersion, translation.VerifierVersion, workouts.VerifierVersion, ghcli.VerifierVersion}, p.Verifier) {
 		return errors.New("unsupported rpcx verifier")
 	}
-	if p.Verifier == goddd.VerifierVersion || p.Verifier == translation.VerifierVersion || p.Verifier == workouts.VerifierVersion {
+	if p.Verifier == goddd.VerifierVersion || p.Verifier == translation.VerifierVersion || p.Verifier == workouts.VerifierVersion || p.Verifier == ghcli.VerifierVersion {
 		materials := goddd.HostMaterialsSHA256
 		if p.Verifier == translation.VerifierVersion {
 			materials = translation.HostMaterialsSHA256
 		}
 		if p.Verifier == workouts.VerifierVersion {
 			materials = workouts.HostMaterialsSHA256
+		}
+		if p.Verifier == ghcli.VerifierVersion {
+			materials = ghcli.HostMaterialsSHA256
 		}
 		hash, err := materials()
 		if err != nil {
@@ -252,4 +257,9 @@ func normalizeTarget(t task.Target, output string) (task.Target, error) {
 // TargetFromWorkouts 描述包含只读 common 模块的固定取消切片。
 func TargetFromWorkouts(id, fixtures, spec string) (task.Target, error) {
 	return targetFromFixtures(id, fixtures, spec, ProfileWorkouts)
+}
+
+// TargetFromGHCLI 构造固定发布输入，生成必须使用隔离容器。
+func TargetFromGHCLI(id, fixtures, spec string) (task.Target, error) {
+	return targetFromFixtures(id, fixtures, spec, ProfileGHCLI)
 }

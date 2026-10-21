@@ -16,6 +16,7 @@ import (
 	"github.com/secacy/agent-harness/internal/repotools"
 	"github.com/secacy/agent-harness/internal/task"
 	"github.com/secacy/agent-harness/scenarios/rpcx/checks"
+	"github.com/secacy/agent-harness/scenarios/rpcx/ghcli"
 	"github.com/secacy/agent-harness/scenarios/rpcx/goddd"
 	"github.com/secacy/agent-harness/scenarios/rpcx/l2"
 	"github.com/secacy/agent-harness/scenarios/rpcx/translation"
@@ -185,6 +186,9 @@ func runWithObserver(parent context.Context, config Config, observer func(runChe
 	if r.profile.Verifier == workouts.VerifierVersion {
 		evaluate = workouts.Evaluate
 	}
+	if r.profile.Verifier == ghcli.VerifierVersion {
+		evaluate = ghcli.Evaluate
+	}
 	validation, err := evaluate(ctx, checks.EvaluationRequest{
 		BaselineDir: r.path("baseline/" + r.profile.RepositoryName), CandidateDir: r.path("workspace/" + r.profile.RepositoryName),
 		SpecPath: r.path("inputs/spec/spec.md"), EvidenceDir: r.path("evidence"),
@@ -264,6 +268,9 @@ func validateConfig(config Config) (Config, error) {
 	if err = p.validate(target); err != nil {
 		return config, err
 	}
+	if target.ProfileID == ProfileGHCLI && config.Backend.Info().Kind != execution.KindDocker {
+		return config, errors.New("GHCLI profile requires Docker execution")
+	}
 	if config.Budget != nil && config.Budget.ID != target.ID {
 		return config, errors.New("budget target ID does not match the task")
 	}
@@ -327,6 +334,9 @@ func (r *runState) prepare(ctx context.Context) error {
 		}
 		if r.profile.Verifier == workouts.VerifierVersion {
 			prepare = workouts.PrepareBackend
+		}
+		if r.profile.Verifier == ghcli.VerifierVersion {
+			prepare = ghcli.PrepareBackend
 		}
 		r.hostBackend, err = prepare(ctx, r.path("host-materials/rpcx-"+r.profile.RepositoryName+"-modules"), r.config.Backend)
 		if err != nil {

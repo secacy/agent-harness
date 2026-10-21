@@ -50,28 +50,30 @@ type Command struct {
 }
 
 type Report struct {
-	SchemaVersion    int                            `json:"schema_version"`
-	Version          string                         `json:"version"`
-	TargetID         string                         `json:"target_id"`
-	RunID            string                         `json:"run_id"`
-	CandidateSHA256  string                         `json:"candidate_sha256"`
-	ProductionSHA256 string                         `json:"production_sha256,omitempty"`
-	BaselineSHA256   string                         `json:"baseline_sha256,omitempty"`
-	SpecSHA256       string                         `json:"spec_sha256,omitempty"`
-	ReferenceVersion string                         `json:"reference_version,omitempty"`
-	ReferenceSHA256  string                         `json:"reference_sha256,omitempty"`
-	ToolSHA256       string                         `json:"tool_sha256,omitempty"`
-	Backend          execution.Info                 `json:"backend"`
-	StartedAt        time.Time                      `json:"started_at"`
-	FinishedAt       time.Time                      `json:"finished_at"`
-	InputsUnchanged  bool                           `json:"inputs_unchanged"`
-	Automatic        Status                         `json:"automatic"`
-	Checks           map[string]Observation         `json:"checks"`
-	Configurations   map[string]ConfigurationReport `json:"configurations,omitempty"`
-	LocalModules     map[string]ModuleReport        `json:"local_modules,omitempty"`
-	Commands         []Command                      `json:"commands"`
-	Artifacts        map[string]string              `json:"artifacts"`
-	Error            string                         `json:"error,omitempty"`
+	SchemaVersion       int                            `json:"schema_version"`
+	Version             string                         `json:"version"`
+	TargetID            string                         `json:"target_id"`
+	RunID               string                         `json:"run_id"`
+	CandidateSHA256     string                         `json:"candidate_sha256"`
+	ProductionSHA256    string                         `json:"production_sha256,omitempty"`
+	BaselineSHA256      string                         `json:"baseline_sha256,omitempty"`
+	SpecSHA256          string                         `json:"spec_sha256,omitempty"`
+	ReferenceVersion    string                         `json:"reference_version,omitempty"`
+	ReferenceSHA256     string                         `json:"reference_sha256,omitempty"`
+	ToolSHA256          string                         `json:"tool_sha256,omitempty"`
+	HostMaterialsSHA256 string                         `json:"host_materials_sha256,omitempty"`
+	SDKs                map[string]string              `json:"sdks,omitempty"`
+	Backend             execution.Info                 `json:"backend"`
+	StartedAt           time.Time                      `json:"started_at"`
+	FinishedAt          time.Time                      `json:"finished_at"`
+	InputsUnchanged     bool                           `json:"inputs_unchanged"`
+	Automatic           Status                         `json:"automatic"`
+	Checks              map[string]Observation         `json:"checks"`
+	Configurations      map[string]ConfigurationReport `json:"configurations,omitempty"`
+	LocalModules        map[string]ModuleReport        `json:"local_modules,omitempty"`
+	Commands            []Command                      `json:"commands"`
+	Artifacts           map[string]string              `json:"artifacts"`
+	Error               string                         `json:"error,omitempty"`
 }
 
 // ModuleReport 保存只读本地依赖自身的构建与测试，不能由业务模块成功推断。

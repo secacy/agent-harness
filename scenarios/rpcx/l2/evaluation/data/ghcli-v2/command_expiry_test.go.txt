@@ -1,0 +1,62 @@
+package delete
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"github.com/cli/cli/v2/internal/ghrepo"
+	"github.com/cli/cli/v2/pkg/cmdutil"
+	"github.com/cli/cli/v2/pkg/iostreams"
+	"io"
+	"net/http"
+	"strings"
+	"sync/atomic"
+	"testing"
+	"time"
+)
+
+type expiryTransport func(*http.Request) (*http.Response, error)
+
+func (f expiryTransport) RoundTrip(r *http.Request) (*http.Response, error) { return f(r) }
+func TestReferenceCommandDefaultExpiry(t *testing.T) {
+	var child context.Context
+	var deletes atomic.Int32
+	ios, _, _, stderr := iostreams.Test()
+	ios.SetStdoutTTY(true)
+	ios.SetStderrTTY(true)
+	client := &http.Client{Transport: expiryTransport(func(r *http.Request) (*http.Response, error) {
+		if r.Method == "DELETE" {
+			deletes.Add(1)
+			child = r.Context()
+			<-child.Done()
+			return nil, child.Err()
+		}
+		body := `{"tag_name":"v1.2.3","draft":false,"url":"https://api.github.com/repos/OWNER/REPO/releases/23456"}`
+		if r.Method == "POST" {
+			body = `{"data":{"repository":{"release":null}}}`
+		}
+		return &http.Response{StatusCode: 200, Header: make(http.Header), Body: io.NopCloser(strings.NewReader(body))}, nil
+	})}
+	f := &cmdutil.Factory{IOStreams: ios, HttpClient: func() (*http.Client, error) { return client, nil }, BaseRepo: func() (ghrepo.Interface, error) { return ghrepo.FromFullName("OWNER/REPO") }}
+	cmd := NewCmdDelete(f, nil)
+	cmd.PersistentFlags().StringP("repo", "R", "", "")
+	cmd.SetArgs([]string{"v1.2.3", "--yes", "--cleanup-tag"})
+	cmd.SetOut(io.Discard)
+	cmd.SetErr(io.Discard)
+	// 完整生产命令入口不设置父截止时间；只有真实 SDK/生产派生的默认期限可结束传输等待。
+	parent, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	start := time.Now()
+	err := cmd.ExecuteContext(parent)
+	elapsed := time.Since(start).Seconds()
+	childDone := child != nil && errors.Is(child.Err(), context.DeadlineExceeded)
+	observation := map[string]any{"elapsed_monotonic_seconds": elapsed, "deadline_exceeded": errors.Is(err, context.DeadlineExceeded), "child_deadline_exceeded": childDone, "parent_live": parent.Err() == nil, "outbound_operations": deletes.Load(), "success_output_absent": !strings.Contains(stderr.String(), "Deleted")}
+	raw, _ := json.Marshal(observation)
+	t.Log("COMMAND_EXPIRY_OBSERVATION " + string(raw))
+	if elapsed < 29 || elapsed > 35 {
+		t.Errorf("actual command expiry outside declared tolerance: %.6f", elapsed)
+	}
+	if !errors.Is(err, context.DeadlineExceeded) || !childDone || parent.Err() != nil || deletes.Load() != 1 || strings.Contains(stderr.String(), "Deleted") {
+		t.Errorf("command expiry outcome changed: %v", err)
+	}
+}

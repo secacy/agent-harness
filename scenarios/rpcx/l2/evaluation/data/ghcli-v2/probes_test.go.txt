@@ -1,0 +1,400 @@
+package delete
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"io"
+	"net/http"
+	"strings"
+	"sync/atomic"
+	"testing"
+	"time"
+
+	"github.com/cli/cli/v2/internal/ghrepo"
+	"github.com/cli/cli/v2/pkg/cmdutil"
+	"github.com/cli/cli/v2/pkg/iostreams"
+)
+
+type refKey struct{}
+type refTransport func(*http.Request) (*http.Response, error)
+
+func (f refTransport) RoundTrip(r *http.Request) (*http.Response, error) { return f(r) }
+
+type refBody struct {
+	closed            bool
+	readErr, closeErr error
+}
+
+func (b *refBody) Read(p []byte) (int, error) { return 0, b.readErr }
+func (b *refBody) Close() error               { b.closed = true; return b.closeErr }
+func refRequest(ctx context.Context) *http.Request {
+	r, e := http.NewRequestWithContext(ctx, "DELETE", "https://reference.invalid/object", strings.NewReader("payload"))
+	if e != nil {
+		panic(e)
+	}
+	r.Header.Set("X-Reference", "retained")
+	return r
+}
+func refResponse() *http.Response {
+	return &http.Response{StatusCode: 204, Header: make(http.Header), Body: io.NopCloser(strings.NewReader(""))}
+}
+func refDone(t *testing.T, ctx context.Context) {
+	t.Helper()
+	if ctx == nil {
+		t.Fatal("missing observed child context")
+	}
+	select {
+	case <-ctx.Done():
+	case <-time.After(time.Second):
+		t.Error("child context not released")
+	}
+}
+
+func TestReferenceMappingAndRelease(t *testing.T) {
+	parent, cancel := context.WithCancel(context.WithValue(context.Background(), refKey{}, "parent-value"))
+	defer cancel()
+	readErr, closeErr := errors.New("read sentinel"), errors.New("close sentinel")
+	body := &refBody{readErr: readErr, closeErr: closeErr}
+	response := refResponse()
+	response.Body = body
+	var observed context.Context
+	client := &http.Client{Transport: refTransport(func(r *http.Request) (*http.Response, error) {
+		observed = r.Context()
+		if observed.Value(refKey{}) != "parent-value" {
+			t.Error("parent value lost")
+		}
+		if r.Method != "DELETE" || r.URL.String() != "https://reference.invalid/object" || r.Header.Get("X-Reference") != "retained" {
+			t.Error("request mapping changed")
+		}
+		b, _ := io.ReadAll(r.Body)
+		if string(b) != "payload" {
+			t.Error("request body changed")
+		}
+		return response, nil
+	})}
+	got, err := invokeHTTP(client, refRequest(parent))
+	if err != nil || got != response {
+		t.Fatalf("response mapping changed: %v", err)
+	}
+	if observed.Err() != nil {
+		t.Error("response child canceled before body ownership ends")
+	}
+	if _, e := got.Body.Read(make([]byte, 1)); !errors.Is(e, readErr) {
+		t.Error("read error changed")
+	}
+	if e := got.Body.Close(); !errors.Is(e, closeErr) {
+		t.Error("close error changed")
+	}
+	if !body.closed {
+		t.Error("underlying body not closed")
+	}
+	refDone(t, observed)
+	if parent.Err() != nil {
+		t.Error("parent canceled by child")
+	}
+}
+
+func TestReferenceErrorAndRelease(t *testing.T) {
+	sentinel := errors.New("transport sentinel")
+	var observed context.Context
+	client := &http.Client{Transport: refTransport(func(r *http.Request) (*http.Response, error) { observed = r.Context(); return nil, sentinel })}
+	got, err := invokeHTTP(client, refRequest(context.Background()))
+	if got != nil || !errors.Is(err, sentinel) {
+		t.Errorf("outbound error lost: %v", err)
+	}
+	refDone(t, observed)
+}
+
+func TestReferenceParentContexts(t *testing.T) {
+	for _, mode := range []string{"pre", "during", "short"} {
+		t.Run(mode, func(t *testing.T) {
+			base := context.WithValue(context.Background(), refKey{}, "context-value")
+			var parent context.Context
+			var cancel context.CancelFunc
+			if mode == "short" {
+				parent, cancel = context.WithTimeout(base, 120*time.Millisecond)
+			} else {
+				parent, cancel = context.WithCancel(base)
+			}
+			defer cancel()
+			if mode == "pre" {
+				cancel()
+			}
+			entered := make(chan context.Context, 1)
+			result := make(chan error, 1)
+			client := &http.Client{Transport: refTransport(func(r *http.Request) (*http.Response, error) {
+				entered <- r.Context()
+				<-r.Context().Done()
+				return nil, r.Context().Err()
+			})}
+			start := time.Now()
+			go func() { _, e := invokeHTTP(client, refRequest(parent)); result <- e }()
+			if mode == "during" {
+				select {
+				case child := <-entered:
+					if child.Value(refKey{}) != "context-value" {
+						t.Error("parent value lost")
+					}
+					cancel()
+				case <-time.After(time.Second):
+					t.Fatal("production dispatch did not start")
+				}
+			}
+			select {
+			case e := <-result:
+				want := context.Canceled
+				if mode == "short" {
+					want = context.DeadlineExceeded
+				}
+				if !errors.Is(e, want) {
+					t.Errorf("parent outcome changed: %v", e)
+				}
+			case <-time.After(2 * time.Second):
+				t.Fatal("parent cancellation or deadline lost")
+			}
+			if time.Since(start) > 2*time.Second {
+				t.Error("parent cancellation not prompt")
+			}
+		})
+	}
+}
+
+func TestReferenceFreshPerCallCeilings(t *testing.T) {
+	parent, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	var deadlines []time.Time
+	var children []context.Context
+	client := &http.Client{Transport: refTransport(func(r *http.Request) (*http.Response, error) {
+		ctx := r.Context()
+		children = append(children, ctx)
+		d, ok := ctx.Deadline()
+		if !ok {
+			t.Error("per-call deadline missing")
+		} else {
+			remaining := time.Until(d).Seconds()
+			if remaining < 29 || remaining > 30.1 {
+				t.Errorf("per-call ceiling invalid: %.6f", remaining)
+			}
+			deadlines = append(deadlines, d)
+		}
+		return refResponse(), nil
+	})}
+	for i := 0; i < 2; i++ {
+		resp, e := invokeHTTP(client, refRequest(parent))
+		if e != nil || resp == nil {
+			t.Fatalf("call failed: %v", e)
+		}
+		resp.Body.Close()
+		refDone(t, children[len(children)-1])
+		if parent.Err() != nil {
+			t.Fatal("completed child canceled parent")
+		}
+		if i == 0 {
+			time.Sleep(220 * time.Millisecond)
+		}
+	}
+	if len(deadlines) == 2 && deadlines[1].Sub(deadlines[0]) < 180*time.Millisecond {
+		t.Error("aging shared deadline reused")
+	}
+}
+
+func TestReferenceCommandOrderAndStop(t *testing.T) {
+	for _, fail := range []bool{false, true} {
+		t.Run(map[bool]string{false: "complete", true: "stop"}[fail], func(t *testing.T) {
+			var deletes atomic.Int32
+			sentinel := errors.New("operation sentinel")
+			ios, _, _, stderr := iostreams.Test()
+			ios.SetStdoutTTY(true)
+			ios.SetStderrTTY(true)
+			client := &http.Client{Transport: refTransport(func(r *http.Request) (*http.Response, error) {
+				if r.Method == "DELETE" {
+					deletes.Add(1)
+					t.Logf("DIAGNOSTIC_UNPUBLISHED_UPSTREAM_CONTEXT propagated=%t", r.Context().Value(refKey{}) == "command-parent")
+					if fail {
+						return nil, sentinel
+					}
+					return refResponse(), nil
+				}
+				body := `{"tag_name":"v1.2.3","draft":false,"url":"https://api.github.com/repos/OWNER/REPO/releases/23456"}`
+				if r.Method == "POST" {
+					body = `{"data":{"repository":{"release":null}}}`
+				}
+				return &http.Response{StatusCode: 200, Header: make(http.Header), Body: io.NopCloser(strings.NewReader(body))}, nil
+			})}
+			f := &cmdutil.Factory{IOStreams: ios, HttpClient: func() (*http.Client, error) { return client, nil }, BaseRepo: func() (ghrepo.Interface, error) { return ghrepo.FromFullName("OWNER/REPO") }}
+			cmd := NewCmdDelete(f, nil)
+			cmd.PersistentFlags().StringP("repo", "R", "", "")
+			args := []string{"v1.2.3", "--yes"}
+			if fail {
+				args = append(args, "--cleanup-tag")
+			}
+			cmd.SetArgs(args)
+			cmd.SetOut(io.Discard)
+			cmd.SetErr(io.Discard)
+			// 错误必须从真实命令入口返回，并阻止后继操作和成功输出。
+			var err error
+			var panicValue any
+			func() {
+				defer func() { panicValue = recover() }()
+				err = cmd.ExecuteContext(context.WithValue(context.Background(), refKey{}, "command-parent"))
+			}()
+			if panicValue != nil {
+				t.Errorf("command panicked: %v", panicValue)
+				return
+			}
+			if fail {
+				if !errors.Is(err, sentinel) {
+					t.Errorf("operation error lost: %v", err)
+				}
+				if deletes.Load() != 1 || strings.Contains(stderr.String(), "Deleted") {
+					t.Error("successful continuation after failure")
+				}
+			} else {
+				if err != nil || deletes.Load() != 1 || !strings.Contains(stderr.String(), "Deleted") {
+					t.Errorf("successful behavior changed: %v", err)
+				}
+			}
+		})
+	}
+}
+
+func TestReferenceActualDefaultExpiry(t *testing.T) {
+	var observed context.Context
+	client := &http.Client{Transport: refTransport(func(r *http.Request) (*http.Response, error) {
+		observed = r.Context()
+		<-r.Context().Done()
+		return nil, r.Context().Err()
+	})}
+	// 通过生产分派及真实 SDK 等待完整默认期限，独立看门狗由运行器提供。
+	start := time.Now()
+	got, err := invokeHTTP(client, refRequest(context.Background()))
+	elapsed := time.Since(start).Seconds()
+	record := map[string]any{"elapsed_monotonic_seconds": elapsed, "deadline_exceeded": errors.Is(err, context.DeadlineExceeded), "child_done": observed != nil && observed.Err() != nil, "response_nil": got == nil}
+	b, _ := json.Marshal(record)
+	t.Log("EXPIRY_OBSERVATION " + string(b))
+	if elapsed < 29 || elapsed > 35 {
+		t.Errorf("actual expiry outside declared tolerance: %.6f", elapsed)
+	}
+	if !errors.Is(err, context.DeadlineExceeded) || got != nil {
+		t.Errorf("default expiry outcome changed: %v", err)
+	}
+	refDone(t, observed)
+}
+
+// 父上下文的规范边界是已有 HTTP 请求；正文消费期间继续观察取消与较短期限。
+type refWaitingBody struct {
+	ctx     context.Context
+	entered chan struct{}
+	closed  atomic.Bool
+}
+
+func (b *refWaitingBody) Read(_ []byte) (int, error) {
+	close(b.entered)
+	<-b.ctx.Done()
+	return 0, b.ctx.Err()
+}
+func (b *refWaitingBody) Close() error { b.closed.Store(true); return nil }
+func TestReferenceResponseBodyParentCancellation(t *testing.T) {
+	for _, mode := range []string{"cancel", "short"} {
+		t.Run(mode, func(t *testing.T) {
+			base := context.WithValue(context.Background(), refKey{}, "body-parent")
+			var parent context.Context
+			var cancel context.CancelFunc
+			if mode == "short" {
+				parent, cancel = context.WithTimeout(base, 120*time.Millisecond)
+			} else {
+				parent, cancel = context.WithCancel(base)
+			}
+			defer cancel()
+			var child context.Context
+			var body *refWaitingBody
+			client := &http.Client{Transport: refTransport(func(r *http.Request) (*http.Response, error) {
+				child = r.Context()
+				body = &refWaitingBody{ctx: child, entered: make(chan struct{})}
+				resp := refResponse()
+				resp.Body = body
+				return resp, nil
+			})}
+			response, err := invokeHTTP(client, refRequest(parent))
+			if err != nil || response == nil {
+				t.Fatalf("dispatch failed: %v", err)
+			}
+			defer response.Body.Close()
+			if child == nil || body == nil {
+				t.Fatal("production response body dispatch not observed")
+			}
+			if child.Value(refKey{}) != "body-parent" {
+				t.Error("request parent value lost during response ownership")
+			}
+			if child.Err() != nil {
+				t.Fatal("response child canceled before body consumption")
+			}
+			readResult := make(chan error, 1)
+			go func() { _, e := response.Body.Read(make([]byte, 1)); readResult <- e }()
+			select {
+			case <-body.entered:
+			case <-time.After(time.Second):
+				t.Fatal("response body read did not start")
+			}
+			if mode == "cancel" {
+				cancel()
+			}
+			want := context.Canceled
+			if mode == "short" {
+				want = context.DeadlineExceeded
+			}
+			select {
+			case e := <-readResult:
+				if !errors.Is(e, want) {
+					t.Errorf("response body parent outcome changed: %v", e)
+				}
+			case <-time.After(2 * time.Second):
+				t.Fatal("request parent cancellation lost during body consumption")
+			}
+			if err := response.Body.Close(); err != nil {
+				t.Errorf("body close failed: %v", err)
+			}
+			if !body.closed.Load() {
+				t.Error("underlying body not closed")
+			}
+			refDone(t, child)
+		})
+	}
+}
+
+func TestReferenceLongParentCeiling(t *testing.T) {
+	parent, cancel := context.WithTimeout(context.WithValue(context.Background(), refKey{}, "long-parent"), time.Minute)
+	defer cancel()
+	var child context.Context
+	client := &http.Client{Transport: refTransport(func(r *http.Request) (*http.Response, error) {
+		child = r.Context()
+		if child.Value(refKey{}) != "long-parent" {
+			t.Error("request parent value lost")
+		}
+		deadline, ok := child.Deadline()
+		if !ok {
+			t.Error("per-call deadline missing")
+		} else {
+			remaining := time.Until(deadline).Seconds()
+			if remaining < 29 || remaining > 30.1 {
+				t.Errorf("long parent bypassed per-call ceiling: %.6f", remaining)
+			}
+		}
+		return refResponse(), nil
+	})}
+	response, err := invokeHTTP(client, refRequest(parent))
+	if err != nil || response == nil {
+		t.Fatalf("dispatch failed: %v", err)
+	}
+	if child == nil {
+		t.Fatal("production dispatch not observed")
+	}
+	if err = response.Body.Close(); err != nil {
+		t.Errorf("body close failed: %v", err)
+	}
+	refDone(t, child)
+	if parent.Err() != nil {
+		t.Error("completed child canceled live parent")
+	}
+}

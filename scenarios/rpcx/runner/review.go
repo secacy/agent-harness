@@ -161,20 +161,23 @@ func evidenceLinks(ids []string, evidence map[string]quality.Evidence) string {
 
 func renderValidation(out *bytes.Buffer, report Report, module string) {
 	result := report.Validation
-	fmt.Fprintf(out, "\n## 检查与条款依据\n\n验证器：%s；材料集合 SHA-256：%s。每项状态仅适用于该检查的支持范围，不把 blocked、unknown 或未执行计为通过。\n", textValue(result.VerifierVersion), textValue(result.MaterialsSHA256))
+	fmt.Fprintf(out, "\n## 检查与规则依据\n\n验证器：%s；材料集合 SHA-256：%s。每项状态仅适用于该检查的支持范围，不把 blocked、unknown 或未执行计为通过。\n", textValue(result.VerifierVersion), textValue(result.MaterialsSHA256))
 	evidence := map[string]quality.Evidence{}
 	used := map[string]bool{}
 	for _, e := range result.Evidence {
 		evidence[e.ID] = e
 	}
+	if _, ok := evidence["rule-map"]; ok {
+		fmt.Fprint(out, "\n规则标识由宿主定义，并非规范原文自带编号；规范段落、行号或宿主策略位置的映射见每项检查所引的 rule-map 证据。\n")
+	}
 	for _, id := range sortedKeys(result.Checks) {
 		check := result.Checks[id]
-		fmt.Fprintf(out, "\n### %s：%s\n\n条款：%s；适用性：%s。\n\n%s\n\n依据：%s。\n", escapeMarkdown(id), escapeMarkdown(check.Status), textValue(strings.Join(check.RuleIDs, ", ")), textValue(check.Applicability), textValue(check.Detail), evidenceLinks(check.EvidenceIDs, evidence))
+		fmt.Fprintf(out, "\n### %s：%s\n\n规则标识：%s；适用性：%s。\n\n%s\n\n依据：%s。\n", escapeMarkdown(id), escapeMarkdown(check.Status), textValue(strings.Join(check.RuleIDs, ", ")), textValue(check.Applicability), textValue(check.Detail), evidenceLinks(check.EvidenceIDs, evidence))
 		for _, ref := range check.EvidenceIDs {
 			used[ref] = true
 		}
 		for _, f := range check.Findings {
-			fmt.Fprintf(out, "\n- %s；条款 %s：%s。依据：%s。", textValue(f.Code), textValue(strings.Join(f.RuleIDs, ", ")), textValue(f.Detail), evidenceLinks(f.EvidenceIDs, evidence))
+			fmt.Fprintf(out, "\n- %s；规则标识 %s：%s。依据：%s。", textValue(f.Code), textValue(strings.Join(f.RuleIDs, ", ")), textValue(f.Detail), evidenceLinks(f.EvidenceIDs, evidence))
 			for _, ref := range f.EvidenceIDs {
 				used[ref] = true
 			}

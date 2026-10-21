@@ -38,6 +38,12 @@ func validateProtocol(schema int, kind string, targets []TargetPin, p *Protocol)
 		if p != nil || kind != Calibration && kind != Development {
 			return errors.New("schema 1 only supports development rounds without a protocol contract")
 		}
+		// 新应用只获准受控校准，不能沿用旧场景的开发评测资格。
+		for _, pin := range targets {
+			if pin.ProfileID == "rpcx-ghcli-t3-v1" && kind != Calibration {
+				return errors.New("GHCLI only supports schema 1 development_calibration")
+			}
+		}
 		return nil
 	}
 	if schema != 2 || p == nil || kind != Calibration && kind != Development && kind != Formal {

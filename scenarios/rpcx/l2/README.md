@@ -36,6 +36,8 @@
 
 [发布与独立核验回执](agent-application-release-v0.1.0.json)固定实际材料、最终源码与运行证据身份；独立只读评审接受已发布基线范围，未发现阻断问题。完整业务材料已入 Git，主调优流程仍只读允许元数据和通用宿主代码；这是过程隔离，不是文件系统权限隔离。
 
+后续[单仓库接入](../ghcli/README.md)已验收可信 Profile、独立门禁、标准参考 API 与 schema 1 校准汇总，实际五组为 ReadyForReview 1/Rejected 3/NeedsAttention 1，参考自动 pass 2/fail 3，独立核验与项目回归通过，见[接入回执](agent-application-integration-v0.1.0.json)。当前活跃参考为 data-v2：独立复核发现旧私有参考额外要求命令上下文传播，v2 改为匹配公开规范的 HTTP 请求边界，保留 v1 数据和失败。该工作仍是受控机制校准，不增加旧开发实验分母或满足原人员留出条件；具体边界见[实施记录](../../../docs/worklog/2026-10-21-isolated-application-integration.md#9-第二实现单元单仓库-harness-与独立参考闭环)。
+
 [首轮开发评测工作](../../../docs/worklog/2026-10-19-l2-development-evaluation.md)采用三个 Target 各一次尝试，独立行为参考结合源码/交付复核；参考未知与确认错误分列。[三场景单候选参考](evaluation/README.md)及[真实批次](../../../docs/experiments/2026-10-20-rpcx-l2-real-model-01.md)已完成：三项原判定均为 NeedsAttention，自动参考均 pass，S/N=0/3、A=0，错误放行率无定义。Goddd、Translation 的实际人员复核与 Workouts 的助手补充已分列，见[阶段收尾](../../../docs/worklog/2026-10-20-m3-closeout-review.md)。[轮次汇总](round/README.md)现支持 v2 协议绑定及一次尝试的身份关联、未知区间和成本分列；独立留出与完整正式评测仍待准备。
 
 ## 清单边界

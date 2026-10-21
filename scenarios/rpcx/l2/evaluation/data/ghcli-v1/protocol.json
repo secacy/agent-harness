@@ -1,0 +1,75 @@
+{
+  "frozen_before_implementation": true,
+  "created_utc": "2026-10-21T04:52:25.780808+00:00",
+  "assignment_sha256": "814bd0b36561de72fb01c32b16e022bf74c3589b360465fceaf3d40811f2e3a5",
+  "criteria": [
+    {
+      "id": "original_behavior",
+      "requirement": "Preserve the bounded original application assertions, request/result mapping, error propagation and meaningful control-flow behavior; separate original-test execution from independent reference checks."
+    },
+    {
+      "id": "sdk_v2_contract",
+      "requirement": "Correct control uses example.com/rpcx/v2, Dial and actual ctx-first Call in the production path, with matching local go.mod. SDKs and protected original material remain unchanged; no v1 fallback."
+    },
+    {
+      "id": "request_context",
+      "requirement": "Migration forwards available parent request context through the actual application production path. Preserve parent values, pre-cancellation, in-flight cancellation and a shorter parent deadline; no Background/TODO request fallback."
+    },
+    {
+      "id": "per_call_timeout",
+      "requirement": "Preserve the injected v1 30-second ceiling per actual RPC while respecting shorter parent deadlines. Multiple calls obtain individual ceilings rather than reusing an aging shared deadline."
+    },
+    {
+      "id": "real_default_expiry",
+      "requirement": "Observe actual waiting until approximately 30-second expiry through the production path in both unchanged v1 B and correct v2, with recorded monotonic elapsed duration, context/error outcome and bounded independent watchdog. Reading Deadline alone or using a shortened/fake clock is insufficient."
+    },
+    {
+      "id": "resources_and_errors",
+      "requirement": "Preserve outbound response/error meaning and resource release. Observe child cancellation/release after return, parent still usable after a completed child call, and no successful continuation when the existing operation fails."
+    },
+    {
+      "id": "reference_independence",
+      "requirement": "New reference implementation derives from declared contract, SDK and original U/B behavior. Do not reuse existing runtime gate, analysis, baseline added probes or other scenario reference implementations; do not consume expected case labels, patches, gate verdict or Agent prose as observations."
+    },
+    {
+      "id": "evidence_binding",
+      "requirement": "Record exact frozen baseline/spec/reference/candidate/production/dependency/SDK identities, exact commands/exits/raw test events, container limits, prior failures and before/after input identity. Expected labels only in external calibration manifest; oracle and answers excluded from future Agent-visible roots."
+    }
+  ],
+  "expiry_tolerance_seconds": [
+    29,
+    35
+  ],
+  "default_deadline_remaining_tolerance_seconds": [
+    29,
+    30.1
+  ],
+  "inflight_and_short_parent_max_seconds": 2,
+  "watchdog_seconds": 45,
+  "original_scope": "Byte-identical retained original test file only, excluding baseline-added tests; complete event identities separately recorded.",
+  "independent_scope": "Production copy without candidate tests, trusted actual SDKs and retained checksum dependency cache. Direct dispatch and command production entrypoints. No case IDs, expected labels, patches or gate verdict supplied to probes.",
+  "baseline_applicability": "Baseline preserves original production exactly; v2 interface and newly forwarded command context are inapplicable to unchanged v1. Existing dispatch parent semantics remain applicable.",
+  "checks": [
+    "request/result mapping and delegated read/close errors",
+    "parent values and pre-cancellation",
+    "in-flight cancellation and shorter parent deadline",
+    "two separated calls with fresh individual 30-second ceilings",
+    "child cancellation after close and error; parent remains usable",
+    "command context forwarding and error halts continuation",
+    "actual 30-second expiry in baseline and correct production paths"
+  ],
+  "revision_policy": "Freeze spec and reference before first execution. Any revisions preserve old artifacts and failure outputs; no weakening to accept mutants.",
+  "limitations": [
+    "Bounded original package, no repository-wide behavior claim",
+    "Manual calibration controls are not model success or effect evidence",
+    "No race detector or production network wire semantics claim"
+  ],
+  "concrete_assertions": {
+    "mapping": "DELETE URL, header and payload preserved; response object identity; delegated read/close sentinel errors",
+    "command": "Original release lookup returns fixed retained shape; command parent value reaches DELETE; failed operation prevents second delete/local cleanup/success output",
+    "contexts": "Original request parent value, already canceled parent, cancellation after transport entry, 120ms shorter parent deadline",
+    "freshness": "Two calls separated by 220ms; each remaining deadline 29..30.1 seconds; second deadline advances at least 180ms",
+    "lifecycle": "Response context usable before close; close and transport error cancel child within one second, live parent remains usable",
+    "expiry": "Real dispatch waits on transport context Done only; DeadlineExceeded and 29..35 monotonic seconds"
+  }
+}
