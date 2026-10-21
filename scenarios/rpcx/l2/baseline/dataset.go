@@ -41,6 +41,8 @@ func lookupDataset(version string) (dataset, error) {
 			{ID: "default", ActiveFile: "translation_google.go", IgnoredFile: "translation_rpcx_alternate.go"},
 			{ID: "rpcx_alternate", Tags: []string{"rpcx_alternate"}, ActiveFile: "translation_rpcx_alternate.go", IgnoredFile: "translation_google.go"},
 		}}, nil
+	case GHCLIVersion:
+		return dataset{Version: version, Business: "ghcli", FreezeSHA256: GHCLIFreezeSHA256, Configurations: []buildConfiguration{{ID: "default"}}}, nil
 	case WorkoutsVersion:
 		return dataset{Version: version, Business: "trainings", FreezeSHA256: "5efa3908ad6f80a8673a4893ef28bb6213a4a8d9a281bce4498726aa69282cb2", LocalModules: []string{"common"}, Configurations: []buildConfiguration{{ID: "default"}}}, nil
 	default:

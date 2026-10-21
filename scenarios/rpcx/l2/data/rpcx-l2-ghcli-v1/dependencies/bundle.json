@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "version": "rpcx-l2-ghcli-v1",
+  "manifest_sha256": "db2ea28c450c5251e9f07ce38b590f8ae4ea0a76ab9d93d2dd3365e23d136b99",
+  "logical_size": 40368870,
+  "logical_sha256": "6e28dc2404fe2740322160db69a02960664160c32f90987a9fdfb9a8b3d24296",
+  "chunks": [
+    {
+      "name": "dependencies/modules-000.tar.gz.part",
+      "size": 8388608,
+      "sha256": "58ceb420af0ecdc1e358fde85955486078ff697bb68f18431bc538bd0226d239"
+    },
+    {
+      "name": "dependencies/modules-001.tar.gz.part",
+      "size": 8388608,
+      "sha256": "14340c96af96e17b6886aaf21fff6e22c48583ed97e43601569acd7f9f69c60e"
+    },
+    {
+      "name": "dependencies/modules-002.tar.gz.part",
+      "size": 8388608,
+      "sha256": "463a2ed94b690d386be4c8a5a930403aaa9475070c03e37ff4046e2f32fad478"
+    },
+    {
+      "name": "dependencies/modules-003.tar.gz.part",
+      "size": 8388608,
+      "sha256": "9202bc26eba750d090d3a302f15a5a71b83a0290738bd529fd0957648bf0718a"
+    },
+    {
+      "name": "dependencies/modules-004.tar.gz.part",
+      "size": 6814438,
+      "sha256": "fd9d03954c656594fdb0d9baf59c5f50022d85219c2832491f12fb25077c5fae"
+    }
+  ]
+}

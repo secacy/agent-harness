@@ -21,7 +21,7 @@ var material embed.FS
 //go:embed data/rpcx-l2-translation-v1/freeze.json data/rpcx-l2-translation-v1/tests.json data/rpcx-l2-translation-v1/dependencies
 var translationMaterial embed.FS
 
-//go:embed modules.go materials.go baseline/data.go
+//go:embed modules.go materials.go baseline/data.go baseline/bundle.go baseline/ghcli.go baseline/dataset.go
 var executionMaterial embed.FS
 
 // ExecutionMaterials 保存实际装配与解包实现，供门禁绑定工具身份。
@@ -89,4 +89,14 @@ var workoutsMaterial embed.FS
 
 func WorkoutsMaterials() (map[string][]byte, error) {
 	return loadMaterials(workoutsMaterial, "data/rpcx-l2-workouts-v1", WorkoutsFreezeSHA256)
+}
+
+const GHCLIFreezeSHA256 = "ec8a6be346dc043cf97298ca815cc40c573c001a37ab002eca6aa57328a3ae47"
+
+//go:embed data/rpcx-l2-ghcli-v1/freeze.json data/rpcx-l2-ghcli-v1/tests.json data/rpcx-l2-ghcli-v1/identity.json data/rpcx-l2-ghcli-v1/dependencies
+var ghcliMaterial embed.FS
+
+// GHCLIMaterials 只返回专属宿主依赖及发布身份，不公开业务来源和纯规范以外的材料。
+func GHCLIMaterials() (map[string][]byte, error) {
+	return loadMaterials(ghcliMaterial, "data/rpcx-l2-ghcli-v1", GHCLIFreezeSHA256)
 }

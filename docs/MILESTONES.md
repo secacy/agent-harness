@@ -182,7 +182,7 @@ M2.3 的[选型实验](experiments/2026-10-18-m2-analysis-study-01.md)已通过 
 
 [应用基线准入评审](../scenarios/rpcx/l2/agent-application-admission-v0.1.0.json)已收束：新隔离评审 Agent 只读核对来源/基线、原断言路径及存量证据，六项必需条件均 supported，可进入参考标准准备。该次没有重跑测试或改变材料，准入时尚无参考与可信 Profile；后续准备结果另存，原回执不改。
 
-[隔离应用参考与正反例](worklog/2026-10-21-isolated-application-reference.md)已在声明范围实现并校准，公开身份见[回执](../scenarios/rpcx/l2/agent-application-reference-v0.1.0.json)：原 v1/手工正确 v2 通过，三个原测试全绿的单错反例分别被超时、上下文与错误条件指出；完整应用入口真实默认到期已建立，独立只读实现/证据核验通过。当前只交付由隔离侧保管的私有可执行参考与手工控制，结构/资源观察限制保留；下一项设计有限宿主 Profile 和参考调用接入，不自动注册公开 API、增加效果分母或满足原人员留出。M5 未冻结、未启动。
+[隔离应用参考与正反例](worklog/2026-10-21-isolated-application-reference.md)已在声明范围实现并校准，公开身份见[回执](../scenarios/rpcx/l2/agent-application-reference-v0.1.0.json)：原 v1/手工正确 v2 通过，三个原测试全绿的单错反例分别被超时、上下文与错误条件指出；完整应用入口真实默认到期已建立，独立只读实现/证据核验通过。后续[宿主接入第一单元](worklog/2026-10-21-isolated-application-integration.md#8-第一实现单元新发布与禁网基线)已发布新布局、纯规范及有界依赖分片，现有 Executor 禁网基线通过。下一单元接可信 Profile、独立门禁/标准参考及受控闭环；当前不增加效果分母或满足原人员留出。M5 未冻结、未启动。
 
 [宿主接入设计](worklog/2026-10-21-isolated-application-integration.md)现已完成，尚未实现：沿用静态发布/显式注册，纯迁移规范与门禁、参考、校准材料分离，旧嵌套 SDK 布局和摘要需新发布映射；约 101.5 MiB 的保留缓存需要新发布专属的有界装配，旧限制保持。下一实现单元先发布并验证可准备输入，再接齐受控 Runner/门禁、单候选参考及校准汇总；不把设计当作新 Profile 可用或 M5 已启动。
 

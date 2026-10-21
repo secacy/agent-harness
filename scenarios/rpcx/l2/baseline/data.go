@@ -43,6 +43,21 @@ func decode(data []byte, value any) error {
 
 // read 扫描整个发布根，不允许通过漏列文件缩小冻结范围。
 func read(ctx context.Context, root string) (map[string][]byte, error) {
+	return readBounded(ctx, root, 8<<20, 32<<20)
+}
+
+// readVersion 仅扩大新发布宿主材料的总量，不改变业务快照读取策略。
+func readVersion(ctx context.Context, root, version string) (map[string][]byte, error) {
+	if _, err := lookupDataset(version); err != nil {
+		return nil, err
+	}
+	if version == GHCLIVersion {
+		return readBounded(ctx, root, 8<<20, 80<<20)
+	}
+	return read(ctx, root)
+}
+
+func readBounded(ctx context.Context, root string, fileLimit, totalLimit int64) (map[string][]byte, error) {
 	info, err := os.Lstat(root)
 	if err != nil {
 		return nil, err
@@ -51,7 +66,7 @@ func read(ctx context.Context, root string) (map[string][]byte, error) {
 		return nil, fmt.Errorf("invalid dataset directory: %s", root)
 	}
 	files := map[string][]byte{}
-	total := 0
+	var total int64
 	err = filepath.WalkDir(root, func(filename string, entry fs.DirEntry, err error) error {
 		if err := errors.Join(err, ctx.Err()); err != nil {
 			return err
@@ -63,10 +78,10 @@ func read(ctx context.Context, root string) (map[string][]byte, error) {
 		if err != nil {
 			return err
 		}
-		if !info.Mode().IsRegular() || info.Size() > 8<<20 {
+		if !info.Mode().IsRegular() || info.Size() > fileLimit {
 			return fmt.Errorf("invalid dataset file: %s", filename)
 		}
-		if len(files) >= 10000 || total+int(info.Size()) > 32<<20 {
+		if len(files) >= 10000 || info.Size() > totalLimit-total {
 			return errors.New("dataset limit exceeded")
 		}
 		data, err := os.ReadFile(filename)
@@ -78,7 +93,7 @@ func read(ctx context.Context, root string) (map[string][]byte, error) {
 			return err
 		}
 		files[filepath.ToSlash(rel)] = data
-		total += len(data)
+		total += int64(len(data))
 		return nil
 	})
 	return files, err

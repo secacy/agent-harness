@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "version": "rpcx-l2-ghcli-v1",
+  "source_full_B_sha256": "1be48a4d09c5956430781ee8d284baa9ef9df7ce9a02384249208d79d778a07e",
+  "snapshot_algorithm": "gate.TreeHash: SHA256(Go JSON sorted path-to-SHA256 map)",
+  "layout_sha256": "97a5f69cf87eac8f4fbd56d4ac32ea3b3ddeb908997329c52b794942c37ca75d",
+  "modules": {
+    "rpcx-v1": {
+      "tree_sha256": "3494436826b66504e9d1f28fa22fa22db4f927d0ee43309ab92b2868e5c6d24b",
+      "file_count": 4
+    },
+    "rpcx-v2": {
+      "tree_sha256": "c8b687c6964c5659391144f0c74934e36a5c0462c438bc8ed886bcdeafb5357c",
+      "file_count": 4
+    },
+    "ghcli": {
+      "tree_sha256": "c299869d906bc9bb084e1cad4c35d8b6820879488536117ba9bdacd0f7ab131c",
+      "file_count": 68
+    }
+  },
+  "original_business_test_files": 1,
+  "original_business_top_level_tests": 2,
+  "original_business_test_events": 11,
+  "supporting_packages_without_tests": 19
+}

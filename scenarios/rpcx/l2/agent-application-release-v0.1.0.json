@@ -1,0 +1,538 @@
+{
+  "schema_version": 1,
+  "version": "rpcx-agent-application-release-v0.1.0",
+  "status": "accepted_for_published_baseline_scope",
+  "purpose": "Versioned input publication and offline baseline verification; not runtime Profile or formal evaluation admission.",
+  "fixed_harness_commit": "d66d82c6ba3698727d860f1cfcbe07c8a825e9c3",
+  "public_release_sha256": "c6da9b923eff0373b6c2a6ca4ed1c8dc5d420e6729c03b6d7e9618897d0d4900",
+  "review_assignment_sha256": "d89dfc839719ff1ced19514b77747548d1d1b2bbcf58f81951db2bc9870e8fe7",
+  "public_review_sha256": "ccc28466c7569f532e951d92f968f9e7b6aaf8cb2375b45b6a3834fcfb77576f",
+  "implementer": {
+    "task": "/root/application_release_implementer",
+    "parent_history_inherited": false,
+    "reference_materials_read": false
+  },
+  "reviewer": {
+    "task": "/root/application_release_reviewer",
+    "parent_history_inherited": false,
+    "read_only": true
+  },
+  "parent_visibility": "Metadata and generic host code only; no new business source, test identities, specification body, or reference material read.",
+  "release": {
+    "schema_version": 1,
+    "id": "rpcx-application-release-01",
+    "status": "published_and_baseline_verified",
+    "assignment_sha256": "18d00be5d48877a4094498051aca98bfbf57c7e5147cf390d4d0c398a585ada5",
+    "dataset_version": "rpcx-l2-ghcli-v1",
+    "source_full_B_sha256": "1be48a4d09c5956430781ee8d284baa9ef9df7ce9a02384249208d79d778a07e",
+    "source_commit": "49f72234acd346666a4646a0f5a427fb3543debc",
+    "freeze_sha256": "ec8a6be346dc043cf97298ca815cc40c573c001a37ab002eca6aa57328a3ae47",
+    "dataset_file_count": 94,
+    "dataset_total_bytes": 42184731,
+    "fixture_file_count": 76,
+    "module_identities": {
+      "rpcx-v1": {
+        "tree_sha256": "3494436826b66504e9d1f28fa22fa22db4f927d0ee43309ab92b2868e5c6d24b",
+        "file_count": 4
+      },
+      "rpcx-v2": {
+        "tree_sha256": "c8b687c6964c5659391144f0c74934e36a5c0462c438bc8ed886bcdeafb5357c",
+        "file_count": 4
+      },
+      "ghcli": {
+        "tree_sha256": "c299869d906bc9bb084e1cad4c35d8b6820879488536117ba9bdacd0f7ab131c",
+        "file_count": 68
+      }
+    },
+    "layout_sha256": "97a5f69cf87eac8f4fbd56d4ac32ea3b3ddeb908997329c52b794942c37ca75d",
+    "spec_sha256": "6e3a87056ec102536b52e1ffc340dbd8dd541d8d28589c555b9b08bafc1e40e8",
+    "provenance_sha256": "10fed7b280a197e1315e88507e887e3ed5c1d0e34c69158edb99d603338f57d6",
+    "test_inventory_sha256": "afa8f94e766234c8b87997fbb1330cfef19f77c1628606b9c2708d4596dd1558",
+    "bundle": {
+      "bundle_sha256": "8aecf2ff3348af907ac309f042616b7cedc68a42329387bfce45f7c8b6a92cd1",
+      "manifest_sha256": "db2ea28c450c5251e9f07ce38b590f8ae4ea0a76ab9d93d2dd3365e23d136b99",
+      "logical_sha256": "6e28dc2404fe2740322160db69a02960664160c32f90987a9fdfb9a8b3d24296",
+      "logical_size": 40368870,
+      "expanded_bytes": 106472966,
+      "cache_files": 6977,
+      "max_file_bytes": 9236390,
+      "chunk_sizes": [
+        8388608,
+        8388608,
+        8388608,
+        8388608,
+        6814438
+      ]
+    },
+    "limits": {
+      "legacy_module_expanded_bytes": 33554432,
+      "legacy_module_file_bytes": 8388608,
+      "new_module_expanded_bytes": 134217728,
+      "new_module_file_bytes": 16777216,
+      "new_module_file_count": 10000,
+      "new_logical_compressed_bytes": 67108864,
+      "new_chunk_bytes": 8388608,
+      "new_chunk_count": 8,
+      "new_dataset_source_read_file_bytes": 8388608,
+      "new_dataset_source_read_total_bytes": 83886080,
+      "business_snapshot_file_bytes": 1048576,
+      "business_snapshot_total_bytes": 16777216,
+      "global_audit_and_round_limits_changed": false,
+      "selected_by": "trusted_static_published_version"
+    },
+    "source_fidelity": {
+      "mapping_counts": {
+        "kept": 71,
+        "modified": 1,
+        "excluded": 1,
+        "added": 4
+      },
+      "baseline_files_mapped": 73,
+      "original_business_test_files": 1,
+      "original_assertions_byte_identical_to_upstream": true,
+      "original_modified_B_source_copies_preserved": true,
+      "sdk_bytes_unchanged": true,
+      "all_cached_regular_files_retained": true,
+      "preparation_probe_files_excluded": 1,
+      "old_inputs_unchanged": true,
+      "source_manifest_is_metadata_only_to_parent": true
+    },
+    "validation": {
+      "baseline_accepted": true,
+      "inputs_unchanged": true,
+      "backend": {
+        "kind": "docker",
+        "image": "sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd",
+        "cpus": 2,
+        "memory_bytes": 2147483648,
+        "pids": 128
+      },
+      "image_reference": "golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd",
+      "network": "none",
+      "uid": 65534,
+      "gid": 65534,
+      "cgo_enabled": false,
+      "read_only_root": true,
+      "read_only_input_mounts": true,
+      "cache": "independent_per_command_tmpfs_cold_compilation",
+      "baseline_command_budget_seconds": 90,
+      "runner_30_second_diagnostic": {
+        "build_passed": true,
+        "test_passed": true,
+        "build_duration_ms": 11951,
+        "test_duration_ms": 15119,
+        "claim": "observed on this host and fixed image only; Runner/Profile not registered"
+      },
+      "original_business_events": {
+        "top_level": 2,
+        "subtests": 9,
+        "pass": 11,
+        "fail": 0,
+        "skip": 0,
+        "tested_package_endings": 1,
+        "supporting_packages_without_tests": 19
+      },
+      "sdk_events": {
+        "v1": {
+          "pass": 5,
+          "top_level": 5,
+          "subtests": 0
+        },
+        "v2": {
+          "pass": 10,
+          "top_level": 7,
+          "subtests": 3
+        }
+      },
+      "commands": [
+        {
+          "sequence": 0,
+          "module": "sdk_v1",
+          "step": "version",
+          "budget_seconds": 90,
+          "duration_ms": 474,
+          "exit_code": 0,
+          "container_id": "99947f46579c8c999657b839dad83fca2d8a15c34aae9c85ba58be0036f6e96d",
+          "cleanup_verified": true
+        },
+        {
+          "sequence": 1,
+          "module": "sdk_v1",
+          "step": "build",
+          "budget_seconds": 90,
+          "duration_ms": 3563,
+          "exit_code": 0,
+          "container_id": "98e7adabdb62f1a52177548f7f3b7f2e1591dffa1aa98822c7f345e3dafa3ff7",
+          "cleanup_verified": true
+        },
+        {
+          "sequence": 2,
+          "module": "sdk_v1",
+          "step": "test",
+          "budget_seconds": 90,
+          "duration_ms": 5017,
+          "exit_code": 0,
+          "container_id": "63a3a97c51fdf5e22bb4ede1c6eb11d80c4abe5209a6ae93ef8e9bf5c737c721",
+          "cleanup_verified": true
+        },
+        {
+          "sequence": 3,
+          "module": "sdk_v2",
+          "step": "version",
+          "budget_seconds": 90,
+          "duration_ms": 363,
+          "exit_code": 0,
+          "container_id": "70118dda7cdefdff9ab6b6a914b48fa11567a7fdde0d72e421e322af5b533b1b",
+          "cleanup_verified": true
+        },
+        {
+          "sequence": 4,
+          "module": "sdk_v2",
+          "step": "build",
+          "budget_seconds": 90,
+          "duration_ms": 3251,
+          "exit_code": 0,
+          "container_id": "9d3fa4981058d0135846e8e024e99c422e95cd792b63a214b9e67ca83093d207",
+          "cleanup_verified": true
+        },
+        {
+          "sequence": 5,
+          "module": "sdk_v2",
+          "step": "test",
+          "budget_seconds": 90,
+          "duration_ms": 5457,
+          "exit_code": 0,
+          "container_id": "ba2f2e213862b3f8698d87c8266369d0f651632386a91831ec025e7277842465",
+          "cleanup_verified": true
+        },
+        {
+          "sequence": 6,
+          "module": "business",
+          "step": "version",
+          "budget_seconds": 90,
+          "duration_ms": 409,
+          "exit_code": 0,
+          "container_id": "b93ccc77f5556d0360530de7a30f0a77bd31dabdb12d793fe63ed0fd65e3386c",
+          "cleanup_verified": true
+        },
+        {
+          "sequence": 7,
+          "module": "business",
+          "step": "build",
+          "budget_seconds": 90,
+          "duration_ms": 12116,
+          "exit_code": 0,
+          "container_id": "17999dc3845b43fba67cc240fc6e06471c76932cba4e0e0833ee03dc41f3d1bd",
+          "cleanup_verified": true
+        },
+        {
+          "sequence": 8,
+          "module": "business",
+          "step": "test",
+          "budget_seconds": 90,
+          "duration_ms": 14237,
+          "exit_code": 0,
+          "container_id": "d9724df12931f7d652d538ccd83f920302e81eb4f0315a6634dcd82d81dd7a12",
+          "cleanup_verified": true
+        },
+        {
+          "sequence": 9,
+          "module": "business",
+          "step": "build",
+          "budget_seconds": 30,
+          "duration_ms": 11951,
+          "exit_code": 0,
+          "container_id": "625aa29a66973592688ebb39f32b0e4d338704d4c9ae0d549367ba264c52eba3",
+          "cleanup_verified": true
+        },
+        {
+          "sequence": 10,
+          "module": "business",
+          "step": "test",
+          "budget_seconds": 30,
+          "duration_ms": 15119,
+          "exit_code": 0,
+          "container_id": "b0ffc183a8a4922763e0da9048f6c2e08580f092e83d923742577c86734bd43e",
+          "cleanup_verified": true
+        },
+        {
+          "sequence": 11,
+          "module": "business",
+          "step": "environment",
+          "budget_seconds": 30,
+          "duration_ms": 389,
+          "exit_code": 0,
+          "container_id": "a8355b64fd079023197bc88d53ac1fc750521bd3de3cfd062b7e1b9355140de2",
+          "cleanup_verified": true
+        }
+      ],
+      "containers_created": 12,
+      "containers_removed": 12,
+      "containers_remaining": 0,
+      "mechanism_checks": "passed, including actual published >32MiB compressed bundle accepted only by new policy, parser malicious cases, exact 16MiB file, 8MiB real chunks, host mutation detection and frozen material authentication",
+      "race": "passed: focused existing/new baseline and material/CLI packages",
+      "vet": "passed: same packages",
+      "diff_check": "passed"
+    },
+    "failures_preserved": [
+      {
+        "phase": "initial_docker_connection",
+        "reason": "filesystem sandbox denied local Docker socket",
+        "resolution": "same authorized network-disabled Executor command allowed after sandbox escalation; no execution policy changed"
+      },
+      {
+        "phase": "mechanism_test_fixture_construction",
+        "reason": "three nonregular member fixtures attempted to write data to zero-size headers",
+        "resolution": "fixed test constructor; rerun and race passed; implementation unchanged by this correction"
+      }
+    ],
+    "changed_source_files": {
+      "scenarios/rpcx/l2/baseline/bundle.go": "b61f021dfcf7afcae74400ae6756db7c2a50afddad0028be76636b6b0fc7fbff",
+      "scenarios/rpcx/l2/baseline/bundle_test.go": "a237024fa5a3c69fba65eb66ccd40d883261afd78c308644def92d95836d543f",
+      "scenarios/rpcx/l2/baseline/host_test.go": "d1a64b98ca87a65e0d9271dff3ae8afb63676dd6c8c0a62e521347c80b6195a2",
+      "scenarios/rpcx/l2/baseline/data.go": "faf39110d836d684b2253770a5b29474c37f7eb76ee4a3a0c149bdb381022812",
+      "scenarios/rpcx/l2/baseline/dataset.go": "0831697cdf7b60e5dd6ae022d3e5d68f26b9dc9e2a88b0d24e1c091b96ab1e50",
+      "scenarios/rpcx/l2/baseline/ghcli.go": "f5fd1be3ca0788c4a0959882927a1148cf2d8e04f87cf67cfc6a05514e9f6928",
+      "scenarios/rpcx/l2/baseline/verify.go": "02a1544fa9500746d03ebaaa30cabf20e6da622ecc90b6b06f69641949d3a0c5",
+      "scenarios/rpcx/l2/modules.go": "fd7108afed74138844ac548104348503ed57cea58885e14286f376bfcad6c8e2",
+      "scenarios/rpcx/l2/materials.go": "a836da10ccf0d2bc019b96f2f358217ae35e4ac187f0a97647ea21bf4939a165"
+    },
+    "safe_generic_review_paths": [
+      "scenarios/rpcx/l2/baseline/bundle.go",
+      "scenarios/rpcx/l2/baseline/bundle_test.go",
+      "scenarios/rpcx/l2/baseline/host_test.go",
+      "scenarios/rpcx/l2/baseline/data.go",
+      "scenarios/rpcx/l2/baseline/verify.go",
+      "scenarios/rpcx/l2/modules.go"
+    ],
+    "execution_materials_include_new_parser": true,
+    "shared_tool_identity_changed": true,
+    "old_protocols_automatically_readmitted": false,
+    "private_evidence_manifest_sha256": "d0980153d657d49d8922fbb298772793ffbb267d77c517f5029a87e961d73144",
+    "runtime_profile_registered": false,
+    "formal_evaluation_started": false,
+    "reference_materials_read": false,
+    "candidate_or_expected_materials_read": false,
+    "git_commit_created": false,
+    "network_downloads": 0,
+    "paid_model_calls": 0,
+    "isolation": "fresh conversation and procedural boundaries; shared filesystem/model family; not independent human or OS security"
+  },
+  "review": {
+    "schema_version": 1,
+    "id": "rpcx-application-release-review-01",
+    "outcome": "accepted_for_published_baseline_scope",
+    "scope": "Frozen published inputs and observed baseline execution only. No Runtime Profile registration or formal evaluation admission.",
+    "review_mode": "independent read-only source and original execution evidence review; no Go/tests/Docker/network rerun",
+    "implementation_assignment_sha256": "18d00be5d48877a4094498051aca98bfbf57c7e5147cf390d4d0c398a585ada5",
+    "reviewed_release_sha256": "c6da9b923eff0373b6c2a6ca4ed1c8dc5d420e6729c03b6d7e9618897d0d4900",
+    "freeze_sha256": "ec8a6be346dc043cf97298ca815cc40c573c001a37ab002eca6aa57328a3ae47",
+    "layout_sha256": "97a5f69cf87eac8f4fbd56d4ac32ea3b3ddeb908997329c52b794942c37ca75d",
+    "spec_sha256": "6e3a87056ec102536b52e1ffc340dbd8dd541d8d28589c555b9b08bafc1e40e8",
+    "bundle_index_sha256": "8aecf2ff3348af907ac309f042616b7cedc68a42329387bfce45f7c8b6a92cd1",
+    "module_manifest_sha256": "db2ea28c450c5251e9f07ce38b590f8ae4ea0a76ab9d93d2dd3365e23d136b99",
+    "logical_archive_sha256": "6e28dc2404fe2740322160db69a02960664160c32f90987a9fdfb9a8b3d24296",
+    "actual_tool_manifest_sha256": "eadcc800e77888e7d74441e10578a73e886f3a370bbaf8e8c829f7d3751fbc4f",
+    "private_evidence_manifest_sha256": "d0980153d657d49d8922fbb298772793ffbb267d77c517f5029a87e961d73144",
+    "final_changed_source_hashes_checked": 9,
+    "actual_tool_source_files_checked": 17,
+    "checks": {
+      "frozen_identity": "passed",
+      "source_provenance_and_original_assertions": "passed",
+      "sdk_byte_preservation": "passed",
+      "pure_spec_contract": "passed",
+      "exact_snapshot_hashes": "passed",
+      "full_dependency_cache_and_chunks": "passed",
+      "bounded_parser_and_trailer_handling": "passed",
+      "trusted_version_policy_and_legacy_compatibility": "passed",
+      "readonly_offline_executor": "passed",
+      "original_events_and_package_endings": "passed",
+      "cold_30s_diagnostic_separate_from_90s_baseline": "passed",
+      "unique_container_cleanup": "passed",
+      "final_source_and_execution_material_identity": "passed",
+      "preserved_failed_attempts": "passed"
+    },
+    "verified_counts": {
+      "upstream_files": 1320,
+      "baseline_source_files": 73,
+      "dataset_files": 94,
+      "fixture_files": 76,
+      "dependency_files": 6977,
+      "dependency_expanded_bytes": 106472966,
+      "dependency_max_file_bytes": 9236390,
+      "logical_compressed_bytes": 40368870,
+      "chunks": 5,
+      "business_top_level_passes": 2,
+      "business_subtest_passes": 9,
+      "business_total_passes": 11,
+      "support_packages_without_tests": 19,
+      "sdk_v1_passes": 5,
+      "sdk_v2_passes": 10,
+      "containers_unique": 12,
+      "containers_removed": 12
+    },
+    "issues": [],
+    "runtime_profile_registered": false,
+    "formal_evaluation_started": false,
+    "isolation": "Separate reviewer; shared filesystem/model family and procedural boundaries, not independent human or OS security."
+  },
+  "project_regression_sha256": "d0e11d0b5d18613a47ee5916f1e0019ec2cf361cf315d657d4915edd6f30c0fc",
+  "project_regression": {
+    "schema_version": 1,
+    "id": "rpcx-application-release-01-regression",
+    "status": "passed_after_localhost_permission_recovery_and_current_template_refresh",
+    "published_release_sha256": "c6da9b923eff0373b6c2a6ca4ed1c8dc5d420e6729c03b6d7e9618897d0d4900",
+    "release_json_unchanged": true,
+    "production_source_frozen": true,
+    "source_files_unchanged": true,
+    "source_files": {
+      "scenarios/rpcx/l2/baseline/bundle.go": "b61f021dfcf7afcae74400ae6756db7c2a50afddad0028be76636b6b0fc7fbff",
+      "scenarios/rpcx/l2/baseline/bundle_test.go": "a237024fa5a3c69fba65eb66ccd40d883261afd78c308644def92d95836d543f",
+      "scenarios/rpcx/l2/baseline/host_test.go": "d1a64b98ca87a65e0d9271dff3ae8afb63676dd6c8c0a62e521347c80b6195a2",
+      "scenarios/rpcx/l2/baseline/data.go": "faf39110d836d684b2253770a5b29474c37f7eb76ee4a3a0c149bdb381022812",
+      "scenarios/rpcx/l2/baseline/dataset.go": "0831697cdf7b60e5dd6ae022d3e5d68f26b9dc9e2a88b0d24e1c091b96ab1e50",
+      "scenarios/rpcx/l2/baseline/ghcli.go": "f5fd1be3ca0788c4a0959882927a1148cf2d8e04f87cf67cfc6a05514e9f6928",
+      "scenarios/rpcx/l2/baseline/verify.go": "02a1544fa9500746d03ebaaa30cabf20e6da622ecc90b6b06f69641949d3a0c5",
+      "scenarios/rpcx/l2/modules.go": "fd7108afed74138844ac548104348503ed57cea58885e14286f376bfcad6c8e2",
+      "scenarios/rpcx/l2/materials.go": "a836da10ccf0d2bc019b96f2f358217ae35e4ac187f0a97647ea21bf4939a165"
+    },
+    "source_identity_sha256": "7ef17edfcc32dde1b02c3d98a6c24841635d4456a7bb26b70dede4fc994755ac",
+    "environment": {
+      "GOCACHE": "private task cache",
+      "GOMODCACHE": "private task module cache",
+      "GOPROXY": "off",
+      "GOSUMDB": "off",
+      "GOENV": "off",
+      "GOTOOLCHAIN": "local",
+      "real_model_calls": 0,
+      "special_docker_matrix_enabled": false,
+      "new_reference_evaluation_enabled": false
+    },
+    "attempts": [
+      {
+        "command": "go test -p 1 ./internal/... ./scenarios/rpcx/... ./cmd/...",
+        "sandbox": "default",
+        "result": {
+          "exit_code": 1,
+          "unique_packages": 35,
+          "passed_packages": 26,
+          "failed_packages": 2,
+          "packages_without_test_files": 7,
+          "log_sha256": "41a29096333e7c4245d2ef8113dae52168a01fc180e01ac5f315adc5bcabc434"
+        },
+        "failure_category": "existing httptest localhost bind denied by filesystem sandbox; two affected packages"
+      },
+      {
+        "command": "go test -p 1 ./internal/deepseek ./cmd/harness",
+        "sandbox": "authorized escalation for localhost test listeners",
+        "result": {
+          "exit_code": 1,
+          "unique_packages": 2,
+          "passed_packages": 1,
+          "failed_packages": 1,
+          "packages_without_test_files": 0,
+          "log_sha256": "52e6bed9dcd15af14d7da20c9e5d6c7af5619862c55988ad4e5ddd73b46ac704"
+        },
+        "scope": "only the two facility-affected packages; previously successful packages not repeated",
+        "remaining_failure": "current enrollment example tool identity is stale"
+      },
+      {
+        "command": "go test -p 1 ./cmd/harness",
+        "sandbox": "authorized localhost test listeners",
+        "result": {
+          "exit_code": 0,
+          "unique_packages": 1,
+          "passed_packages": 1,
+          "failed_packages": 0,
+          "packages_without_test_files": 0,
+          "log_sha256": "9af67fb0e962bd41ba835a35074d2b0580209c7cad732cc1258b9e9915216c7b"
+        },
+        "scope": "only current-template compatibility repair; Go source and frozen protocols unchanged"
+      }
+    ],
+    "final_unique_coverage": {
+      "packages": 35,
+      "passed_packages": 28,
+      "failed_packages": 0,
+      "packages_without_test_files": 7,
+      "explicit_package_skip_markers_observed": 0,
+      "test_case_skip_count": null,
+      "test_case_skip_count_limitation": "The requested default nonverbose go test output does not enumerate skipped test cases; no claim of zero skipped test cases.",
+      "duplicate_package_runs_not_added_to_coverage": true
+    },
+    "focused_checks_previously_executed": {
+      "race_command": "go test -race ./scenarios/rpcx/l2/baseline ./scenarios/rpcx/l2 ./scenarios/rpcx/l2/cmd/verify-baseline",
+      "race_result": "pass",
+      "race_baseline_package_duration_seconds": 48.3,
+      "host_backend_test_included_in_race": true,
+      "standalone_host_test_command_run": false,
+      "vet_command": "go vet ./scenarios/rpcx/l2/baseline ./scenarios/rpcx/l2 ./scenarios/rpcx/l2/cmd/verify-baseline",
+      "vet_result": "pass"
+    },
+    "private_logs_preserved": true,
+    "production_source_changes_for_regression": false,
+    "current_example_identity_refresh": true,
+    "template_refresh_manifest_sha256": "c41e1d854e1ae05cd3b9f74b458ed6f334f840afb56c6fe38c71b26d8235cf68",
+    "compatibility_failure_preserved": {
+      "category": "existing example enrollment reference publication identity is stale",
+      "affected_package": "github.com/secacy/agent-harness/cmd/harness",
+      "observed_mismatch": "existing goddd reference identity",
+      "attribution": "Shared execution material implementation and its identity changed in this release; old enrollment example was not updated in the isolated source scope.",
+      "resolution_status": "resolved by authorized refresh of current example templates only; frozen protocols and historical artifacts unchanged",
+      "source_or_test_assertions_changed_to_make_regression_pass": false
+    }
+  },
+  "current_template_refresh_sha256": "c41e1d854e1ae05cd3b9f74b458ed6f334f840afb56c6fe38c71b26d8235cf68",
+  "current_template_refresh": {
+    "schema_version": 1,
+    "status": "current_templates_refreshed",
+    "reason": "Current example must bind actual changed shared execution tool identity; immutable experiment protocols and history are retained unchanged.",
+    "spec_and_reference_sha256_unchanged": true,
+    "go_source_unchanged": true,
+    "test_assertions_unchanged": true,
+    "frozen_protocols_unchanged": true,
+    "regression_failures_retained": true,
+    "files": [
+      {
+        "path": "examples/rpcx-l2-enrollment.json",
+        "old_sha256": "dc39f9c3bc3fd76c220e0aa561f2e24687e0cbb05b95aaf5a2a3ce06ade4eb42",
+        "new_sha256": "bd1e1f66340b2c3e04c7e46678382d7a0af946e1276ec80ec9f1c6504c510d01",
+        "changed_fields": [
+          {
+            "path": "targets[0].tool_sha256",
+            "old": "ad6681e9020f8f250b9457cf7c7b34ac490d4ebaa2d4566aae51330105d0b939",
+            "new": "4ef2d4d440ed383de7b8e62247e4fceb996a3eb7e2a14259f05cbde37228dd29"
+          },
+          {
+            "path": "targets[1].tool_sha256",
+            "old": "ad6681e9020f8f250b9457cf7c7b34ac490d4ebaa2d4566aae51330105d0b939",
+            "new": "4ef2d4d440ed383de7b8e62247e4fceb996a3eb7e2a14259f05cbde37228dd29"
+          },
+          {
+            "path": "targets[2].tool_sha256",
+            "old": "ad6681e9020f8f250b9457cf7c7b34ac490d4ebaa2d4566aae51330105d0b939",
+            "new": "4ef2d4d440ed383de7b8e62247e4fceb996a3eb7e2a14259f05cbde37228dd29"
+          }
+        ]
+      },
+      {
+        "path": "examples/rpcx-l2-batch.json",
+        "old_sha256": "df417bd79a7c4d03fcf1d7531dc305209f38288d137d0d1119aa4831ab7306f9",
+        "new_sha256": "dabd145c0e590b459ea0af841e7a8b051a4a8a1bab764773e01436311d53ea39",
+        "changed_fields": [
+          {
+            "path": "enrollment.sha256",
+            "old": "dc39f9c3bc3fd76c220e0aa561f2e24687e0cbb05b95aaf5a2a3ce06ade4eb42",
+            "new": "bd1e1f66340b2c3e04c7e46678382d7a0af946e1276ec80ec9f1c6504c510d01"
+          }
+        ]
+      }
+    ],
+    "post_refresh_regression": {
+      "command": "go test -p 1 ./cmd/harness",
+      "exit_code": 0,
+      "sandbox": "authorized localhost test listeners",
+      "log_sha256": "9af67fb0e962bd41ba835a35074d2b0580209c7cad732cc1258b9e9915216c7b"
+    }
+  }
+}

@@ -3,6 +3,7 @@ package baseline
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"maps"
@@ -16,16 +17,18 @@ import (
 
 // Command 保存实际命令、日志和执行结果；测试计数包含子测试。
 type Command struct {
-	Module       string           `json:"module"`
-	BuildConfig  string           `json:"build_config,omitempty"`
-	Args         []string         `json:"args"`
-	Result       execution.Result `json:"result"`
-	Stdout       string           `json:"stdout"`
-	StdoutSHA256 string           `json:"stdout_sha256"`
-	Stderr       string           `json:"stderr"`
-	StderrSHA256 string           `json:"stderr_sha256"`
-	PassedTests  int              `json:"passed_tests"`
-	Error        string           `json:"error,omitempty"`
+	Module               string           `json:"module"`
+	BuildConfig          string           `json:"build_config,omitempty"`
+	Args                 []string         `json:"args"`
+	Result               execution.Result `json:"result"`
+	Stdout               string           `json:"stdout"`
+	StdoutSHA256         string           `json:"stdout_sha256"`
+	Stderr               string           `json:"stderr"`
+	StderrSHA256         string           `json:"stderr_sha256"`
+	PassedTests          int              `json:"passed_tests"`
+	Error                string           `json:"error,omitempty"`
+	DurationMS           int64            `json:"duration_ms"`
+	CommandBudgetSeconds int              `json:"command_budget_seconds"`
 }
 
 // Report 只说明冻结基线可复跑，不代表迁移验证或 Agent 效果。
@@ -55,6 +58,9 @@ func VerifyVersion(ctx context.Context, projectRoot, runRoot, version string, ba
 
 	if backend == nil {
 		return nil, errors.New("execution backend is required")
+	}
+	if version == GHCLIVersion && backend.Info().Kind != execution.KindDocker {
+		return nil, errors.New("dataset requires Docker execution backend")
 	}
 	projectRoot, err = filepath.Abs(projectRoot)
 	if err != nil {
@@ -88,7 +94,7 @@ func VerifyVersion(ctx context.Context, projectRoot, runRoot, version string, ba
 		}
 		err = errors.Join(err, writeJSON(filepath.Join(runRoot, "report.json"), report))
 	}()
-	files, err := read(ctx, dataRoot)
+	files, err := readVersion(ctx, dataRoot, version)
 	if err != nil {
 		return report, err
 	}
@@ -97,6 +103,11 @@ func VerifyVersion(ctx context.Context, projectRoot, runRoot, version string, ba
 	}
 	if err := provenance(files); err != nil {
 		return report, err
+	}
+	if version == GHCLIVersion {
+		if err := validateGHCLIIdentity(files); err != nil {
+			return report, err
+		}
 	}
 	report.FreezeSHA256 = digest(files["freeze.json"])
 	for _, name := range []string{"freeze.json", "tests.json", "provenance.json", "dependencies/modules.json"} {
@@ -128,7 +139,7 @@ func VerifyVersion(ctx context.Context, projectRoot, runRoot, version string, ba
 		}
 	}
 	moduleCache := filepath.Join(runRoot, "modules")
-	if err := unpack(files, moduleCache); err != nil {
+	if err := ExtractModulesVersion(files, moduleCache, version); err != nil {
 		return report, err
 	}
 	mounted := []string{moduleCache}
@@ -139,8 +150,13 @@ func VerifyVersion(ctx context.Context, projectRoot, runRoot, version string, ba
 	if err != nil {
 		return report, err
 	}
-	cacheBefore, err := read(ctx, moduleCache)
-	if err != nil {
+	var cacheManifest struct {
+		Files map[string]string `json:"files"`
+	}
+	if err := json.Unmarshal(files["dependencies/modules.json"], &cacheManifest); err != nil {
+		return report, err
+	}
+	if err := CheckModuleTree(ctx, moduleCache, cacheManifest.Files, version); err != nil {
 		return report, err
 	}
 	completed := false
@@ -148,10 +164,10 @@ func VerifyVersion(ctx context.Context, projectRoot, runRoot, version string, ba
 	defer func() {
 		finalCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 10*time.Second)
 		defer cancel()
-		a, sourceErr := read(finalCtx, dataRoot)
+		a, sourceErr := readVersion(finalCtx, dataRoot, version)
 		b, workErr := read(finalCtx, workspace)
-		c, cacheErr := read(finalCtx, moduleCache)
-		report.InputsUnchanged = sourceErr == nil && workErr == nil && cacheErr == nil && equalFiles(files, a) && equalFiles(workspaceBefore, b) && equalFiles(cacheBefore, c)
+		cacheErr := CheckModuleTree(finalCtx, moduleCache, cacheManifest.Files, version)
+		report.InputsUnchanged = sourceErr == nil && workErr == nil && cacheErr == nil && equalFiles(files, a) && equalFiles(workspaceBefore, b)
 		if !report.InputsUnchanged {
 			err = errors.Join(err, errors.New("baseline inputs changed during verification"), sourceErr, workErr, cacheErr)
 		}
@@ -191,13 +207,14 @@ func VerifyVersion(ctx context.Context, projectRoot, runRoot, version string, ba
 				}
 				args = append([]string{"env", "GOMODCACHE=" + cache}, args...)
 				commandCtx, cancel := context.WithTimeout(ctx, 90*time.Second)
+				start := time.Now()
 				result, runErr := backend.Run(commandCtx, execution.Request{
 					Args: args, Directory: filepath.Join(workspace, module), ReadOnlyDirs: mounted,
 					CacheDir: filepath.Join(runRoot, "cache", module, config.ID, step), MaxBytes: 4 << 20,
 				})
 				runErr = errors.Join(runErr, commandCtx.Err())
 				cancel()
-				entry := Command{Module: module, BuildConfig: config.ID, Args: args, Result: result,
+				entry := Command{DurationMS: time.Since(start).Milliseconds(), CommandBudgetSeconds: 90, Module: module, BuildConfig: config.ID, Args: args, Result: result,
 					Stdout: filepath.Join("logs", module+"-"+config.ID+"-"+step+".stdout.log"), Stderr: filepath.Join("logs", module+"-"+config.ID+"-"+step+".stderr.log"),
 					StdoutSHA256: digest(result.Stdout), StderrSHA256: digest(result.Stderr)}
 				// 日志单独保存，避免报告内重复嵌入正文或二进制编码。

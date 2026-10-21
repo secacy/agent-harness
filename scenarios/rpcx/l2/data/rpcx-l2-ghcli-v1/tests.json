@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "modules": {
+    "rpcx-v1": {
+      "packages": [
+        "example.com/rpcx"
+      ],
+      "packages_without_tests": [],
+      "original_tests": [],
+      "added_tests": [
+        "example.com/rpcx/TestDefaultDeadlineAndRelease",
+        "example.com/rpcx/TestNilHandler",
+        "example.com/rpcx/TestRegistration",
+        "example.com/rpcx/TestRequestResponseAndError",
+        "example.com/rpcx/TestUnknownAddress"
+      ]
+    },
+    "rpcx-v2": {
+      "packages": [
+        "example.com/rpcx/v2"
+      ],
+      "packages_without_tests": [],
+      "original_tests": [],
+      "added_tests": [
+        "example.com/rpcx/v2/TestCallerContext",
+        "example.com/rpcx/v2/TestCallerContext/long-deadline",
+        "example.com/rpcx/v2/TestCallerContext/no-deadline",
+        "example.com/rpcx/v2/TestCallerContext/short-deadline",
+        "example.com/rpcx/v2/TestCancellationInBackend",
+        "example.com/rpcx/v2/TestCancelledParent",
+        "example.com/rpcx/v2/TestNilHandler",
+        "example.com/rpcx/v2/TestRegistration",
+        "example.com/rpcx/v2/TestRequestResponseAndError",
+        "example.com/rpcx/v2/TestUnknownAddress"
+      ]
+    },
+    "ghcli": {
+      "packages": [
+        "github.com/cli/cli/v2/pkg/cmd/release/delete"
+      ],
+      "packages_without_tests": [
+        "github.com/cli/cli/v2/api",
+        "github.com/cli/cli/v2/context",
+        "github.com/cli/cli/v2/git",
+        "github.com/cli/cli/v2/internal/browser",
+        "github.com/cli/cli/v2/internal/gh",
+        "github.com/cli/cli/v2/internal/ghinstance",
+        "github.com/cli/cli/v2/internal/ghrepo",
+        "github.com/cli/cli/v2/internal/prompter",
+        "github.com/cli/cli/v2/internal/run",
+        "github.com/cli/cli/v2/pkg/cmd/release/shared",
+        "github.com/cli/cli/v2/pkg/cmdutil",
+        "github.com/cli/cli/v2/pkg/extensions",
+        "github.com/cli/cli/v2/pkg/httpmock",
+        "github.com/cli/cli/v2/pkg/iostreams",
+        "github.com/cli/cli/v2/pkg/jsoncolor",
+        "github.com/cli/cli/v2/pkg/option",
+        "github.com/cli/cli/v2/pkg/set",
+        "github.com/cli/cli/v2/pkg/surveyext",
+        "github.com/cli/cli/v2/utils"
+      ],
+      "original_tests": [
+        "github.com/cli/cli/v2/pkg/cmd/release/delete/Test_NewCmdDelete",
+        "github.com/cli/cli/v2/pkg/cmd/release/delete/Test_NewCmdDelete/cleanup_tag",
+        "github.com/cli/cli/v2/pkg/cmd/release/delete/Test_NewCmdDelete/no_arguments",
+        "github.com/cli/cli/v2/pkg/cmd/release/delete/Test_NewCmdDelete/skip_confirm",
+        "github.com/cli/cli/v2/pkg/cmd/release/delete/Test_NewCmdDelete/version_argument",
+        "github.com/cli/cli/v2/pkg/cmd/release/delete/Test_deleteRun",
+        "github.com/cli/cli/v2/pkg/cmd/release/delete/Test_deleteRun/cleanup-tag",
+        "github.com/cli/cli/v2/pkg/cmd/release/delete/Test_deleteRun/cleanup-tag_&_skipping_confirmation",
+        "github.com/cli/cli/v2/pkg/cmd/release/delete/Test_deleteRun/interactive_confirm",
+        "github.com/cli/cli/v2/pkg/cmd/release/delete/Test_deleteRun/non-interactive",
+        "github.com/cli/cli/v2/pkg/cmd/release/delete/Test_deleteRun/skipping_confirmation"
+      ],
+      "added_tests": []
+    }
+  }
+}
