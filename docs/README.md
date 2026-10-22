@@ -48,7 +48,7 @@ M3.4 已完成[样本设计与选择](worklog/2026-10-19-m3-4-sample-selection.m
 
 [GHCLI 证据分类修正](worklog/2026-10-22-ghcli-proof-classification.md)随后区分明确丢失请求父上下文与局部证明不足；原样候选的新门禁回归为 NeedsAttention，直接 Background 变体仍 Rejected。保留旧实验结果，未扩大自动放行形式或调用模型。
 
-[GHCLI 有限来源与资源证明设计](worklog/2026-10-22-ghcli-bounded-proof.md)明确后续扩展的支持范围、方案取舍与正反例：先实现函数内来源和证据链，再验证受限 Body 资源转移及完整剩余结构比较。函数内来源与严格证据链已实现；原样候选父来源可证明，但资源与整体范围仍未知，维持 NeedsAttention。资源转移和扩展归约尚待原型验证。
+[GHCLI 有限来源与资源证明设计](worklog/2026-10-22-ghcli-bounded-proof.md)明确后续扩展的支持范围、方案取舍与正反例：先实现函数内来源和证据链，再验证受限 Body 资源转移及完整剩余结构比较。函数内来源与严格证据链已实现；原样候选父来源可证明，但资源与整体范围仍未知，维持 NeedsAttention。随后完成[Body 资源原型](worklog/2026-10-22-ghcli-bounded-proof.md#9-body-资源与剩余比较的原型2026-10-23)：有限模式和局部调用/返回比较已有开发证据，尚未接入门禁或完整范围检查。
 
 [工程交付包](worklog/2026-10-21-engineering-delivery.md)说明显式材料选择、工作区源码/二进制身份、原文保留、请求路径映射和离线迁移验收；[材料清单](delivery/engineering-v0.1.1.json)不包含构建缓存或凭证。归档中的工具可重做运行审计和三个原轮次的指标汇总，不重新生成候选或执行 Docker。
 

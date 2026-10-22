@@ -1,0 +1,47 @@
+package sample
+
+import (
+    "context"
+    "io"
+    "net/http"
+    "time"
+
+    rpcx "example.com/rpcx/v2"
+)
+
+type outboundResponse struct { Response *http.Response }
+
+// invoke 是原型自建的同步边界，不是业务参考答案。
+func invoke(request *http.Request, exchange func(context.Context) (*http.Response, error)) (*http.Response, error) {
+    unregister := rpcx.Register("ownership-study", func(ctx context.Context, _ string, _, out any) error {
+        response, err := exchange(ctx)
+        out.(*outboundResponse).Response = response
+        return err
+    })
+    defer unregister()
+    client, err := rpcx.Dial("ownership-study")
+    if err != nil { return nil, err }
+    var response outboundResponse
+    callCtx, cancel := context.WithTimeout(request.Context(), 30*time.Second)
+    err = client.Call(callCtx, "http.do", request, &response)
+    if err != nil {
+        cancel()
+        return response.Response, err
+    }
+    if response.Response == nil || response.Response.Body == nil {
+        cancel()
+        return response.Response, nil
+    }
+    response.Response.Body = &releaseBody{ReadCloser: response.Response.Body, release: cancel}
+    return response.Response, nil
+}
+
+type releaseBody struct {
+    io.ReadCloser
+    release context.CancelFunc
+}
+
+func (body *releaseBody) Close() error {
+    defer body.release()
+    return body.ReadCloser.Close()
+}

@@ -1,0 +1,93 @@
+package sample
+
+import (
+    "context"
+    "errors"
+    "net/http"
+    "testing"
+)
+
+func request(t *testing.T) *http.Request {
+    t.Helper()
+    r, err := http.NewRequest("GET", "http://ownership.invalid", nil)
+    if err != nil { t.Fatal(err) }
+    return r
+}
+
+func TestErrorRelease(t *testing.T) {
+    for _, withResponse := range []bool{false, true} {
+        var observed context.Context
+        var original *http.Response
+        if withResponse { original = &http.Response{StatusCode: 503} }
+        sentinel := errors.New("transport failure")
+        got, err := invoke(request(t), func(ctx context.Context) (*http.Response, error) {
+            observed = ctx
+            return original, sentinel
+        })
+        if got != original || err != sentinel { t.Error("original response or transport error lost") }
+        if observed == nil { t.Fatal("transport was not called") }
+        if observed.Err() != context.Canceled { t.Error("transport error did not release context") }
+    }
+}
+
+func TestEmptyRelease(t *testing.T) {
+    for _, original := range []*http.Response{nil, {StatusCode: 204}} {
+        var observed context.Context
+        got, err := invoke(request(t), func(ctx context.Context) (*http.Response, error) {
+            observed = ctx
+            return original, nil
+        })
+        if got != original || err != nil { t.Error("empty response changed") }
+        if observed == nil { t.Fatal("transport was not called") }
+        if observed.Err() != context.Canceled { t.Error("empty body did not release context") }
+    }
+}
+
+type observedBody struct {
+    ctx context.Context
+    closeErr error
+    closes int
+    canceledDuringClose bool
+}
+func (b *observedBody) Read(p []byte) (int, error) {
+    if err := b.ctx.Err(); err != nil { return 0, err }
+    return copy(p, "payload"), nil
+}
+func (b *observedBody) Close() error {
+    b.closes++
+    b.canceledDuringClose = b.ctx.Err() != nil
+    return b.closeErr
+}
+
+func TestBodyLifetime(t *testing.T) {
+    sentinel := errors.New("close failure")
+    raw := &observedBody{closeErr: sentinel}
+    original := &http.Response{Body: raw}
+    got, err := invoke(request(t), func(ctx context.Context) (*http.Response, error) {
+        raw.ctx = ctx
+        return original, nil
+    })
+    if err != nil || got != original { t.Fatalf("dispatch changed: %v", err) }
+    if raw.ctx.Err() != nil { t.Fatal("body canceled when dispatch returned") }
+    p := make([]byte, 16)
+    n, err := got.Body.Read(p)
+    if err != nil || string(p[:n]) != "payload" { t.Fatalf("body read changed: %v", err) }
+    if err := got.Body.Close(); err != sentinel { t.Error("original Close error lost") }
+    if raw.closes != 1 || raw.canceledDuringClose { t.Error("underlying Close ordering changed") }
+    if raw.ctx.Err() != context.Canceled { t.Error("Close did not release context") }
+}
+
+func TestParentCancellation(t *testing.T) {
+    parent, cancel := context.WithCancel(context.Background())
+    defer cancel()
+    raw := &observedBody{}
+    got, err := invoke(request(t).WithContext(parent), func(ctx context.Context) (*http.Response, error) {
+        raw.ctx = ctx
+        return &http.Response{Body: raw}, nil
+    })
+    if err != nil { t.Fatal(err) }
+    cancel()
+    if _, err := got.Body.Read(make([]byte, 8)); err != context.Canceled { t.Error("parent cancellation lost during body read") }
+    if err := got.Body.Close(); err != nil { t.Fatal(err) }
+    if raw.closes != 1 { t.Error("body close lost") }
+}

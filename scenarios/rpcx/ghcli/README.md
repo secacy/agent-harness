@@ -17,3 +17,6 @@
 离线参考位于 [l2/evaluation](../l2/evaluation/README.md)，当前活跃入口为 `EvaluateGHCLI`，数据版本为 `rpcx-l2-reference-ghcli-data-v2`。原 v1 参考额外要求命令入口上下文传播，作为诊断保留；v2 对齐已发布规范。参考报告不修改原 Run 判定，未填写的复核仍为 inconclusive。
 
 该固定切片已接入四任务 schema 2 有限开发评测，见[真实实验](../../../docs/experiments/2026-10-22-rpcx-fixed-real-model-01.md)。本次来源追踪只重验已保存候选和构造变体，不新增模型效果或严格留出证据。
+
+
+[ownership 原型](ownership/README.md)已用独立构造例、动态见证和保存边界的类型检查验证有限 Body 转移形式；它不被当前 worker/门禁导入。资源证明、整包用途覆盖与完整剩余结构的生产接入仍待，保存候选继续 NeedsAttention。
