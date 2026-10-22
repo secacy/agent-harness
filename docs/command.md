@@ -4,6 +4,8 @@
 
 ## 完整场景验收
 
+首次阅读可从[离线演示指南](DEMO.md)开始：源码检查展示固定候选门禁，四任务包复验展示已有真实批次的审计、指标及证据导航。两者均不调用模型，范围与预期输出分别说明。
+
 ```sh
 ./scripts/verify-rpcx-t1-t2.sh
 ```
@@ -434,7 +436,7 @@ go build -o runs/harness ./cmd/harness
 runs/harness audit --campaign runs/<campaign>/campaign --output runs/<new-audit-dir>
 ```
 
-当前 campaign-audit-v5 支持 Campaign v1/v2、根账本 budget v1、rpcx Run v2，以及两种 demo-orders、Goddd、Translation、Workouts Profile；另检查 recoveries 中的恢复检查点（包含 budget v2）和提交标记。Campaign v2 仍为单 Run，核对写锁协议声明及原始锁文件，但不检测写者活性。输入可以迁移到新位置；记录里的旧来源/命令路径只作元数据核对，不回到旧机器取材料。输出 audit.json、sources.json、audit.md，最后发布带文件摘要的 published.json。缺少最终标记不能算报告完整发布。
+当前 campaign-audit-v5 支持 Campaign v1/v2、根账本 budget v1、rpcx Run v2，以及两种 demo-orders、Goddd、Translation、Workouts 和 GHCLI Profile；另检查 recoveries 中的恢复检查点（包含 budget v2）和提交标记。Campaign v2 仍为单 Run，核对写锁协议声明及原始锁文件，但不检测写者活性。输入可以迁移到新位置；记录里的旧来源/命令路径只作元数据核对，不回到旧机器取材料。输出 audit.json、sources.json、audit.md，最后发布带文件摘要的 published.json。缺少最终标记不能算报告完整发布。
 
 原生退出码：0 为一致性完整通过；1 为确定违规（即使同时有缺口）；2 为参数/目录配置错误；3 为审计无法完成、来源变化或操作失败；130 为取消。终端同时显示 execution_state、违规/缺口/观察数。合法初始化或发布中断可以退出 0 并显示 incomplete，不能据此恢复运行或释放预算。`go run` 会包装程序退出码；需要判断精确退出码时使用编译后的二进制。
 
@@ -558,5 +560,7 @@ PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s scripts -p 'test_packa
 ```
 
 包是选定工程证据的开发版交付，不是全部历史运行、独立留出或正式 M5 实验；原报告中的旧缺陷保持。设计与隔离验证见[工作记录](worklog/2026-10-21-engineering-delivery.md)。
+
+后续四任务有限真实评测包为 `harness-fixed-evaluation-v0.1.0`，归档与上述工程包分别保留。对应收据见[固定评测交付身份](delivery/fixed-evaluation-v0.1.0.json)，获取归档后的完整命令、平台要求、预期输出和证据阅读顺序见[演示指南](DEMO.md)。
 
 资源命令并发的实际 Docker 对照可单独运行：`HARNESS_DOCKER_TEST=1 go test -race ./internal/execution -run '^TestOwnedDockerConcurrentCommandCleanup$' -count=1`。该命令运行四个短命令并核对各自回收；设置 HARNESS_RECOVERY_ARTIFACTS 可保留逐命令记录。受控 CLI 故障替身需要本机 Python 3。
