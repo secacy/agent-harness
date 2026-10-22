@@ -1,4 +1,4 @@
-package ownership
+package main
 
 import (
 	"bytes"
@@ -49,7 +49,7 @@ func fixture(t *testing.T) string {
 	return string(b)
 }
 
-func inspect(t *testing.T, source string, extra ...string) Result {
+func inspectOwnership(t *testing.T, source string, extra ...string) Result {
 	t.Helper()
 	fs := token.NewFileSet()
 	files := []*ast.File{}
@@ -150,7 +150,7 @@ func TestBoundedBodyOwnership(t *testing.T) {
 			if strings.Contains(s, "drop(") {
 				s += "\nfunc drop(c context.CancelFunc){c()}\n"
 			}
-			r := inspect(t, s)
+			r := inspectOwnership(t, s)
 			if r.Status != tc.status || r.Reason != tc.reason {
 				t.Fatalf("got %+v; want %s/%s", r, tc.status, tc.reason)
 			}
@@ -173,9 +173,9 @@ func TestOwnershipUnknownUses(t *testing.T) {
 			s := fixture(t) + tc.addition
 			var r Result
 			if tc.extra != "" {
-				r = inspect(t, s, tc.extra)
+				r = inspectOwnership(t, s, tc.extra)
 			} else {
-				r = inspect(t, s)
+				r = inspectOwnership(t, s)
 			}
 			if r.Status != Unknown {
 				t.Fatalf("unsupported resource use accepted: %+v", r)
@@ -189,7 +189,7 @@ func TestOwnershipNamesAreNotIdentity(t *testing.T) {
 	for before, after := range map[string]string{"releaseBody": "bodyHandle", "release": "dispose", "callCtx": "bounded", "cancel": "finish", "response": "outcome", "body": "handle"} {
 		s = strings.ReplaceAll(s, before, after)
 	}
-	if r := inspect(t, s); r.Status != Proven {
+	if r := inspectOwnership(t, s); r.Status != Proven {
 		t.Fatal(r)
 	}
 }

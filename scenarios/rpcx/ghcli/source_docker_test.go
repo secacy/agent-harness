@@ -94,7 +94,7 @@ func TestSourceProofDocker(t *testing.T) {
 			}
 			var proof sourceEnvelope
 			// 再走严格消费端，确认保存证据和实际 stdout 的身份一致。
-			proof, err = decodeSourceEnvelope(wire, candidate, typed.InputSHA256, toolSHA)
+			proof, err = decodeSourceEnvelope(wire, candidate, typed.InputSHA256, toolSHA, gate.Module(fixtures, "ghcli"))
 			if err != nil || len(proof.Proofs) != 1 || proof.Proofs[0].Status != tc.status {
 				t.Fatalf("unexpected proof: %+v / %v", proof, err)
 			}

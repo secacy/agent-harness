@@ -28,6 +28,8 @@ import (
 // 通用事实留在原报告内；GHCLI 信封与来源证明由专用消费端校验。
 type report struct {
 	proofs        []sourceProof
+	baseline      []byte
+	boundary      scopeProof
 	SchemaVersion int            `json:"schema_version"`
 	Status        string         `json:"status"`
 	LoadExitCode  int            `json:"load_exit_code"`
@@ -93,6 +95,7 @@ func main() {
 func run() error {
 	input := flag.String("input", "", "expected input digest")
 	tool := flag.String("tool", "", "analysis material digest")
+	baselinePath := flag.String("baseline", "", "authenticated baseline boundary file")
 	tagText := flag.String("tags", "", "build tags")
 	flag.Parse()
 	root, err := os.Getwd()
@@ -113,6 +116,11 @@ func run() error {
 	r := report{SchemaVersion: 2, Status: "complete", InputSHA256: before, ToolSHA256: *tool,
 		Config:   configuration{runtime.Version(), runtime.GOOS, runtime.GOARCH, os.Getenv("CGO_ENABLED"), tags},
 		Packages: []packageFacts{}, Calls: []callFact{}, Gaps: []gap{}}
+	r.baseline, err = os.ReadFile(*baselinePath)
+	if err != nil {
+		return err
+	}
+	r.boundary = unknownScope(r.baseline, nil, "boundary_not_proven")
 	if r.Config.CGO != "0" || os.Getenv("GOPROXY") != "off" || os.Getenv("GOWORK") != "off" {
 		return errors.New("analysis requires offline modules, disabled workspaces and cgo")
 	}
@@ -149,6 +157,20 @@ func run() error {
 	if err != nil || after != before {
 		return errors.New("analysis inputs changed during inspection")
 	}
+	boundaryBytes, readErr := os.ReadFile(filepath.Join(root, "pkg/cmd/release/delete/outbound.go"))
+	if readErr != nil {
+		return readErr
+	}
+	if r.boundary.CandidateSHA256 == "" {
+		r.boundary.CandidateSHA256 = digest(boundaryBytes)
+	}
+	baselineAfter, readErr := os.ReadFile(*baselinePath)
+	if readErr != nil || !bytes.Equal(baselineAfter, r.baseline) {
+		return errors.New("baseline changed during analysis")
+	}
+	if err := sealScope(root, &r.boundary); err != nil {
+		return err
+	}
 	if err := sealProofs(root, r.proofs); err != nil {
 		return err
 	}
@@ -156,7 +178,7 @@ func run() error {
 	if proofs == nil {
 		proofs = []sourceProof{}
 	}
-	return json.NewEncoder(os.Stdout).Encode(sourceEnvelope{SchemaVersion: 1, Report: r, Proofs: proofs})
+	return json.NewEncoder(os.Stdout).Encode(sourceEnvelope{SchemaVersion: 2, Report: r, Proofs: proofs, Boundary: r.boundary})
 }
 
 type limitedBuffer struct {
@@ -288,7 +310,7 @@ func inspectPackage(root string, p listedPackage, exports map[string]string, r *
 	}
 	r.Packages = append(r.Packages, facts)
 	for _, file := range files {
-		inspectCalls(root, p.ImportPath, fset, file, info, r)
+		inspectCalls(root, p.ImportPath, fset, file, info, r, files...)
 	}
 	return nil
 }

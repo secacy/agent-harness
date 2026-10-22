@@ -10,12 +10,13 @@ import (
 	"strings"
 
 	"github.com/secacy/agent-harness/internal/quality"
+	"github.com/secacy/agent-harness/scenarios/rpcx/gate"
 )
 
 const boundaryFile = "pkg/cmd/release/delete/outbound.go"
 
 // scope 只接受原公开边界中的局部迁移；无法归一化的辅助函数保持未知。
-func scope(base, candidate map[string][]byte) quality.Check {
+func scope(base, candidate map[string][]byte, proofs ...scopeProof) quality.Check {
 	status := quality.StatusPass
 	for name, before := range base {
 		after, ok := candidate[name]
@@ -26,9 +27,24 @@ func scope(base, candidate map[string][]byte) quality.Check {
 			return check("request_scope", quality.StatusFail, "source outside the RPC boundary changed", "input-snapshots")
 		}
 	}
+	f, parseErr := parser.ParseFile(token.NewFileSet(), "boundary.go", candidate[boundaryFile], parser.ParseComments|parser.SkipObjectResolution)
+	if parseErr != nil {
+		return check("request_scope", quality.StatusUnknown, "candidate boundary cannot be parsed", "input-snapshots")
+	}
+	for _, g := range f.Comments {
+		for _, c := range g.List {
+			for _, prefix := range []string{"//go:", "//line ", "/*line ", "//export "} {
+				if strings.HasPrefix(c.Text, prefix) {
+					return check("request_scope", quality.StatusUnknown, "semantic directive requires separate proof", "input-snapshots")
+				}
+			}
+		}
+	}
+	added := false
 	for name := range candidate {
 		if _, ok := base[name]; !ok {
 			status = quality.StatusUnknown
+			added = true
 		}
 	}
 	before, err := normalBoundary(base[boundaryFile], false)
@@ -38,8 +54,18 @@ func scope(base, candidate map[string][]byte) quality.Check {
 	after, err := normalBoundary(candidate[boundaryFile], true)
 	if err || !bytes.Equal(before, after) {
 		status = quality.StatusUnknown
+		if len(proofs) == 1 && proofs[0].Status == "pass" && proofs[0].BaselineSHA256 == gate.Digest(base[boundaryFile]) && proofs[0].CandidateSHA256 == gate.Digest(candidate[boundaryFile]) {
+			status = quality.StatusPass
+		}
 	}
-	return check("request_scope", status, "bounded boundary preservation: "+status, "input-snapshots", "typed-analysis")
+	if added {
+		status = quality.StatusUnknown
+	}
+	refs := []string{"input-snapshots", "typed-analysis"}
+	if len(proofs) == 1 && proofs[0].Status != "" {
+		refs = append(refs, "boundary-proof")
+	}
+	return check("request_scope", status, "bounded boundary preservation: "+status, refs...)
 }
 
 func printed(n any) []byte {

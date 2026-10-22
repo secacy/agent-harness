@@ -27,8 +27,11 @@ func sdkClient(t types.Type) bool {
 	return ok && n.Obj().Pkg() != nil && n.Obj().Pkg().Path() == "example.com/rpcx/v2" && n.Obj().Name() == "Client"
 }
 
-// inspectCalls 组合有限父来源、期限与原局部释放模式；响应资源转移仍保持未知。
-func inspectCalls(root, pkg string, fset *token.FileSet, file *ast.File, info *types.Info, r *report) {
+// inspectCalls 组合有限父来源、期限与资源释放模式，并生成完整边界的比较证据。
+func inspectCalls(root, pkg string, fset *token.FileSet, file *ast.File, info *types.Info, r *report, packageFiles ...*ast.File) {
+	if len(packageFiles) == 0 {
+		packageFiles = []*ast.File{file}
+	}
 	for _, d := range file.Decls {
 		fn, ok := d.(*ast.FuncDecl)
 		if !ok || fn.Body == nil {
@@ -62,7 +65,7 @@ func inspectCalls(root, pkg string, fset *token.FileSet, file *ast.File, info *t
 			}
 			path, _ := relative(root, fset.Position(c.Pos()).Filename)
 			f := callFact{Package: pkg, File: path, Line: fset.Position(c.Pos()).Line, Function: fn.Name.Name, SDK: "example.com/rpcx/v2", Kind: "bounded", Status: "unknown", Reason: "unsupported_local_flow"}
-			proof := sourceProof{Call: nodeLocation(root, fset, c), Status: "unknown", Reason: sourceUnknown, RuleIDs: []string{"CTX-001"}, Steps: []sourceStep{}}
+			proof := sourceProof{Call: nodeLocation(root, fset, c), Status: "unknown", Reason: sourceUnknown, RuleIDs: []string{"CTX-001"}, Steps: []sourceStep{}, Resource: resourceProof{Status: Unknown, Reason: "unsupported_binding"}}
 			publish := func() {
 				r.Calls = append(r.Calls, f)
 				r.proofs = append(r.proofs, proof)
@@ -138,6 +141,7 @@ func inspectCalls(root, pkg string, fset *token.FileSet, file *ast.File, info *t
 				return true
 			}
 			proof = traceParent(root, fset, fn, info, derivedIndex, deriv.Args[0], c)
+			proof.Resource = resourceProof{Status: Unknown, Reason: "unsupported_binding"}
 			parentStatus := proof.Status
 			if parentStatus == "fail" {
 				f.Status = "fail"
@@ -166,7 +170,24 @@ func inspectCalls(root, pkg string, fset *token.FileSet, file *ast.File, info *t
 				publish()
 				return true
 			}
+			ownership := Analyze(packageFiles, info, fn, derived, c)
+			if parentStatus == "pass" || ownership.Status == Violated {
+				proof.Resource = makeResourceProof(root, fset, ownership)
+			}
+			if ownership.Status == Violated {
+				f.Status = "fail"
+				f.Reason = ownership.Reason
+				publish()
+				return true
+			}
 			if parentStatus != "pass" {
+				publish()
+				return true
+			}
+			if ownership.Status == Proven {
+				f.Status = "pass"
+				f.Reason = "typed_request_parent_30s_with_body_release"
+				r.boundary = proveBoundary(root, fset, file, info, fn, derived, c, proof, ownership, r.baseline)
 				publish()
 				return true
 			}
@@ -205,6 +226,7 @@ func inspectCalls(root, pkg string, fset *token.FileSet, file *ast.File, info *t
 			if safe {
 				f.Status = "pass"
 				f.Reason = "typed_request_parent_30s_with_release"
+				proof.Resource = resourceProof{Status: Proven, Reason: "local_defer_release", Mode: "defer", Nodes: []sourceNode{nodeLocation(root, fset, derived), nodeLocation(root, fset, c)}}
 			}
 			publish()
 			return true

@@ -33,17 +33,19 @@ type sourceStep struct {
 	Definition *sourceNode `json:"definition,omitempty"`
 }
 type sourceProof struct {
-	Call    sourceNode   `json:"call"`
-	Parent  *sourceNode  `json:"parent,omitempty"`
-	Status  string       `json:"status"`
-	Reason  string       `json:"reason"`
-	RuleIDs []string     `json:"rule_ids"`
-	Steps   []sourceStep `json:"steps"`
+	Call     sourceNode    `json:"call"`
+	Parent   *sourceNode   `json:"parent,omitempty"`
+	Status   string        `json:"status"`
+	Reason   string        `json:"reason"`
+	RuleIDs  []string      `json:"rule_ids"`
+	Steps    []sourceStep  `json:"steps"`
+	Resource resourceProof `json:"resource"`
 }
 type sourceEnvelope struct {
 	SchemaVersion int             `json:"schema_version"`
 	Report        analysis.Report `json:"report"`
 	Proofs        []sourceProof   `json:"proofs"`
+	Boundary      scopeProof      `json:"boundary"`
 }
 
 type sourceIndex struct {
@@ -86,7 +88,7 @@ func (i *sourceIndex) node(n sourceNode) (ast.Node, error) {
 	return node, nil
 }
 
-func decodeSourceEnvelope(data []byte, candidate map[string][]byte, inputSHA, toolSHA string) (sourceEnvelope, error) {
+func decodeSourceEnvelope(data []byte, candidate map[string][]byte, inputSHA, toolSHA string, baselines ...map[string][]byte) (sourceEnvelope, error) {
 	var e sourceEnvelope
 	d := json.NewDecoder(bytes.NewReader(data))
 	d.DisallowUnknownFields()
@@ -96,24 +98,24 @@ func decodeSourceEnvelope(data []byte, candidate map[string][]byte, inputSHA, to
 	if err := d.Decode(new(any)); err != io.EOF {
 		return e, errors.New("GHCLI source proof has trailing content")
 	}
-	if err := validateSourceEnvelope(e, candidate, inputSHA, toolSHA); err != nil {
+	if err := validateSourceEnvelope(e, candidate, inputSHA, toolSHA, baselines...); err != nil {
 		return e, err
 	}
 	return e, nil
 }
 
-func validateSourceEnvelope(e sourceEnvelope, candidate map[string][]byte, inputSHA, toolSHA string) error {
+func validateSourceEnvelope(e sourceEnvelope, candidate map[string][]byte, inputSHA, toolSHA string, baselines ...map[string][]byte) error {
 	r := e.Report
-	if e.SchemaVersion != 1 || e.Proofs == nil || r.SchemaVersion != 2 || r.InputSHA256 != inputSHA || r.ToolSHA256 != toolSHA ||
+	if e.SchemaVersion != 2 || e.Proofs == nil || r.SchemaVersion != 2 || r.InputSHA256 != inputSHA || r.ToolSHA256 != toolSHA ||
 		r.Config.GOOS != "linux" || (r.Config.GOARCH != "amd64" && r.Config.GOARCH != "arm64") || !version.IsValid(r.Config.GoVersion) ||
 		r.Config.CGO != "0" || r.Config.Tags == nil || len(r.Config.Tags) != 0 || r.Packages == nil || r.Calls == nil || r.Gaps == nil {
 		return errors.New("GHCLI source proof version, configuration or binding mismatch")
 	}
 	if r.Status == "load_failed" {
-		if r.LoadExitCode == 0 || r.Diagnostic == "" || len(r.Packages)+len(r.Calls)+len(r.Gaps)+len(e.Proofs) != 0 {
+		if r.LoadExitCode == 0 || r.Diagnostic == "" || len(r.Packages)+len(r.Calls)+len(r.Gaps)+len(e.Proofs) != 0 || e.Boundary.Status != "unknown" || e.Boundary.Reason != "boundary_not_proven" || len(e.Boundary.Edits) != 0 {
 			return errors.New("invalid GHCLI failed-load record")
 		}
-		return nil
+		return validateBoundaryProof(e.Boundary, candidate, baselines, nil)
 	}
 	if r.Status != "complete" || r.LoadExitCode != 0 || r.Diagnostic != "" || len(r.Packages) == 0 || len(e.Proofs) != len(r.Calls) {
 		return errors.New("incomplete GHCLI source proof")
@@ -160,6 +162,9 @@ func validateSourceEnvelope(e sourceEnvelope, candidate map[string][]byte, input
 			return errors.New("GHCLI production source omitted from proof")
 		}
 	}
+	if err := validateBoundaryProof(e.Boundary, candidate, baselines, indices); err != nil {
+		return err
+	}
 	used := make([]bool, len(r.Calls))
 	seenCalls := map[sourceNode]bool{}
 	for _, p := range e.Proofs {
@@ -205,8 +210,17 @@ func validateSourceEnvelope(e sourceEnvelope, candidate map[string][]byte, input
 			return errors.New("source proof has no matching RPC fact")
 		}
 		used[match] = true
+		if err := validateResourceProof(p.Resource, p.Call, r.Calls[match], indices); err != nil {
+			return err
+		}
 		if err := validateSourceProof(p, r.Calls[match], fn, indices); err != nil {
 			return err
+		}
+	}
+
+	if e.Boundary.Status == "pass" {
+		if len(e.Proofs) != 1 || e.Proofs[0].Status != "pass" || e.Proofs[0].Call.File != boundaryFile || e.Proofs[0].Resource.Status != "proven" || e.Proofs[0].Resource.Mode != "body" || r.Calls[0].Function != "invokeHTTP" || r.Calls[0].Operation == nil || *r.Calls[0].Operation != "http.do" {
+			return errors.New("boundary proof has no matching body/source proof")
 		}
 	}
 	return nil
@@ -298,7 +312,7 @@ func validateSourceProof(p sourceProof, c analysis.Call, fn *ast.FuncDecl, indic
 	}
 	switch c.Status {
 	case "pass":
-		if p.Status != "pass" || c.Reason != "typed_request_parent_30s_with_release" || c.TimeoutNS == nil || *c.TimeoutNS != 30_000_000_000 {
+		if p.Status != "pass" || (c.Reason != "typed_request_parent_30s_with_release" && c.Reason != "typed_request_parent_30s_with_body_release") || c.TimeoutNS == nil || *c.TimeoutNS != 30_000_000_000 {
 			return errors.New("invalid passed GHCLI call")
 		}
 	case "fail":
@@ -313,7 +327,9 @@ func validateSourceProof(p sourceProof, c analysis.Call, fn *ast.FuncDecl, indic
 			}
 		case "v2_context_missing":
 		default:
-			return errors.New("unknown GHCLI violation reason")
+			if p.Resource.Status != "violated" || p.Resource.Reason != c.Reason {
+				return errors.New("unknown GHCLI violation reason")
+			}
 		}
 	case "unknown":
 		if p.Status == "fail" || (c.Reason != "unsupported_local_flow" && c.Reason != "request_parent_unproven" && c.Reason != "timeout_unproven") {

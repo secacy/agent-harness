@@ -1,5 +1,5 @@
-// Package ownership 是尚未接入运行时门禁的响应资源证明原型。
-package ownership
+// 响应资源检查只接受有限的局部释放/转交形式。
+package main
 
 import (
 	"bytes"
@@ -24,6 +24,9 @@ type Path struct {
 
 // Result 只对指定的派生和调用负责；父来源、期限和完整业务范围必须另证。
 type Result struct {
+	nodes         []ast.Node
+	wrapper       *ast.TypeSpec
+	close         *ast.FuncDecl
 	Status        string `json:"status"`
 	Reason        string `json:"reason"`
 	Paths         []Path `json:"paths,omitempty"`
@@ -46,9 +49,6 @@ func object(expr ast.Expr, info *types.Info) types.Object {
 		return nil
 	}
 	return info.ObjectOf(id)
-}
-func same(expr ast.Expr, o types.Object, info *types.Info) bool {
-	return o != nil && object(expr, info) == o
 }
 func named(t types.Type, pkg, name string) bool {
 	n, ok := t.(*types.Named)
@@ -256,11 +256,26 @@ func Analyze(files []*ast.File, info *types.Info, fn *ast.FuncDecl, derive *ast.
 			return result(Unknown, "resource_use_outside_proven_nodes")
 		}
 	}
+	var wrapper *ast.TypeSpec
+	for _, file := range files {
+		for _, decl := range file.Decls {
+			if g, ok := decl.(*ast.GenDecl); ok && g.Tok == token.TYPE {
+				for _, sp := range g.Specs {
+					if t, ok := sp.(*ast.TypeSpec); ok && info.Defs[t.Name] == n.Obj() {
+						wrapper = t
+					}
+				}
+			}
+		}
+	}
+	if wrapper == nil {
+		return result(Unknown, "unsupported_wrapper_declaration")
+	}
 	remainder, err := callRemainder(fn.Body.List[callIndex].(*ast.AssignStmt), call, i.responseExpr)
 	if err != nil {
 		return result(Unknown, "remainder_cannot_be_printed")
 	}
-	return Result{Status: Proven, Reason: "bounded_body_transfer", Paths: []Path{{"rpc_error", "released"}, {"empty_body", "released"}, {"response_body", "transferred"}, {"body_close", "released"}}, CallRemainder: remainder}
+	return Result{Status: Proven, Reason: "bounded_body_transfer", Paths: []Path{{"rpc_error", "released"}, {"empty_body", "released"}, {"response_body", "transferred"}, {"body_close", "released"}}, CallRemainder: remainder, wrapper: wrapper, close: close, nodes: []ast.Node{derive, fn.Body.List[callIndex], errorBranch, emptyBranch, transfer, last, wrapper, close}}
 }
 
 // callRemainder 只投影已证明的调用/返回区间；前缀和其他声明不属于本原型的业务证明。

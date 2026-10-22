@@ -50,7 +50,8 @@ return client.Call(ctx,"http.do",nil,nil)
 		Packages: []analysis.Package{{Path: "example.com/demo", Files: map[string]string{"boundary.go": gate.Digest(data)}, Ignored: []string{}}},
 		Calls:    []analysis.Call{{Package: "example.com/demo", File: "boundary.go", Line: 4, Function: "invokeHTTP", SDK: "example.com/rpcx/v2", Kind: "bounded", Status: "pass", Reason: "typed_request_parent_30s_with_release", Operation: &operation, TimeoutNS: &duration}}, Gaps: []analysis.Gap{}}
 	p := sourceProof{Call: rpc, Parent: &parent, Status: "pass", Reason: "request_parent_preserved", RuleIDs: []string{"CTX-001"}, Steps: []sourceStep{{Role: "request_context", Node: parent, Definition: &def}}}
-	return sourceEnvelope{SchemaVersion: 1, Report: r, Proofs: []sourceProof{p}}, files
+	p.Resource = resourceProof{Status: "proven", Reason: "local_defer_release", Mode: "defer", Nodes: []sourceNode{loc(fn.Body.List[0]), rpc}}
+	return sourceEnvelope{SchemaVersion: 2, Report: r, Proofs: []sourceProof{p}, Boundary: scopeProof{Status: "unknown", Reason: "boundary_not_proven", BaselineSHA256: gate.Digest(nil), CandidateSHA256: gate.Digest(nil), Edits: []sourceStep{}}}, files
 }
 
 func TestSourceEnvelopeValidation(t *testing.T) {
@@ -59,7 +60,7 @@ func TestSourceEnvelopeValidation(t *testing.T) {
 		change func(*sourceEnvelope)
 	}{
 		{"valid", nil},
-		{"version", func(e *sourceEnvelope) { e.SchemaVersion = 2 }},
+		{"version", func(e *sourceEnvelope) { e.SchemaVersion = 1 }},
 		{"input", func(e *sourceEnvelope) { e.Report.InputSHA256 = "other" }},
 		{"tool", func(e *sourceEnvelope) { e.Report.ToolSHA256 = "other" }},
 		{"OS", func(e *sourceEnvelope) { e.Report.Config.GOOS = "darwin" }},
@@ -69,6 +70,11 @@ func TestSourceEnvelopeValidation(t *testing.T) {
 		{"cgo", func(e *sourceEnvelope) { e.Report.Config.CGO = "1" }},
 		{"tags", func(e *sourceEnvelope) { e.Report.Config.Tags = []string{"unexpected"} }},
 		{"null-tags", func(e *sourceEnvelope) { e.Report.Config.Tags = nil }},
+		{"missing-resource", func(e *sourceEnvelope) { e.Proofs[0].Resource = resourceProof{} }},
+		{"false-body-proof", func(e *sourceEnvelope) { e.Proofs[0].Resource.Mode = "body" }},
+		{"resource-node-hash", func(e *sourceEnvelope) { e.Proofs[0].Resource.Nodes[0].SHA256 = "wrong" }},
+		{"false-scope", func(e *sourceEnvelope) { e.Boundary.Status = "pass" }},
+		{"scope-input", func(e *sourceEnvelope) { e.Boundary.CandidateSHA256 = "wrong" }},
 		{"missing-proof", func(e *sourceEnvelope) { e.Proofs = nil }},
 		{"duplicate-proof", func(e *sourceEnvelope) {
 			e.Proofs = append(e.Proofs, e.Proofs[0])
@@ -132,5 +138,31 @@ func TestSourceEnvelopeStrictJSON(t *testing.T) {
 	files["omitted.go"] = []byte("package demo")
 	if _, err := decodeSourceEnvelope(valid, files, "input", "tool"); err == nil {
 		t.Fatal("omitted production source accepted")
+	}
+}
+
+func TestSourceEnvelopeFailedLoadCannotClaimBoundary(t *testing.T) {
+	e, files := proofFixture(t)
+	e.Report.Status = "load_failed"
+	e.Report.LoadExitCode = 1
+	e.Report.Diagnostic = "package loading failed"
+	e.Report.Packages = []analysis.Package{}
+	e.Report.Calls = []analysis.Call{}
+	e.Proofs = []sourceProof{}
+	data, err := json.Marshal(e)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = decodeSourceEnvelope(data, files, "input", "tool"); err != nil {
+		t.Fatal(err)
+	}
+	e.Boundary.Status = "pass"
+	e.Boundary.Reason = "typed_body_boundary_preserved"
+	data, err = json.Marshal(e)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = decodeSourceEnvelope(data, files, "input", "tool"); err == nil {
+		t.Fatal("failed loading published a boundary proof")
 	}
 }

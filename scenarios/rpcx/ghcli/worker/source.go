@@ -33,18 +33,20 @@ type sourceStep struct {
 }
 
 type sourceProof struct {
-	Call    sourceNode   `json:"call"`
-	Parent  *sourceNode  `json:"parent,omitempty"`
-	Status  string       `json:"status"`
-	Reason  string       `json:"reason"`
-	RuleIDs []string     `json:"rule_ids"`
-	Steps   []sourceStep `json:"steps"`
+	Call     sourceNode    `json:"call"`
+	Parent   *sourceNode   `json:"parent,omitempty"`
+	Status   string        `json:"status"`
+	Reason   string        `json:"reason"`
+	RuleIDs  []string      `json:"rule_ids"`
+	Steps    []sourceStep  `json:"steps"`
+	Resource resourceProof `json:"resource"`
 }
 
 type sourceEnvelope struct {
 	SchemaVersion int           `json:"schema_version"`
 	Report        report        `json:"report"`
 	Proofs        []sourceProof `json:"proofs"`
+	Boundary      scopeProof    `json:"boundary"`
 }
 
 // origin 仅描述本次派生之前的有限来源，不承担资源所有权证明。
@@ -120,6 +122,11 @@ func sealProofs(root string, proofs []sourceProof) error {
 		}
 		if p.Parent != nil {
 			if err := seal(p.Parent); err != nil {
+				return err
+			}
+		}
+		for j := range p.Resource.Nodes {
+			if err := seal(&p.Resource.Nodes[j]); err != nil {
 				return err
 			}
 		}

@@ -1,4 +1,4 @@
-package ownership
+package main
 
 import (
 	"bytes"
@@ -64,7 +64,7 @@ func TestRuntimeStudy(t *testing.T) {
 			if strings.Contains(source, "drop(") {
 				source += "\nfunc drop(c context.CancelFunc){c()}\n"
 			}
-			analysis := inspect(t, source)
+			analysis := inspectOwnership(t, source)
 			dir := filepath.Join(output, tc.name)
 			if err := os.Mkdir(dir, 0755); err != nil {
 				t.Fatal(err)

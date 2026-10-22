@@ -8,7 +8,9 @@
 
 父上下文按对象身份和语句顺序追踪：直接请求 Context()、直线局部别名以及已证明非 nil 的有限 Background 兜底可证明保留；直接或经直线别名的 Background/TODO/WithoutCancel 明确脱离取消链。重赋值、取址、未知 helper、闭包等保留 unknown，不能沿用失效来源；同名业务方法不冒充标准库。未知不掩盖可独立证明的错误常量超时。分类修正见[前序记录](../../../docs/worklog/2026-10-22-ghcli-proof-classification.md)，当前支持与验收见[有限证明工作记录](../../../docs/worklog/2026-10-22-ghcli-bounded-proof.md#8-第一单元函数内来源与证据链)。
 
-隔离 worker 输出 GHCLI schema 1 信封，携带原 schema 2 类型报告和来源证明。宿主严格核对配置、输入/工具摘要、活动文件、原节点范围/摘要、定义位置、状态与原因，再保存 typed-analysis.json 与 boundary-proof.json。源码使用原字节，不按名字抹去修改；scope 尚未消费新证明做扩展归约。旧局部 defer 模式继续检查，响应 Body 转移仍未支持，所以保存候选的父来源虽已证明，完整门禁仍为 NeedsAttention。
+隔离 worker 输出 GHCLI schema 2 信封，携带原 schema 2 类型报告、来源/资源证据与完整边界比较。Body 模式只接受错误和空 Body 退出释放、成功转交原 Body 与同一 cancel，以及唯一包装器按原 Close 错误返回后释放；额外资源用途或未知 helper 保留 unknown。旧局部 defer 模式保留。
+
+完整边界比较在 worker 内使用当前活动包的类型信息，仅消去有证明的来源、期限、包装器与 SDK 适配节点，保留请求参数、调用前业务、dispatchHTTP、原 cancelBody 和其他声明。标准库 Context 返回值的不可达 nil 分支单独证明；新增语义指令保持 unknown。宿主认证基线/候选/工具/配置、活动文件、节点范围/摘要、资源路径、编辑种类和归约摘要，再保存 typed-analysis.json 与 boundary-proof.json；其他文件修改和新增文件仍独立检查。详情见[生产闭环记录](../../../docs/worklog/2026-10-22-ghcli-bounded-proof.md#10-资源证据与完整边界的生产接入2026-10-23)。
 
 公开规范的父 context 义务以既有 HTTP 请求为边界。门禁规则标识由宿主分配，归档的规则映射说明每项来自规范哪个段落/行号，或来自哪项宿主策略；这些标识不是规范原文自带编号。审核材料引用映射与实际验证证据，区分迁移要求和宿主支持范围。
 
@@ -19,4 +21,4 @@
 该固定切片已接入四任务 schema 2 有限开发评测，见[真实实验](../../../docs/experiments/2026-10-22-rpcx-fixed-real-model-01.md)。本次来源追踪只重验已保存候选和构造变体，不新增模型效果或严格留出证据。
 
 
-[ownership 原型](ownership/README.md)已用独立构造例、动态见证和保存边界的类型检查验证有限 Body 转移形式；它不被当前 worker/门禁导入。资源证明、整包用途覆盖与完整剩余结构的生产接入仍待，保存候选继续 NeedsAttention。
+[ownership 研究记录](ownership/README.md)保留有限模式与动态见证的说明；实际规则和测试已迁入 worker，不维护两份实现。保存候选的新门禁结果以生产闭环记录为准，原固定实验及指标不回写。

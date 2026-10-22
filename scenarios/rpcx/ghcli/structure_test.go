@@ -49,6 +49,26 @@ func TestScopeProtectedAndUnsupported(t *testing.T) {
 	if c := scope(files, added); c.Status != quality.StatusUnknown {
 		t.Fatal(c)
 	}
+	for _, prefix := range []string{"//go:noinline\n", "//line changed.go:1\n"} {
+		directive := copyFiles()
+		directive[boundaryFile] = append([]byte(prefix), directive[boundaryFile]...)
+		outside := copyFiles()
+		outside[boundaryFile] = directive[boundaryFile]
+		outside["LICENSE"] = []byte("changed")
+		if c := scope(files, outside); c.Status != quality.StatusFail {
+			t.Fatal("directive hid an explicit scope violation", c)
+		}
+		if c := scope(files, directive); c.Status != quality.StatusUnknown {
+			t.Fatal("semantic directive erased", c)
+		}
+	}
+	proof := scopeProof{Status: "pass", BaselineSHA256: gate.Digest(files[boundaryFile]), CandidateSHA256: gate.Digest(files[boundaryFile])}
+	if c := scope(files, added, proof); c.Status != quality.StatusUnknown {
+		t.Fatal("proof hid additional file", c)
+	}
+	if c := scope(files, changed, proof); c.Status != quality.StatusFail {
+		t.Fatal("proof hid protected change", c)
+	}
 	unsupported := copyFiles()
 	unsupported[boundaryFile] = append(unsupported[boundaryFile], []byte("\nfunc unprovedHelper(){}\n")...)
 	if c := scope(files, unsupported); c.Status != quality.StatusUnknown {

@@ -1,4 +1,4 @@
-package ownership
+package main
 
 import (
 	"bytes"
@@ -16,7 +16,7 @@ import (
 
 func TestProjectionPreservesBusinessChanges(t *testing.T) {
 	s := fixture(t)
-	good := inspect(t, s)
+	good := inspectOwnership(t, s)
 	if good.Status != Proven || !strings.Contains(good.CallRemainder, `client.Call("http.do", request, &response)`) {
 		t.Fatal(good)
 	}
@@ -24,7 +24,7 @@ func TestProjectionPreservesBusinessChanges(t *testing.T) {
 		{`"http.do", request, &response`, `"changed", request, &response`},
 		{`"http.do", request, &response`, `"http.do", request.Clone(request.Context()), &response`},
 	} {
-		r := inspect(t, replace(t, s, tc.before, tc.after))
+		r := inspectOwnership(t, replace(t, s, tc.before, tc.after))
 		if r.Status != Proven || r.CallRemainder == good.CallRemainder {
 			t.Fatalf("business change vanished from projection: %+v", r)
 		}
@@ -55,7 +55,7 @@ func TestSavedBoundaryStudy(t *testing.T) {
 	if err = os.Mkdir(output, 0755); err != nil {
 		t.Fatal(err)
 	}
-	r := inspect(t, string(input))
+	r := inspectOwnership(t, string(input))
 	if r.Status != Proven {
 		t.Fatalf("saved boundary not supported by prototype: %+v", r)
 	}

@@ -576,3 +576,25 @@ HARNESS_GHCLI_SOURCE_OUTPUT="$PWD/runs/ghcli-source-inspect-01" \
 ```
 
 预期四组类型结论依次为 pass、pass、fail、unknown；各输出含 typed-analysis.json、evidence/boundary-proof.json 和 inspection.json 的命令/容器记录。这里的 pass 仅指有限类型边界，不是完整候选的 ReadyForReview。重复验证请用新目录。协议和支持边界见[工作记录](worklog/2026-10-22-ghcli-bounded-proof.md#8-第一单元函数内来源与证据链)。
+
+
+## GHCLI Body 资源与完整范围的开发回归
+
+需要本机保存的固定候选、Go、Docker 与已准备镜像。下面的路径来自原固定运行；若未取得该材料，相关测试会明确跳过，不代表验收通过。输出目录必须不存在，不读取密钥，不调用模型或独立参考：
+
+```sh
+HARNESS_GHCLI_REGRESSION_CANDIDATE="$PWD/runs/l2-fixed-eval-v0.1.0/campaign/targets/ghcli/runs/rpcx-agent-3621433355/evidence/candidate/ghcli" \
+HARNESS_GHCLI_REGRESSION_OUTPUT="$PWD/runs/ghcli-body-regression-01" \
+  go test ./scenarios/rpcx/ghcli -run '^TestSavedCandidateParentClassification$' -count=1 -timeout=20m
+```
+
+五组预期依次为 ReadyForReview、Rejected、Rejected、NeedsAttention、NeedsAttention；每组执行完整门禁并保存 report.json、原输入副本及来源/资源/范围证据。原样候选还验证八项证据篡改不能被消费。三种判定各自保留含义，不是一次新的模型效果评测。
+
+仅核对已暴露边界的完整剩余结构，无需 Docker：
+
+```sh
+HARNESS_GHCLI_OWNERSHIP_CANDIDATE="$PWD/runs/l2-fixed-eval-v0.1.0/campaign/targets/ghcli/runs/rpcx-agent-3621433355/evidence/candidate/ghcli/pkg/cmd/release/delete/outbound.go" \
+  go test -race ./scenarios/rpcx/ghcli/worker -run '^TestSavedCompleteBoundary$' -count=1
+```
+
+该命令检查原样边界及六种业务/声明/语义指令变体，不执行候选业务；资源分析的构造动态见证见[说明](../scenarios/rpcx/ghcli/ownership/README.md)。完整支持范围、实际执行结果与局限见[工作记录](worklog/2026-10-22-ghcli-bounded-proof.md#10-资源证据与完整边界的生产接入2026-10-23)。
