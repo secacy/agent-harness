@@ -25,8 +25,9 @@ import (
 	"time"
 )
 
-// 这是跨进程协议的生产端；消费端由 analysis.Report 校验和解码。
+// 通用事实留在原报告内；GHCLI 信封与来源证明由专用消费端校验。
 type report struct {
+	proofs        []sourceProof
 	SchemaVersion int            `json:"schema_version"`
 	Status        string         `json:"status"`
 	LoadExitCode  int            `json:"load_exit_code"`
@@ -148,7 +149,14 @@ func run() error {
 	if err != nil || after != before {
 		return errors.New("analysis inputs changed during inspection")
 	}
-	return json.NewEncoder(os.Stdout).Encode(r)
+	if err := sealProofs(root, r.proofs); err != nil {
+		return err
+	}
+	proofs := r.proofs
+	if proofs == nil {
+		proofs = []sourceProof{}
+	}
+	return json.NewEncoder(os.Stdout).Encode(sourceEnvelope{SchemaVersion: 1, Report: r, Proofs: proofs})
 }
 
 type limitedBuffer struct {

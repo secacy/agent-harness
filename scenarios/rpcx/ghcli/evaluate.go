@@ -333,7 +333,7 @@ func Evaluate(ctx context.Context, req checks.EvaluationRequest) (out checks.Eva
 				status = quality.StatusFail
 			}
 		}
-		e.result.Checks["migration_completeness"] = check("migration_completeness", status, "typed bounded call proof: "+status, "typed-analysis", "typed-command", "typed-command-stdout", "typed-command-stderr")
+		e.result.Checks["migration_completeness"] = check("migration_completeness", status, "typed bounded call proof: "+status, "typed-analysis", "boundary-proof", "typed-command", "typed-command-stdout", "typed-command-stderr")
 		e.result.Checks["request_scope"] = scope(base, candidate)
 		if err = e.behavior(ctx, candidate, fixtures); err != nil {
 			return out, err
@@ -356,7 +356,7 @@ func Evaluate(ctx context.Context, req checks.EvaluationRequest) (out checks.Eva
 // inspect 使用标准加载器提供的类型身份；工具和模块仅以各自只读根挂载。
 func (e *evaluation) inspect(ctx context.Context, root string, candidate, fixtures map[string][]byte) (analysis.Report, error) {
 	toolRoot := filepath.Join(e.req.EvidenceDir, "typed-tool")
-	for _, name := range []string{"main.go", "rules.go"} {
+	for _, name := range []string{"main.go", "rules.go", "source.go"} {
 		data, err := materials.ReadFile("worker/" + name)
 		if err != nil {
 			return analysis.Report{}, err
@@ -375,7 +375,7 @@ func (e *evaluation) inspect(ctx context.Context, root string, candidate, fixtur
 			input[sdk+"/"+name] = data
 		}
 	}
-	args := []string{"go", "run", backendPath(toolRoot) + "/main.go", backendPath(toolRoot) + "/rules.go", "-input", gate.TreeHash(input), "-tool", e.result.MaterialsSHA256}
+	args := []string{"go", "run", backendPath(toolRoot) + "/main.go", backendPath(toolRoot) + "/rules.go", backendPath(toolRoot) + "/source.go", "-input", gate.TreeHash(input), "-tool", e.result.MaterialsSHA256}
 	for _, p := range []string{root, filepath.Join(filepath.Dir(root), "rpcx-v1"), filepath.Join(filepath.Dir(root), "rpcx-v2")} {
 		args = append(args, backendPath(p))
 	}
@@ -388,16 +388,14 @@ func (e *evaluation) inspect(ctx context.Context, root string, candidate, fixtur
 	if result.ExitCode != 0 {
 		return analysis.Report{}, errors.New("typed analysis worker failed")
 	}
-	var report analysis.Report
-	d := json.NewDecoder(bytes.NewReader(result.Stdout))
-	d.DisallowUnknownFields()
-	if err = d.Decode(&report); err != nil {
-		return report, err
+	envelope, err := decodeSourceEnvelope(result.Stdout, candidate, gate.TreeHash(input), e.result.MaterialsSHA256)
+	if err != nil {
+		return analysis.Report{}, err
 	}
-	if report.InputSHA256 != gate.TreeHash(input) || report.ToolSHA256 != e.result.MaterialsSHA256 {
-		return report, errors.New("typed analysis binding mismatch")
+	if err = e.saveJSON("boundary-proof", "typed_request_parent_proof", "boundary-proof.json", envelope); err != nil {
+		return analysis.Report{}, err
 	}
-	return report, nil
+	return envelope.Report, nil
 }
 
 // boundaryCovered 不把原封不动的受保护支持包动态导入当作新 RPC 边界缺口。

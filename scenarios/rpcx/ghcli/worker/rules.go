@@ -27,35 +27,7 @@ func sdkClient(t types.Type) bool {
 	return ok && n.Obj().Pkg() != nil && n.Obj().Pkg().Path() == "example.com/rpcx/v2" && n.Obj().Name() == "Client"
 }
 
-// requestParentStatus 区分已证明保留、明确脱离取消链和超出局部证明范围。
-func requestParentStatus(expr ast.Expr, fn *ast.FuncDecl, info *types.Info) string {
-	parent, ok := expr.(*ast.CallExpr)
-	if !ok {
-		return "unknown"
-	}
-	if len(parent.Args) == 0 && (namedFunction(parent.Fun, info, "context", "Background") || namedFunction(parent.Fun, info, "context", "TODO")) ||
-		len(parent.Args) == 1 && namedFunction(parent.Fun, info, "context", "WithoutCancel") {
-		return "fail"
-	}
-	if len(parent.Args) != 0 || !namedFunction(parent.Fun, info, "net/http", "Context") {
-		return "unknown"
-	}
-	selector := parent.Fun.(*ast.SelectorExpr)
-	id, ok := selector.X.(*ast.Ident)
-	if !ok {
-		return "unknown"
-	}
-	for _, field := range fn.Type.Params.List {
-		for _, p := range field.Names {
-			if info.ObjectOf(p) == info.ObjectOf(id) {
-				return "pass"
-			}
-		}
-	}
-	return "unknown"
-}
-
-// inspectCalls 只证明一个局部派生、无重赋值的调用，不扩展任意辅助函数或别名数据流。
+// inspectCalls 组合有限父来源、期限与原局部释放模式；响应资源转移仍保持未知。
 func inspectCalls(root, pkg string, fset *token.FileSet, file *ast.File, info *types.Info, r *report) {
 	for _, d := range file.Decls {
 		fn, ok := d.(*ast.FuncDecl)
@@ -90,10 +62,15 @@ func inspectCalls(root, pkg string, fset *token.FileSet, file *ast.File, info *t
 			}
 			path, _ := relative(root, fset.Position(c.Pos()).Filename)
 			f := callFact{Package: pkg, File: path, Line: fset.Position(c.Pos()).Line, Function: fn.Name.Name, SDK: "example.com/rpcx/v2", Kind: "bounded", Status: "unknown", Reason: "unsupported_local_flow"}
+			proof := sourceProof{Call: nodeLocation(root, fset, c), Status: "unknown", Reason: sourceUnknown, RuleIDs: []string{"CTX-001"}, Steps: []sourceStep{}}
+			publish := func() {
+				r.Calls = append(r.Calls, f)
+				r.proofs = append(r.proofs, proof)
+			}
 			if len(c.Args) != 4 {
 				f.Status = "fail"
 				f.Reason = "v2_context_missing"
-				r.Calls = append(r.Calls, f)
+				publish()
 				return true
 			}
 			if v := info.Types[c.Args[1]].Value; v != nil && v.Kind() == constant.String {
@@ -102,7 +79,7 @@ func inspectCalls(root, pkg string, fset *token.FileSet, file *ast.File, info *t
 			}
 			ctxID, ok := c.Args[0].(*ast.Ident)
 			if !ok {
-				r.Calls = append(r.Calls, f)
+				publish()
 				return true
 			}
 			ctxObj := info.ObjectOf(ctxID)
@@ -150,20 +127,22 @@ func inspectCalls(root, pkg string, fset *token.FileSet, file *ast.File, info *t
 					}
 				}
 			}
-			if derived == nil || cancel == nil || reassigned || !provenReceiver || derivedIndex >= callIndex {
-				r.Calls = append(r.Calls, f)
+			if derived == nil || cancel == nil || reassigned || !provenReceiver || derivedIndex >= callIndex ||
+				!directCallStatement(fn.Body.List[callIndex], c) || changedOrEscaped(fn.Body.List[:callIndex], info, ctxObj, receiverSource) {
+				publish()
 				return true
 			}
 			deriv, ok := derived.Rhs[0].(*ast.CallExpr)
 			if !ok || !namedFunction(deriv.Fun, info, "context", "WithTimeout") || len(deriv.Args) != 2 {
-				r.Calls = append(r.Calls, f)
+				publish()
 				return true
 			}
-			parentStatus := requestParentStatus(deriv.Args[0], fn, info)
+			proof = traceParent(root, fset, fn, info, derivedIndex, deriv.Args[0], c)
+			parentStatus := proof.Status
 			if parentStatus == "fail" {
 				f.Status = "fail"
 				f.Reason = "request_parent_not_preserved"
-				r.Calls = append(r.Calls, f)
+				publish()
 				return true
 			}
 			if parentStatus == "unknown" {
@@ -171,23 +150,24 @@ func inspectCalls(root, pkg string, fset *token.FileSet, file *ast.File, info *t
 			}
 			v := info.Types[deriv.Args[1]].Value
 			if v == nil || v.Kind() != constant.Int {
-				r.Calls = append(r.Calls, f)
+				f.Reason = "timeout_unproven"
+				publish()
 				return true
 			}
 			duration, ok := constant.Int64Val(v)
 			if !ok {
-				r.Calls = append(r.Calls, f)
+				publish()
 				return true
 			}
 			f.TimeoutNS = &duration
 			if duration != 30000000000 {
 				f.Status = "fail"
 				f.Reason = "per_call_maximum_not_30s"
-				r.Calls = append(r.Calls, f)
+				publish()
 				return true
 			}
 			if parentStatus != "pass" {
-				r.Calls = append(r.Calls, f)
+				publish()
 				return true
 			}
 			deferred := false
@@ -197,14 +177,27 @@ func inspectCalls(root, pkg string, fset *token.FileSet, file *ast.File, info *t
 				}
 			}
 			if !deferred {
-				r.Calls = append(r.Calls, f)
+				publish()
 				return true
 			}
 			// 衍生与调用间仅接受 defer 以及变量声明，避免任意分支或额外使用。
 			safe := true
 			for _, s := range fn.Body.List[derivedIndex+1 : callIndex] {
-				switch s.(type) {
-				case *ast.DeferStmt, *ast.DeclStmt:
+				switch s := s.(type) {
+				case *ast.EmptyStmt:
+				case *ast.DeferStmt:
+					safe = safe && len(s.Call.Args) == 0 && same(s.Call.Fun, cancel, info)
+				case *ast.DeclStmt:
+					g, ok := s.Decl.(*ast.GenDecl)
+					if !ok || g.Tok != token.VAR {
+						safe = false
+						break
+					}
+					for _, spec := range g.Specs {
+						if len(spec.(*ast.ValueSpec).Values) != 0 {
+							safe = false
+						}
+					}
 				default:
 					safe = false
 				}
@@ -213,8 +206,63 @@ func inspectCalls(root, pkg string, fset *token.FileSet, file *ast.File, info *t
 				f.Status = "pass"
 				f.Reason = "typed_request_parent_30s_with_release"
 			}
-			r.Calls = append(r.Calls, f)
+			publish()
 			return true
 		})
 	}
+}
+
+// directCallStatement 排除闭包或条件表达式内部的调用，避免把外层顺序当成实际顺序。
+func directCallStatement(stmt ast.Stmt, call *ast.CallExpr) bool {
+	switch s := stmt.(type) {
+	case *ast.AssignStmt:
+		return len(s.Rhs) == 1 && s.Rhs[0] == call
+	case *ast.ReturnStmt:
+		return len(s.Results) == 1 && s.Results[0] == call
+	case *ast.ExprStmt:
+		return s.X == call
+	}
+	return false
+}
+
+// changedOrEscaped 同时检查嵌套赋值、部分短声明和地址/闭包逃逸。
+func changedOrEscaped(statements []ast.Stmt, info *types.Info, objects ...types.Object) bool {
+	invalid := false
+	tracked := func(id *ast.Ident) bool {
+		if id == nil {
+			return false
+		}
+		object := info.ObjectOf(id)
+		for _, want := range objects {
+			if want != nil && object == want {
+				return true
+			}
+		}
+		return false
+	}
+	for _, s := range statements {
+		ast.Inspect(s, func(n ast.Node) bool {
+			switch n := n.(type) {
+			case *ast.AssignStmt:
+				for _, lhs := range n.Lhs {
+					if id, ok := lhs.(*ast.Ident); ok && info.Defs[id] == nil && tracked(id) {
+						invalid = true
+					}
+				}
+			case *ast.UnaryExpr:
+				if id, ok := n.X.(*ast.Ident); ok && n.Op == token.AND && tracked(id) {
+					invalid = true
+				}
+			case *ast.FuncLit:
+				ast.Inspect(n, func(n ast.Node) bool {
+					if id, ok := n.(*ast.Ident); ok && tracked(id) {
+						invalid = true
+					}
+					return true
+				})
+			}
+			return true
+		})
+	}
+	return invalid
 }

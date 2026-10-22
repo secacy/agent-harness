@@ -1,7 +1,7 @@
 # GHCLI：有限上下文来源与响应资源证明
 
 - 日期：2026-10-22。
-- 状态：设计完成，尚未实现或验收；资源转移方案需先用正反例验证。
+- 状态：第一单元来源与证据链已在声明范围验收，见第 8 节；资源转移与扩展范围归约仍未实现。
 - 代码基线：2db2fdb。
 - 对应能力：[M2 证据判定](../MILESTONES.md#m2证据驱动的判定)的开发扩展，不是新的效果评测。
 - 前置：[分类修正](2026-10-22-ghcli-proof-classification.md)已完成；[当前交付](../DELIVERY.md)保持有效。
@@ -132,3 +132,43 @@ normalBoundary 当前独立按语法删去派生语句，没有足够信息支�
 交付为本设计及当前文档入口更新。本文中的资源状态、信封和正反例仍是待实现方案；没有新通过率、没有扩大现有支持范围。原候选、规范、Profile、冻结实验和归档保持。第一单元下一步实施；原 M3—M5 的人员与严格未见留出缺口仍保留。
 
 文档检查通过：四份变更文档的 201 个本地链接目标、26 个锚点与代码围栏有效，git diff --check 通过；变更路径仅为本设计、文档索引、里程碑和交付说明。检查材料保存于 runs/ghcli-bounded-proof-design-01/verification.json。未运行 Go 测试、Docker 或模型，故不将设计矩阵记为功能验收。
+
+
+## 8. 第一单元：函数内来源与证据链
+
+- 实现基线：f150795；日期：2026-10-22。
+- 范围：来源追踪、旧局部释放模式组合、跨进程证明及严格消费，不实现 Body 所有权转移或新的 scope 归约。
+
+### 实际实现与具体取舍
+
+worker/source.go 在派生的原位置之前顺序处理语句，按 types.Object 维护原请求、局部 context 的来源和依赖。只接纳直线新声明和已证明非 nil 的限定分支；未支持语句涉及已追踪对象时保守失效，不尝试一般路径合并。标准库 Context、Background、TODO、WithoutCancel 继续按真实包/方法对象确认，不以变量名或字符串判断。
+
+新来源事实与调用完整结论分开：来源可为 pass，调用仍因期限或释放无法证明而 unknown。保存候选因此从“父来源不明”推进到“父来源已证明、释放仍未知”，没有获得新的整体自动放行。来源未知时仍可独立拒绝已证明的 31 秒常量。
+
+组合检查发现原规则会略过任意 var 初始化和额外 defer，也只在顶层识别重赋值。为避免新来源 pass 建立在过宽的旧检查上，本单元限定派生与 RPC 之间为对应 defer、无初始化的 var 和空语句，排除嵌套/部分短声明重赋值、地址与闭包逃逸，要求 Call 直接位于当前语句。额外效果的正当性无法证明时保持 unknown；不把这些形态一律写成业务违规。
+
+协议采用设计中的 GHCLI 专用信封 schema 1，原 analysis.Report/schema 2 不变。生产端与消费端保持各自小型 wire 定义，因为 worker 按独立 go run 文件在隔离工具根编译，直接导入宿主模块会扩大依赖与可见边界；真实 Docker 编解码对照覆盖二者兼容。信封包含完整类型报告、每个调用的来源状态/原因/规则、原节点与定义位置、文件和节点摘要。宿主校验版本、配置、活动源清单、生产覆盖、调用一一对应、节点 AST/范围/摘要、状态与原因及重复证明，拒绝未知字段、尾随 JSON 和身份不符。
+
+原 typed-analysis.json 保留，boundary-proof.json 单独认证落盘，并进入 migration_completeness 的证据引用。协议失败或保存失败走原 Evaluate 错误路径，无质量 verdict；不会降格成可用证明。输入/配置/工具绑定由同一类型报告承载，不额外重复建一个账本或通用证明框架。rule-map、Profile、规范及 quality.Policy 不改，scope 继续使用原检查。
+
+### 结果与边界
+
+保存候选的新完整门禁仍为 NeedsAttention：六项检查 pass，migration_completeness/request_scope unknown。来源证明为 pass，链条包含 request_context、context_alias、unreachable_nil_fallback；调用原因变为 unsupported_local_flow，明确剩余缺口在释放结构。直接 Background 派生父参数的变体仍 Rejected，来源与迁移完整性 fail，行为检查也 fail。
+
+两份新报告的工具材料身份为 a5e3870d9313c28df9633abb03aa8ee5936bbd25961d5561a20a21d4a5dbbf6d，输出在 runs/ghcli-source-proof-01/docker-gate/。原候选摘要仍为 39390941b07031512fd3eac31104acfcb281409e545819d94cf158ecb4c74de9。只运行已有候选和本地构造变体，不读取 .env，不调用模型，不重跑独立参考，不修改原效果指标。
+
+| 验证 | 实际结果 | 证据（runs/ghcli-source-proof-01/ 下） |
+| --- | --- | --- |
+| 最终受影响包竞态检测 | 两包 122 项测试及子测试 pass，两个显式 Docker 用例 skip，无竞态报告 | core-race-final.jsonl |
+| 类型加载及信封真实对照 | 直接请求、别名/nil 分支、脱离、helper 四组分别 pass/pass/fail/unknown；五项测试及子测试通过，实际四条 Docker 命令 | docker-inspect-final.jsonl、docker-inspect-final/ |
+| 保存候选完整门禁 | 原样 NeedsAttention、脱离变体 Rejected，来源分别 pass/fail；三项测试及子测试通过，含原到期行为检查，实际十二条 Docker 命令 | docker-gate.jsonl、docker-gate/ |
+| 消费端回归 | quality、audit、analysis、Runner、round 五包通过，516 项 pass、25 项 skip；跳过项不算执行通过 | consumers.jsonl |
+| 静态检查 | 两个受影响包 go vet 通过 | vet.log |
+| 容器回收 | 在 Docker server 可用的前后两次确认之间，20 个精确 ID 均不存在，包含较早一轮四条类型检查 | container-cleanup.json |
+| 历史身份 | 登记的 59,589 份数据、协议、原运行及解包归档文件摘要均不变；不含缓存 | history-before.json、history-after.json |
+
+第一次普通检查 first.jsonl 通过时尚未补齐新正反例。随后 second.jsonl 捕获构造程序含显式空语句导致规则返回 unknown；承认 EmptyStmt 无效果后，third.jsonl 及最终竞态检测通过。没有用失败轮次或重复执行累计覆盖数。较早 docker-inspect.jsonl 在补严工具链版本格式校验之前执行，最终四组以 docker-inspect-final.jsonl 为准；消费者和完整门禁使用最终生产规则。
+
+第一单元已验收：可交付有限父来源分析、独立证据和原局部释放模式的组合。资源原型和 Body/完整范围证明仍是下一单元；旧正式实验有效自动成功保持 1/4。不在这一轮重跑完整 L1 正式矩阵，公共分析、quality、规范和冻结数据均未修改。汇总保存在 runs/ghcli-source-proof-01/summary.json，运行产物不入 Git。
+
+收尾检查：六份变更 Markdown 文档的 250 个本地链接目标、34 个锚点及围栏有效，10 份变更 Go 文件格式正确，git diff --check 通过；记录在 documentation.json。代码、测试和文档作为本工作单元一起提交。

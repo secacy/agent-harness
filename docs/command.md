@@ -564,3 +564,15 @@ PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s scripts -p 'test_packa
 后续四任务有限真实评测包为 `harness-fixed-evaluation-v0.1.0`，归档与上述工程包分别保留。对应收据见[固定评测交付身份](delivery/fixed-evaluation-v0.1.0.json)，获取归档后的完整命令、平台要求、预期输出和证据阅读顺序见[演示指南](DEMO.md)。
 
 资源命令并发的实际 Docker 对照可单独运行：`HARNESS_DOCKER_TEST=1 go test -race ./internal/execution -run '^TestOwnedDockerConcurrentCommandCleanup$' -count=1`。该命令运行四个短命令并核对各自回收；设置 HARNESS_RECOVERY_ARTIFACTS 可保留逐命令记录。受控 CLI 故障替身需要本机 Python 3。
+
+
+## GHCLI 父上下文来源的开发验证
+
+需要本机 Go、Docker 及已准备的固定镜像，输出目录必须不存在。以下命令构造直接请求、别名/nil 兜底、脱离来源、未知 helper 四组迁移，在 Docker 内离线加载和检查类型；不执行候选业务、不调用模型或独立参考：
+
+```sh
+HARNESS_GHCLI_SOURCE_OUTPUT="$PWD/runs/ghcli-source-inspect-01" \
+  go test ./scenarios/rpcx/ghcli -run '^TestSourceProofDocker$' -count=1
+```
+
+预期四组类型结论依次为 pass、pass、fail、unknown；各输出含 typed-analysis.json、evidence/boundary-proof.json 和 inspection.json 的命令/容器记录。这里的 pass 仅指有限类型边界，不是完整候选的 ReadyForReview。重复验证请用新目录。协议和支持边界见[工作记录](worklog/2026-10-22-ghcli-bounded-proof.md#8-第一单元函数内来源与证据链)。

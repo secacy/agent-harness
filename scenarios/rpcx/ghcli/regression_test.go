@@ -70,7 +70,7 @@ func TestSavedCandidateParentClassification(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, tc := range []struct{ name, status, reason, verdict string }{
-		{"saved-candidate", quality.StatusUnknown, "request_parent_unproven", quality.NeedsAttention},
+		{"saved-candidate", quality.StatusUnknown, "unsupported_local_flow", quality.NeedsAttention},
 		{"detached-parent", quality.StatusFail, "request_parent_not_preserved", quality.Rejected},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -115,6 +115,21 @@ func TestSavedCandidateParentClassification(t *testing.T) {
 			}
 			if typed.Status != "complete" || len(typed.Calls) != 1 || typed.Calls[0].Status != tc.status || typed.Calls[0].Reason != tc.reason {
 				t.Fatalf("unexpected typed parent evidence: %+v", typed)
+			}
+			wire, err := os.ReadFile(filepath.Join(evidence, "boundary-proof.json"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			envelope, err := decodeSourceEnvelope(wire, files, typed.InputSHA256, typed.ToolSHA256)
+			if err != nil || len(envelope.Proofs) != 1 {
+				t.Fatalf("invalid saved source proof: %v", err)
+			}
+			wantSource := "pass"
+			if tc.name == "detached-parent" {
+				wantSource = "fail"
+			}
+			if envelope.Proofs[0].Status != wantSource {
+				t.Fatalf("source not separated from resource proof: %+v", envelope.Proofs[0])
 			}
 			if tc.name == "saved-candidate" {
 				for _, name := range []string{"build", "baseline_tests", "dependencies", "protected_paths", "test_preservation", "semantic_behavior"} {
