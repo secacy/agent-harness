@@ -25,7 +25,7 @@ M3 是最低项目交付点，但不代表全部项目目标完成：进程中�
 
 1. 当前已有范围内工程开发版、四任务有限真实评测与归档；[GHCLI 分类修正](worklog/2026-10-22-ghcli-proof-classification.md)已完成，不再列作待实现事项。原实验、历史归档与原总体验收缺口保留。
 2. 以[项目首页](../README.md)、[离线演示](DEMO.md)和[当前交付说明](DELIVERY.md)统一阅读入口；复用原脚本/包内工具，不新增模型调用或重复打包。[入口收敛记录](worklog/2026-10-22-delivery-entry.md)记录命令验证与版本边界。
-3. 后续针对具体证据缺口选择有边界的支持扩展；Translation 暂缓。[GHCLI 有限证明设计](worklog/2026-10-22-ghcli-bounded-proof.md)已明确函数内来源、受限 Body 资源转移和完整剩余比较的边界及正反例；来源、有限 Body 资源和完整剩余比较已接入生产门禁，见[接入验收](worklog/2026-10-22-ghcli-bounded-proof.md#10-资源证据与完整边界的生产接入2026-10-23)；原样已见候选在新证据下为 ReadyForReview。此为生成后开发回归，原指标保持。严格未见留出与人员条件齐备后再推进原总体验收，不将当前小样本结果视为普遍效果。
+3. 后续针对具体证据缺口选择有边界的支持扩展；Translation 暂缓。[GHCLI 有限证明设计](worklog/2026-10-22-ghcli-bounded-proof.md)已明确函数内来源、受限 Body 资源转移和完整剩余比较的边界及正反例；来源、有限 Body 资源和完整剩余比较已接入生产门禁，见[接入验收](worklog/2026-10-22-ghcli-bounded-proof.md#10-资源证据与完整边界的生产接入2026-10-23)；原样已见候选在新证据下为 ReadyForReview。此为生成后开发回归，原指标保持。 随后的[完整 Harness 交付验收](worklog/2026-10-23-ghcli-harness-delivery.md)已覆盖新证明的预算、工具、Runner、审核导航和 Campaign 审计；脚本化重放不计新迁移效果。严格未见留出与人员条件齐备后再推进原总体验收，不将当前小样本结果视为普遍效果。
 
 以下保留此前阶段交付与实际复核的边界。M3 [逐项验收评审](worklog/2026-10-20-m3-closeout-review.md)和受托复核已完成；A1—A5 有范围内证据，A6/A7 的原人员口径与实际留出缺口保留。M4 的[收尾核对](worklog/2026-10-21-m4-closeout-review.md)、[持久化窗口补充](worklog/2026-10-21-m4-persistence-windows.md)及[连接故障链](worklog/2026-10-21-m4-docker-connection.md)分别记录其工程范围。[旧工程包](worklog/2026-10-21-engineering-delivery.md)和后续四任务归档保持各自版本，不能用来替代未来实验的实现/环境/模型/预算冻结。严格留出原协议仍为草案，四任务有限协议已单独完成冻结与执行。
 

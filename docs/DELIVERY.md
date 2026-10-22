@@ -37,6 +37,8 @@ Harness 已将固定输入、基线检查、Agent 修改/修复、独立门禁�
 
 随后完成 [GHCLI 证据分类修正](worklog/2026-10-22-ghcli-proof-classification.md)：保存候选在新门禁下为 NeedsAttention，直接 Background 父参数变体仍 Rejected；原可证明写法仍通过。该工作没有新增模型调用，没有修改原候选、原判定、指标或归档。随后实现有限函数内来源与证据链，保存候选的请求别名及限定 nil 分支已可证明；后续有限 Body 资源与完整边界证明已接入，保存候选在新门禁下为 ReadyForReview；未知 helper 与额外业务修改仍需证据，不能直接放行。
 
+随后完成[新证明的 Harness 交付验收](worklog/2026-10-23-ghcli-harness-delivery.md)：脚本模型经真实工具、预算、Docker 和 Runner 交付两个 Run，分别保留 ReadyForReview / NeedsAttention；补丁重放、审核导航和完整 Campaign 审计通过，证明文件副本的单独篡改被 API/CLI 审计定位。该结果补足工程集成证据，不增加自主迁移样本或改写原指标。
+
 ## 版本与复验材料
 
 | 材料 | 用途与版本边界 |

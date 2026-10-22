@@ -598,3 +598,17 @@ HARNESS_GHCLI_OWNERSHIP_CANDIDATE="$PWD/runs/l2-fixed-eval-v0.1.0/campaign/targe
 ```
 
 该命令检查原样边界及六种业务/声明/语义指令变体，不执行候选业务；资源分析的构造动态见证见[说明](../scenarios/rpcx/ghcli/ownership/README.md)。完整支持范围、实际执行结果与局限见[工作记录](worklog/2026-10-22-ghcli-bounded-proof.md#10-资源证据与完整边界的生产接入2026-10-23)。
+
+## GHCLI 新证明的完整 Harness 交付验收
+
+需要保存的固定候选、本机 Go/Git/patch、Docker 与已准备镜像。输出目录必须不存在。该测试使用脚本化模型通过真实工具重放两个已见候选，执行基线、go_check 和独立门禁，并核对预算、补丁重放、审核链接及原批次/篡改副本审计；不会调用模型服务或独立参考：
+
+```sh
+HARNESS_GHCLI_DELIVERY_CANDIDATE="$PWD/runs/l2-fixed-eval-v0.1.0/campaign/targets/ghcli/runs/rpcx-agent-3621433355/evidence/candidate/ghcli" \
+HARNESS_GHCLI_DELIVERY_OUTPUT="$PWD/runs/ghcli-harness-delivery-02" \
+  go test -race ./scenarios/rpcx/runner -run '^TestGHCLIProofDeliveryCampaign$' -count=1 -timeout=15m
+```
+
+两个 Run 的预期为 Completed / ReadyForReview 和 Completed / NeedsAttention。共享账本记录 6 次受控调用、120 个模型声明的 Token，无未知/在途占用；这不是供应商费用或自主迁移效果。输出包含 campaign/summary.md、两份 Run 交付、input-pins.json、delivery-result.json、补丁重放副本与日志、audit/、audit-copy-before/、audit-copy-tampered/ 和 proof-tamper.json。
+
+审计副本只在原字节核对成功后构造；新增信封保持 JSON 可读但摘要变化，篡改审计应定位 boundary-proof.json。输入缺失时的显式 skip 不算执行验收。实际条件、结果与局限见[工作记录](worklog/2026-10-23-ghcli-harness-delivery.md)。

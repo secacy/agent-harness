@@ -82,3 +82,7 @@ env GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly G
 [持久化窗口补充](../../../docs/worklog/2026-10-21-m4-persistence-windows.md)增加基线后与候选固定但验证前的强杀/新 Run 对照。candidate_fixed 位于候选摘要计算及输入复核之后、独立验证调用之前；此时磁盘仍是 Running/Validating，候选 pin 未发布。测试管道中的摘要仅用于核实注入窗口，不作为审计完成依据，也不改 Run 格式。
 
 有 Campaign 资源模板时，Runner 在首份 run.json 发布后填入实际 Run ID 和相对路径，再绑定命令后端；基线、工具和验证均复用它。resources 控制目录由宿主分配且不挂载给候选，Run 自身格式不变。[真实 Docker 中断、清理与重跑验收](../../../docs/worklog/2026-10-21-m4-resource-ownership.md)。
+
+## GHCLI 新证明的受控交付
+
+`TestGHCLIProofDeliveryCampaign` 从公开基线经真实 Agent 工具重放已保存候选和未知 helper 变体，覆盖共享预算、两个不同质量结论的完整 Run、原始补丁重放、审核导航和新信封的归档审计。它使用脚本化模型，不提供新的自主迁移成功率。通过环境变量显式开启，输入摘要固定，产物保存在新的输出目录；命令与预期见[命令参考](../../../docs/command.md#ghcli-新证明的完整-harness-交付验收)，实际结果见[交付验收记录](../../../docs/worklog/2026-10-23-ghcli-harness-delivery.md)。

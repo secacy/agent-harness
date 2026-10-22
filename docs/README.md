@@ -48,7 +48,7 @@ M3.4 已完成[样本设计与选择](worklog/2026-10-19-m3-4-sample-selection.m
 
 [GHCLI 证据分类修正](worklog/2026-10-22-ghcli-proof-classification.md)随后区分明确丢失请求父上下文与局部证明不足；原样候选的新门禁回归为 NeedsAttention，直接 Background 变体仍 Rejected。保留旧实验结果，未扩大自动放行形式或调用模型。
 
-[GHCLI 有限来源与资源证明](worklog/2026-10-22-ghcli-bounded-proof.md)已按三个单元推进：函数内来源/证据链、资源原型、[生产资源与完整边界闭环](worklog/2026-10-22-ghcli-bounded-proof.md#10-资源证据与完整边界的生产接入2026-10-23)。有限 Body 模式和完整剩余结构证据已接入 worker/宿主；保存候选的新门禁为 ReadyForReview。此为已见样本的开发支持扩展，历史实验、原归档及 1/4 指标保持不变。
+[GHCLI 有限来源与资源证明](worklog/2026-10-22-ghcli-bounded-proof.md)已按三个单元推进：函数内来源/证据链、资源原型、[生产资源与完整边界闭环](worklog/2026-10-22-ghcli-bounded-proof.md#10-资源证据与完整边界的生产接入2026-10-23)。有限 Body 模式和完整剩余结构证据已接入 worker/宿主；保存候选的新门禁为 ReadyForReview。此为已见样本的开发支持扩展，历史实验、原归档及 1/4 指标保持不变。 随后[完整 Harness 交付验收](worklog/2026-10-23-ghcli-harness-delivery.md)用两个脚本化任务检验预算、补丁/审核材料和新证明的审计正反例，未新增模型实验。
 
 
 [工程交付包](worklog/2026-10-21-engineering-delivery.md)说明显式材料选择、工作区源码/二进制身份、原文保留、请求路径映射和离线迁移验收；[材料清单](delivery/engineering-v0.1.1.json)不包含构建缓存或凭证。归档中的工具可重做运行审计和三个原轮次的指标汇总，不重新生成候选或执行 Docker。
