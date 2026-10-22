@@ -27,6 +27,34 @@ func sdkClient(t types.Type) bool {
 	return ok && n.Obj().Pkg() != nil && n.Obj().Pkg().Path() == "example.com/rpcx/v2" && n.Obj().Name() == "Client"
 }
 
+// requestParentStatus 区分已证明保留、明确脱离取消链和超出局部证明范围。
+func requestParentStatus(expr ast.Expr, fn *ast.FuncDecl, info *types.Info) string {
+	parent, ok := expr.(*ast.CallExpr)
+	if !ok {
+		return "unknown"
+	}
+	if len(parent.Args) == 0 && (namedFunction(parent.Fun, info, "context", "Background") || namedFunction(parent.Fun, info, "context", "TODO")) ||
+		len(parent.Args) == 1 && namedFunction(parent.Fun, info, "context", "WithoutCancel") {
+		return "fail"
+	}
+	if len(parent.Args) != 0 || !namedFunction(parent.Fun, info, "net/http", "Context") {
+		return "unknown"
+	}
+	selector := parent.Fun.(*ast.SelectorExpr)
+	id, ok := selector.X.(*ast.Ident)
+	if !ok {
+		return "unknown"
+	}
+	for _, field := range fn.Type.Params.List {
+		for _, p := range field.Names {
+			if info.ObjectOf(p) == info.ObjectOf(id) {
+				return "pass"
+			}
+		}
+	}
+	return "unknown"
+}
+
 // inspectCalls 只证明一个局部派生、无重赋值的调用，不扩展任意辅助函数或别名数据流。
 func inspectCalls(root, pkg string, fset *token.FileSet, file *ast.File, info *types.Info, r *report) {
 	for _, d := range file.Decls {
@@ -131,29 +159,15 @@ func inspectCalls(root, pkg string, fset *token.FileSet, file *ast.File, info *t
 				r.Calls = append(r.Calls, f)
 				return true
 			}
-			parent, ok := deriv.Args[0].(*ast.CallExpr)
-			parentOK := false
-			if ok && len(parent.Args) == 0 {
-				if s, ok := parent.Fun.(*ast.SelectorExpr); ok {
-					o := info.ObjectOf(s.Sel)
-					if o != nil && o.Pkg() != nil && o.Pkg().Path() == "net/http" && o.Name() == "Context" {
-						if id, ok := s.X.(*ast.Ident); ok {
-							for _, field := range fn.Type.Params.List {
-								for _, p := range field.Names {
-									if info.ObjectOf(p) == info.ObjectOf(id) {
-										parentOK = true
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-			if !parentOK {
+			parentStatus := requestParentStatus(deriv.Args[0], fn, info)
+			if parentStatus == "fail" {
 				f.Status = "fail"
 				f.Reason = "request_parent_not_preserved"
 				r.Calls = append(r.Calls, f)
 				return true
+			}
+			if parentStatus == "unknown" {
+				f.Reason = "request_parent_unproven"
 			}
 			v := info.Types[deriv.Args[1]].Value
 			if v == nil || v.Kind() != constant.Int {
@@ -169,6 +183,10 @@ func inspectCalls(root, pkg string, fset *token.FileSet, file *ast.File, info *t
 			if duration != 30000000000 {
 				f.Status = "fail"
 				f.Reason = "per_call_maximum_not_30s"
+				r.Calls = append(r.Calls, f)
+				return true
+			}
+			if parentStatus != "pass" {
 				r.Calls = append(r.Calls, f)
 				return true
 			}

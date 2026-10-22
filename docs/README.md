@@ -43,6 +43,8 @@ M3.4 已完成[样本设计与选择](worklog/2026-10-19-m3-4-sample-selection.m
 
 随后获授权的[四任务唯一真实评测](experiments/2026-10-22-rpcx-fixed-real-model-01.md)已完成：自动成功 1/4，错误放行 0/1，保留两项 NeedsAttention 与一次 GHCLI 判定依据误拒。四项自动参考和实际助手复核分列，原门禁不回写；完整材料、成本、分层与局限均另存，不把有限已见评测当严格留出验收。
 
+[GHCLI 证据分类修正](worklog/2026-10-22-ghcli-proof-classification.md)随后区分明确丢失请求父上下文与局部证明不足；原样候选的新门禁回归为 NeedsAttention，直接 Background 变体仍 Rejected。保留旧实验结果，未扩大自动放行形式或调用模型。
+
 [工程交付包](worklog/2026-10-21-engineering-delivery.md)说明显式材料选择、工作区源码/二进制身份、原文保留、请求路径映射和离线迁移验收；[材料清单](delivery/engineering-v0.1.1.json)不包含构建缓存或凭证。归档中的工具可重做运行审计和三个原轮次的指标汇总，不重新生成候选或执行 Docker。
 
 ## 记录原则

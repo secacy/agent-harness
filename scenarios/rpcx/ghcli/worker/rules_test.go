@@ -6,7 +6,6 @@ import (
 	"go/parser"
 	"go/token"
 	"go/types"
-	"strings"
 	"testing"
 )
 
@@ -22,32 +21,55 @@ func (s stubImporter) Import(path string) (*types.Package, error) {
 }
 
 func TestTypedBoundedContextRules(t *testing.T) {
-	for _, mode := range []string{"bounded", "wrong-parent", "wrong-duration", "helper", "missing-release", "spoof"} {
-		t.Run(mode, func(t *testing.T) {
-			parent := "request.Context()"
-			duration := "30*time.Second"
-			release := "defer cancel()"
-			ctx := "ctx"
-			if mode == "wrong-parent" {
-				parent = "context.Background()"
+	for _, tc := range []struct {
+		name, setup, parent, duration, release, callContext, receiver string
+		wantStatus, wantReason                                        string
+	}{
+		{name: "bounded", wantStatus: "pass", wantReason: "typed_request_parent_30s_with_release"},
+		{name: "background", parent: "context.Background()", wantStatus: "fail", wantReason: "request_parent_not_preserved"},
+		{name: "todo", parent: "context.TODO()", wantStatus: "fail", wantReason: "request_parent_not_preserved"},
+		{name: "without-cancel", parent: "context.WithoutCancel(request.Context())", wantStatus: "fail", wantReason: "request_parent_not_preserved"},
+		{name: "wrong-duration", duration: "31*time.Second", wantStatus: "fail", wantReason: "per_call_maximum_not_30s"},
+		{name: "request-alias", setup: "parent := request.Context()", parent: "parent", wantStatus: "unknown", wantReason: "request_parent_unproven"},
+		{name: "request-alias-nil-fallback", setup: "parent := request.Context(); if parent == nil { parent = context.Background() }", parent: "parent", wantStatus: "unknown", wantReason: "request_parent_unproven"},
+		{name: "background-alias", setup: "parent := context.Background()", parent: "parent", wantStatus: "unknown", wantReason: "request_parent_unproven"},
+		{name: "helper-parent", parent: "identity(request.Context())", wantStatus: "unknown", wantReason: "request_parent_unproven"},
+		{name: "other-request", setup: "other := &http.Request{}", parent: "other.Context()", wantStatus: "unknown", wantReason: "request_parent_unproven"},
+		{name: "same-name-context-method", setup: "other := requestLike{}", parent: "other.Context()", wantStatus: "unknown", wantReason: "request_parent_unproven"},
+		{name: "same-name-background-function", parent: "pretend.Background()", wantStatus: "unknown", wantReason: "request_parent_unproven"},
+		{name: "unknown-parent-wrong-duration", setup: "parent := request.Context()", parent: "parent", duration: "31*time.Second", wantStatus: "fail", wantReason: "per_call_maximum_not_30s"},
+		{name: "unknown-parent-unknown-duration", setup: "parent := request.Context(); duration := 30*time.Second", parent: "parent", duration: "duration", wantStatus: "unknown", wantReason: "request_parent_unproven"},
+		{name: "missing-release", release: "_ = cancel", wantStatus: "unknown", wantReason: "unsupported_local_flow"},
+		{name: "helper-call-context", callContext: "identity(ctx)", wantStatus: "unknown", wantReason: "unsupported_local_flow"},
+		{name: "reassigned-receiver", receiver: "caller = client", wantStatus: "unknown", wantReason: "unsupported_local_flow"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.parent == "" {
+				tc.parent = "request.Context()"
 			}
-			if mode == "wrong-duration" {
-				duration = "31*time.Second"
+			if tc.duration == "" {
+				tc.duration = "30*time.Second"
 			}
-			if mode == "missing-release" {
-				release = "_ = cancel"
+			if tc.release == "" {
+				tc.release = "defer cancel()"
 			}
-			if mode == "helper" {
-				ctx = "identity(ctx)"
+			if tc.callContext == "" {
+				tc.callContext = "ctx"
 			}
 			source := `package demo
 import("context";"net/http";"time";rpcx "example.com/rpcx/v2")
 type outboundCaller interface{Call(context.Context,string,any,any)error}
 func identity(c context.Context)context.Context{return c}
-func invokeHTTP(request *http.Request)error{client,_:=rpcx.Dial("address");var caller outboundCaller=client;ctx,cancel:=context.WithTimeout(` + parent + `,` + duration + `);` + release + `;return caller.Call(` + ctx + `,"http.do",nil,nil)}`
-			if mode == "spoof" {
-				source = strings.Replace(source, "var caller outboundCaller=client", "var caller outboundCaller=client;caller=client", 1)
-			}
+type requestLike struct{}
+func(requestLike)Context()context.Context{return context.Background()}
+type contextLike struct{}
+func(contextLike)Background()context.Context{return context.Background()}
+var pretend contextLike
+func invokeHTTP(request *http.Request)error{
+client,_:=rpcx.Dial("address");var caller outboundCaller=client;` + tc.receiver + `;
+` + tc.setup + `;
+ctx,cancel:=context.WithTimeout(` + tc.parent + `,` + tc.duration + `);` + tc.release + `;
+return caller.Call(` + tc.callContext + `,"http.do",nil,nil)}`
 			fs := token.NewFileSet()
 			f, err := parser.ParseFile(fs, "/module/boundary.go", source, 0)
 			if err != nil {
@@ -62,15 +84,8 @@ func invokeHTTP(request *http.Request)error{client,_:=rpcx.Dial("address");var c
 			if len(r.Calls) != 1 {
 				t.Fatal(r.Calls)
 			}
-			want := "unknown"
-			if mode == "bounded" {
-				want = "pass"
-			}
-			if mode == "wrong-parent" || mode == "wrong-duration" {
-				want = "fail"
-			}
-			if r.Calls[0].Status != want {
-				t.Fatalf("got %+v want %s", r.Calls[0], want)
+			if fact := r.Calls[0]; fact.Status != tc.wantStatus || fact.Reason != tc.wantReason {
+				t.Fatalf("got %+v; want %s / %s", fact, tc.wantStatus, tc.wantReason)
 			}
 		})
 	}
