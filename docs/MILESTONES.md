@@ -19,25 +19,16 @@ M3 是最低项目交付点，但不代表全部项目目标完成：进程中�
 
 项目保持单机执行，以候选补丁和审核材料为交付边界；不增加自动 PR、合并部署、分布式调度或复杂外部测试环境编排。
 
-## 当前交付优先级（2026-10-23）
+## 当前交付优先级（2026-10-24）
 
-按用户确认，优先形成完整、可讲清楚的工程交付，取舍与现状见[交付收敛记录](worklog/2026-10-20-delivery-focus.md)和[当前交付说明](DELIVERY.md)。
+当前已有范围内工程开发版、有限真实评测及可复验材料。最新[研发对齐复核](worklog/2026-10-24-rd-alignment-review.md)确认通用 Runtime 与业务场景的主要边界仍成立；近期 GHCLI 支持扩展已经收尾，下一项回到跨场景的公共机制维护。
 
-1. 当前已有范围内工程开发版、四任务有限真实评测与归档；[GHCLI 分类修正](worklog/2026-10-22-ghcli-proof-classification.md)已完成，不再列作待实现事项。原实验、历史归档与原总体验收缺口保留。
-2. 以[项目首页](../README.md)、[离线演示](DEMO.md)和[当前交付说明](DELIVERY.md)统一阅读入口；复用原脚本/包内工具，不新增模型调用或重复打包。[入口收敛记录](worklog/2026-10-22-delivery-entry.md)记录命令验证与版本边界。
-3. 后续针对具体证据缺口选择有边界的支持扩展；Translation 暂缓。[GHCLI 有限证明设计](worklog/2026-10-22-ghcli-bounded-proof.md)已明确函数内来源、受限 Body 资源转移和完整剩余比较的边界及正反例；来源、有限 Body 资源和完整剩余比较已接入生产门禁，见[接入验收](worklog/2026-10-22-ghcli-bounded-proof.md#10-资源证据与完整边界的生产接入2026-10-23)；原样已见候选在新证据下为 ReadyForReview。此为生成后开发回归，原指标保持。 随后的[完整 Harness 交付验收](worklog/2026-10-23-ghcli-harness-delivery.md)已覆盖新证明的预算、工具、Runner、审核导航和 Campaign 审计；脚本化重放不计新迁移效果。严格未见留出与人员条件齐备后再推进原总体验收，不将当前小样本结果视为普遍效果。
+1. **已交付**：[GHCLI 响应契约 A/B/C](worklog/2026-10-23-ghcli-runtime-response-design.md)已覆盖生产门禁、观察证据、三类完整交付和实际批次审计。原样响应丢失在新门禁下 Rejected，未知形式保持 NeedsAttention；这些是开发校准，原真实指标不回写。
+2. **下一项，尚未实现**：统一 Goddd、Translation、Workouts、GHCLI 重复的命令取证流程，保留各场景挂载、业务规则与判定。复核记录明确了现有差异、备选方案、兼容风险及停止条件；不扩大为通用工作流重构。
+3. **之后再评估**：按明确收益选择新的效果/成本观察。原四任务有效自动成功仍为 1/4，GHCLI 后续单次开发实验为 0/1；公共代码复用不能代替效果提高的证据。
+4. **保留缺口**：严格未见留出、原人员口径和正式总体验收仍未满足。GHCLI 更多形式及 Translation 支持暂缓；不通过降低原验收条件推进阶段状态。
 
-[GHCLI 开发观察 v0.1.0](experiments/2026-10-23-ghcli-dev-real-model-01.md)在生成前因原文身份变化停止，原记录保留。[能力契约分离](worklog/2026-10-23-capability-contract.md)及[新版协议](experiments/ghcli-dev-eval-v0.2.0/README.md)完成验收后，[v0.2.0 唯一真实执行](experiments/2026-10-23-ghcli-dev-real-model-02.md)已获授权并完成：Completed / NeedsAttention，固定自动参考 pass、实际助手复核 fail，发现额外清空错误响应改变函数返回值；17 次生成、25 次工具、140,909 Token。未自动放行，不重试；随后[响应与错误返回值的离线回归](worklog/2026-10-23-ghcli-response-regression.md)已固化原样反例及正负对照。随后[独立参考 v3](worklog/2026-10-23-ghcli-reference-v3.md)新增响应/错误与 Body 契约，保留旧版数据和原报告；这是已见开发支持扩展，运行时门禁不变。原 M3—M5 总体验收、人员、留出条件及旧四任务 1/4 保持。
-
-[运行时响应契约](worklog/2026-10-23-ghcli-runtime-response-design.md)的 A/B/C 已在声明范围验收：生产门禁、绑定观察、审核与审计已接入，完整三任务 Runner/Campaign 交付 ReadyForReview / Rejected / NeedsAttention 各一，补丁重放、导航、实际批次审计及五类篡改对照通过。消费来源依赖已补齐，42 个容器实际回收；受控联调不计新效果指标，也不改变原总体验收缺口。
-
-以下保留此前阶段交付与实际复核的边界。M3 [逐项验收评审](worklog/2026-10-20-m3-closeout-review.md)和受托复核已完成；A1—A5 有范围内证据，A6/A7 的原人员口径与实际留出缺口保留。M4 的[收尾核对](worklog/2026-10-21-m4-closeout-review.md)、[持久化窗口补充](worklog/2026-10-21-m4-persistence-windows.md)及[连接故障链](worklog/2026-10-21-m4-docker-connection.md)分别记录其工程范围。[旧工程包](worklog/2026-10-21-engineering-delivery.md)和后续四任务归档保持各自版本，不能用来替代未来实验的实现/环境/模型/预算冻结。严格留出原协议仍为草案，四任务有限协议已单独完成冻结与执行。
-
-当前 [Goddd 实际人工复核](worklog/2026-10-20-goddd-human-review.md)和 [Translation 双配置实际复核](worklog/2026-10-20-translation-human-review.md)均已完成并进入最新离线汇总：二者测试保留/变更覆盖 pass、交付依据 fail；原质量判定保持。Workouts 在原正式汇总中仍 inconclusive，受托助手评审见下文；独立留出仍待，M3 状态保持。
-
-随后已按用户委托完成 [Workouts 助手源码/证据评审](worklog/2026-10-20-workouts-assistant-review.md)，同样为 pass/pass/fail，单列 development_calibration 补充汇总。受托复核结论覆盖 3/3 仓库，原协议实际人员仍为 2/3，独立留出未准备；原正式汇总和 M3 总体验收状态不改，不再将本次助手任务写成等待用户填表。
-
-[M3 阶段交付结论](worklog/2026-10-20-m3-closeout-review.md#7-m3-阶段交付结论2026-10-20)与本地交付索引已形成：当前可以交付有明确局限的开发版，A1—A5 工程证据保持，A6/A7 仍部分满足。受托复核与材料整理不再作为新的待实现能力反复推进；后续若并行开展 M4，须单列并行边界，不能冒充 M3 通过。
+已有交付、真实指标与历史修正统一见[交付说明](DELIVERY.md)，操作见[离线演示](DEMO.md)。下一项工程维护不新增里程碑，也不将 M3—M5 改为整体通过。
 
 ## M0：离线 rpcx T1/T2 场景夹具
 
