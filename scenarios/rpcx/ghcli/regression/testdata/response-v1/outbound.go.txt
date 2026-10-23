@@ -1,0 +1,96 @@
+package delete
+
+import (
+	"context"
+	"fmt"
+	"io"
+	"net/http"
+	"sync/atomic"
+	"time"
+
+	rpcx "example.com/rpcx/v2"
+)
+
+// outboundCallTimeout bounds each individual RPC call; the v2 SDK has no implicit timeout.
+const outboundCallTimeout = 30 * time.Second
+
+type outboundCaller interface {
+	Call(context.Context, string, any, any) error
+}
+
+type outboundRequest struct {
+	Client  *http.Client
+	Request *http.Request
+}
+
+type outboundResponse struct{ Response *http.Response }
+
+var outboundSequence atomic.Uint64
+
+// invokeHTTP changes only dispatch; the caller retains response handling and ownership.
+func invokeHTTP(client *http.Client, request *http.Request) (*http.Response, error) {
+	address := fmt.Sprintf("cli-outbound-%d", outboundSequence.Add(1))
+	unregister := rpcx.Register(address, dispatchHTTP)
+	defer unregister()
+	clientRPC, err := rpcx.Dial(address)
+	if err != nil {
+		return nil, err
+	}
+	var caller outboundCaller = clientRPC
+	var response outboundResponse
+	// The RPC call is bounded explicitly; the parent request context is carried through
+	// so the backend can derive its own lifetime for the caller-owned response body.
+	parent := request.Context()
+	callCtx, cancelCall := context.WithTimeout(parent, outboundCallTimeout)
+	defer cancelCall()
+	err = caller.Call(callCtx, "http.do", outboundRequest{Client: client, Request: request}, &response)
+	if err != nil {
+		response.Response = nil
+	}
+	return response.Response, err
+}
+
+func dispatchHTTP(ctx context.Context, method string, request, response any) error {
+	if method != "http.do" {
+		return fmt.Errorf("unsupported outbound operation %q", method)
+	}
+	in, ok := request.(outboundRequest)
+	if !ok {
+		return fmt.Errorf("invalid outbound request")
+	}
+	out, ok := response.(*outboundResponse)
+	if !ok {
+		return fmt.Errorf("invalid outbound response")
+	}
+	parent := in.Request.Context()
+	var cancel context.CancelFunc
+	// RPC call cancellation ends before the caller consumes the response body.
+	// Carry the RPC deadline onto the original parent instead of its call lifetime.
+	if deadline, hasDeadline := ctx.Deadline(); hasDeadline {
+		parent, cancel = context.WithDeadline(parent, deadline)
+	} else {
+		parent, cancel = context.WithCancel(parent)
+	}
+	resp, err := in.Client.Do(in.Request.WithContext(parent))
+	out.Response = resp
+	if err != nil {
+		cancel()
+		return err
+	}
+	if resp.Body == nil {
+		cancel()
+		return nil
+	}
+	resp.Body = &cancelBody{ReadCloser: resp.Body, cancel: cancel}
+	return nil
+}
+
+type cancelBody struct {
+	io.ReadCloser
+	cancel context.CancelFunc
+}
+
+func (body *cancelBody) Close() error {
+	defer body.cancel()
+	return body.ReadCloser.Close()
+}

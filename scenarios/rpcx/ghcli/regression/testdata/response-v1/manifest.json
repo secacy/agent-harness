@@ -1,0 +1,16 @@
+{
+  "version": "ghcli-response-return-v1",
+  "origin": {
+    "protocol": "ghcli-dev-eval-v0_2_0",
+    "run_id": "rpcx-agent-323326691",
+    "candidate_sha256": "b4294cbb291cc5a5a4c6c9b1e12845ba9c31fb79e8724cffa60a72653d324db6"
+  },
+  "baseline_sha256": "c299869d906bc9bb084e1cad4c35d8b6820879488536117ba9bdacd0f7ab131c",
+  "boundary_sha256": "a5cfabcbc16522a59cc54c5fd10cbe4c7a5289c6e9effce05fd42f23eb43eece",
+  "spec_sha256": "6e3a87056ec102536b52e1ffc340dbd8dd541d8d28589c555b9b08bafc1e40e8",
+  "sdks": {
+    "rpcx-v1": "3494436826b66504e9d1f28fa22fa22db4f927d0ee43309ab92b2868e5c6d24b",
+    "rpcx-v2": "c8b687c6964c5659391144f0c74934e36a5c0462c438bc8ed886bcdeafb5357c"
+  },
+  "scope": "Previously seen development counterexample, not an independent reference release or runtime gate. Original source bytes preserved."
+}

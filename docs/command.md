@@ -637,3 +637,11 @@ PYTHONDONTWRITEBYTECODE=1 python3 docs/experiments/ghcli-dev-eval-v0.2.0/launch.
 ```
 
 首次启动前需要对应源码/二进制副本和固定 Docker 环境，实际预检曾返回 valid=true、model_queried=false、credentials_read=false、batch_created=false。该记录保留在[准备记录](worklog/2026-10-23-ghcli-v02-preparation.md)；本版一次许可已使用，不自动追加查询、生成或额度。实际用量、参考/复核、审计和失败原因见本次报告，原冻结材料不改。
+
+## GHCLI 响应返回值的离线回归
+
+```sh
+go test ./scenarios/rpcx/ghcli/regression -count=1
+```
+
+比较原基线、原样模型候选、保留响应对照及吞错负例，检查四种响应/错误与 Body 契约。外层通过表示实际正反例符合预期，不表示原候选正确。默认用临时目录，无需 Docker、runs 或密钥，不访问网络；显式保留输入和日志的方式见[包说明](../scenarios/rpcx/ghcli/regression/README.md)。这是已见开发回归，不更新运行时判定、正式参考或历史指标，实际验收见[工作记录](worklog/2026-10-23-ghcli-response-regression.md)。

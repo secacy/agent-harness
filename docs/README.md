@@ -55,7 +55,7 @@ M3.4 已完成[样本设计与选择](worklog/2026-10-19-m3-4-sample-selection.m
 
 [GHCLI 一次新生成协议](experiments/ghcli-dev-eval-v0.1.0/README.md)和[准备记录](worklog/2026-10-23-ghcli-generation-preparation.md)已固定当前实现与一个已见 Target。[获授权的一次启动](experiments/2026-10-23-ghcli-dev-real-model-01.md)因 Models 附加元数据改变原文摘要而在生成前停止，0 Run / 0 生成，未重试。[能力契约分离](worklog/2026-10-23-capability-contract.md)随后已实现并在模拟服务及旧轮次离线复验中通过；新策略必须显式用于另版协议，原结果保持。长期选择见 [ADR-011](adr/011-capability-contract-binding.md)。
 
-[新版 GHCLI 协议 v0.2.0](experiments/ghcli-dev-eval-v0.2.0/README.md)和[准备记录](worklog/2026-10-23-ghcli-v02-preparation.md)固定新策略及实际材料；随后获授权的[唯一真实执行](experiments/2026-10-23-ghcli-dev-real-model-02.md)已完成：NeedsAttention、自动参考 pass、实际助手复核 fail，额外清空错误响应的分支改变返回值。没有自动放行或重试，旧指标保持；下一项先做该反例的离线回归设计。
+[新版 GHCLI 协议 v0.2.0](experiments/ghcli-dev-eval-v0.2.0/README.md)和[准备记录](worklog/2026-10-23-ghcli-v02-preparation.md)固定新策略及实际材料；随后获授权的[唯一真实执行](experiments/2026-10-23-ghcli-dev-real-model-02.md)已完成：NeedsAttention、自动参考 pass、实际助手复核 fail，额外清空错误响应的分支改变返回值。没有自动放行或重试，旧指标保持。随后[响应返回值的离线回归](worklog/2026-10-23-ghcli-response-regression.md)已在 Git 中保存原样反例、基线及正负对照，默认离线运行；生产门禁与固定参考不变。
 
 ## 记录原则
 

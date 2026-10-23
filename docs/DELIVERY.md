@@ -73,4 +73,4 @@ M0—M2 已在声明边界验收；M3/M4 已有范围内工程交付，原总体
 [GHCLI 有限来源与资源证明](worklog/2026-10-22-ghcli-bounded-proof.md#10-资源证据与完整边界的生产接入2026-10-23)已完成生产接入：保存候选在新证据下为 ReadyForReview，明确父来源/释放违规仍拒绝，未知 helper 或额外业务声明保留 NeedsAttention。这是已见候选的开发校准，不能把原有效自动成功 1/4 改成新的效果数字。Translation 暂缓。任何新效果评测均使用新实现身份和新协议，历史结果保留。严格留出及人员安排齐备后，再对照原总体验收条件推进。
 
 
-[v0.1.0 失败启动](experiments/2026-10-23-ghcli-dev-real-model-01.md)和[能力契约分离](worklog/2026-10-23-capability-contract.md)保留各自事实；采用新策略的[v0.2.0 实际报告](experiments/2026-10-23-ghcli-dev-real-model-02.md)已完成。本次不自动追加生成或修补候选，下一项先将新确认的响应＋错误反例形成离线回归与支持边界设计；不重复打包或回写旧指标。
+[v0.1.0 失败启动](experiments/2026-10-23-ghcli-dev-real-model-01.md)和[能力契约分离](worklog/2026-10-23-capability-contract.md)保留各自事实；采用新策略的[v0.2.0 实际报告](experiments/2026-10-23-ghcli-dev-real-model-02.md)已完成。随后[响应＋错误契约回归](worklog/2026-10-23-ghcli-response-regression.md)已固化原样候选、原基线和两个修改对照，并验证四种返回值情形。该开发回归不进入生产门禁或冻结参考；不追加生成、不修补原候选、不回写旧指标。下一项可据此设计新版参考的返回值覆盖和接入边界。
