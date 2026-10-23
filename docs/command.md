@@ -612,3 +612,17 @@ HARNESS_GHCLI_DELIVERY_OUTPUT="$PWD/runs/ghcli-harness-delivery-02" \
 两个 Run 的预期为 Completed / ReadyForReview 和 Completed / NeedsAttention。共享账本记录 6 次受控调用、120 个模型声明的 Token，无未知/在途占用；这不是供应商费用或自主迁移效果。输出包含 campaign/summary.md、两份 Run 交付、input-pins.json、delivery-result.json、补丁重放副本与日志、audit/、audit-copy-before/、audit-copy-tampered/ 和 proof-tamper.json。
 
 审计副本只在原字节核对成功后构造；新增信封保持 JSON 可读但摘要变化，篡改审计应定位 boundary-proof.json。输入缺失时的显式 skip 不算执行验收。实际条件、结果与局限见[工作记录](worklog/2026-10-23-ghcli-harness-delivery.md)。
+
+
+## GHCLI 一次新生成观察的准备状态
+
+[ghcli-dev-eval-v0.1.0](experiments/ghcli-dev-eval-v0.1.0/README.md)固定一个已见 Target、一次尝试、40 次生成 / 80 次工具 / 250 万 Token。它是新轨迹的开发观察，未运行，也不替代原四任务实验或严格留出。当前源码和导出二进制身份与完整停止规则已固定；本次 API 请求和代码外发仍待明确授权。
+
+在取得本工作区准备材料且 Docker 可用时，只做完整本地预检：
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 python3 docs/experiments/ghcli-dev-eval-v0.1.0/launch.py \
+  --check --freeze-sha256 291b2f7a1c1322e54f2c1d2fa59913b115d4632feb07a49e68d115aa1bd86727
+```
+
+预期 valid=true、model_queried=false、credentials_read=false、batch_created=false。源码/二进制准备副本在 runs/，不随 Git 分发；缺副本或环境/摘要不符必须停止，不能改旧 freeze。--execute 会读取 .env 的 Key 并实际查询/生成，只能在本次具体授权后使用。协议准备与局部契约的结果见[工作记录](worklog/2026-10-23-ghcli-generation-preparation.md)。

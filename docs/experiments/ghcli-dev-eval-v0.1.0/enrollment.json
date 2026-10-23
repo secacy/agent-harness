@@ -1,0 +1,51 @@
+{
+  "schema_version": 2,
+  "id": "ghcli-dev-eval-v0_1_0",
+  "kind": "development_evaluation",
+  "targets": [
+    {
+      "id": "ghcli",
+      "profile_id": "rpcx-ghcli-t3-v1",
+      "build_config": "default",
+      "baseline_sha256": "c299869d906bc9bb084e1cad4c35d8b6820879488536117ba9bdacd0f7ab131c",
+      "spec_sha256": "6e3a87056ec102536b52e1ffc340dbd8dd541d8d28589c555b9b08bafc1e40e8",
+      "reference_version": "rpcx-l2-reference-ghcli-data-v2",
+      "reference_sha256": "feb693bc5eb75aa1876bcf7ddc5bde5b8d28bedca92ff9b32fd0f7dea88acf8f",
+      "tool_sha256": "04348c6a5236ee54f3d9cb2f4082c8b5e8f4b8f58f077a1fb7ada2c0242d1bd1"
+    }
+  ],
+  "protocol": {
+    "id": "ghcli-dev-eval-v0_1_0",
+    "split": "development",
+    "attempts_per_target": 1,
+    "plan_settings_sha256": "1ae55c92158c380c236f84a95d59e54ce6679f0750a0869daca4d354312621f0",
+    "execution": {
+      "kind": "docker",
+      "image": "sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd",
+      "cpus": 2,
+      "memory_bytes": 2147483648,
+      "pids": 128
+    },
+    "reviewers": {
+      "ghcli": "codex:/root"
+    },
+    "materials": {
+      "protocol": {
+        "path": "/Users/can/src/golang/agent-harness-new/docs/experiments/ghcli-dev-eval-v0.1.0/README.md",
+        "sha256": "d9144b69b65f263f3c9f10eb6847177312c16e906b668646e1cfb7c9ae3d7e44"
+      },
+      "dataset": {
+        "path": "/Users/can/src/golang/agent-harness-new/docs/experiments/ghcli-dev-eval-v0.1.0/dataset.json",
+        "sha256": "264ede9b033bd8b6bfd2e6d732cb67822765961a0e15338674bddfe25d0f12bc"
+      },
+      "implementation": {
+        "path": "/Users/can/src/golang/agent-harness-new/docs/experiments/ghcli-dev-eval-v0.1.0/implementation.json",
+        "sha256": "bde63052c5f52a4124101a0bf7d7c7d6f26a8fd703c6003182aa13fdb1dbc1ca"
+      },
+      "environment": {
+        "path": "/Users/can/src/golang/agent-harness-new/docs/experiments/ghcli-dev-eval-v0.1.0/environment.json",
+        "sha256": "fa15b8a125047aefa274bab332ffeeaa2c95c537af67cff39be0a2bc27b87dd9"
+      }
+    }
+  }
+}

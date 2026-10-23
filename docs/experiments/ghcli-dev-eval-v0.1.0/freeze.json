@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "id": "ghcli-dev-eval-v0_1_0",
+  "files": {
+    "README.md": "d9144b69b65f263f3c9f10eb6847177312c16e906b668646e1cfb7c9ae3d7e44",
+    "batch.json": "cdf898b5da8d96218501897ebb879d5d85d7257b4e26f90d838fe00fbb73fe3b",
+    "capabilities-observed.json": "9743d744c58468765cb1d8c478700183e7687a87ebc754efc939451a421a3f11",
+    "dataset.json": "264ede9b033bd8b6bfd2e6d732cb67822765961a0e15338674bddfe25d0f12bc",
+    "enrollment.json": "e7d488a9fb9e104b094aa4c7ee7ec20f38434814ce3da50d0b26692bc086d7ce",
+    "environment.json": "fa15b8a125047aefa274bab332ffeeaa2c95c537af67cff39be0a2bc27b87dd9",
+    "expected-plan.json": "b2bcddf315ed9b76c617646414362c254d2835d9bc18ff96a2d6ab81f0a94174",
+    "implementation.json": "bde63052c5f52a4124101a0bf7d7c7d6f26a8fd703c6003182aa13fdb1dbc1ca",
+    "launch.py": "1efd387aa9fcc3ce840b7f5e2f7841f630fcdcb44525890fa34f5236f7be2a17",
+    "models-observed.json": "b86388abe65929c84de3825eee299b8d78bae23e82e300239f3c788569eb5f39",
+    "reviewers.json": "a61443f28d79f278a496fe490b8287d2f72291e1fb2a2aa20fefd8e0db593d75",
+    "source-files.json": "cacf6140b583cff83c8b252fef0733b9f15410941ecbbc1b6e85e6e6a12b6712"
+  }
+}

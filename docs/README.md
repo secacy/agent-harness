@@ -53,6 +53,8 @@ M3.4 已完成[样本设计与选择](worklog/2026-10-19-m3-4-sample-selection.m
 
 [工程交付包](worklog/2026-10-21-engineering-delivery.md)说明显式材料选择、工作区源码/二进制身份、原文保留、请求路径映射和离线迁移验收；[材料清单](delivery/engineering-v0.1.1.json)不包含构建缓存或凭证。归档中的工具可重做运行审计和三个原轮次的指标汇总，不重新生成候选或执行 Docker。
 
+[GHCLI 一次新生成协议](experiments/ghcli-dev-eval-v0.1.0/README.md)和[准备记录](worklog/2026-10-23-ghcli-generation-preparation.md)已固定当前实现与一个已见 Target，离线 --check 通过；当前未授权、未查询、未生成，不作为新的效果结果。
+
 ## 记录原则
 
 **里程碑与工程记录**：`MILESTONES.md` 只跟踪已确定的开发目标及其验收状态。`worklog/` 按需记录重要的设计与开发过程，也可暂存尚未确定的技术问题；不要求每天或每次修改都写日志。

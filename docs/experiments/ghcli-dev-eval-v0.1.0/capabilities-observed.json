@@ -1,0 +1,13 @@
+{
+  "url": "https://api.deepseek.com/models",
+  "profile": {
+    "provider": "deepseek",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "model": "deepseek-flash",
+    "context_tokens": 1048576,
+    "max_output_tokens": 4096,
+    "source_sha256": "b86388abe65929c84de3825eee299b8d78bae23e82e300239f3c788569eb5f39",
+    "verified_at": "2026-10-19T18:38:42.884492Z"
+  },
+  "model_output_limit": 393216
+}
