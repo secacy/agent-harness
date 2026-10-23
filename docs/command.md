@@ -627,13 +627,13 @@ PYTHONDONTWRITEBYTECODE=1 python3 docs/experiments/ghcli-dev-eval-v0.1.0/launch.
 
 准备时预期 valid=true、model_queried=false、credentials_read=false、batch_created=false；这是首次启动前的检查记录。源码/二进制准备副本在 runs/，不随 Git 分发；缺副本或环境/摘要不符必须停止，不能改旧 freeze。本次启动后，实际输出/启动记录已存在，不再适用此前“未创建批次”的预期，也不应删除记录重新执行。协议准备与局部契约的结果见[工作记录](worklog/2026-10-23-ghcli-generation-preparation.md)。
 
-## GHCLI v0.2.0 的本地预检
+## GHCLI v0.2.0 的启动记录
 
-[新版协议](experiments/ghcli-dev-eval-v0.2.0/README.md)显式采用 model-contract-v1，已固定当前实现与一个已见 Target；旧版失败记录保留。本版尚未外发，以下仅核对已准备材料和实际本地环境，不读取 .env、不查询模型、不创建容器：
+[新版协议](experiments/ghcli-dev-eval-v0.2.0/README.md)显式采用 model-contract-v1；随后[获授权的一次执行](experiments/2026-10-23-ghcli-dev-real-model-02.md)已完成，原判定 NeedsAttention，实际复核 fail。以下保留首次启动前的本地预检命令；实际输出及启动记录已存在，不再满足此前条件，不能删除记录重放本版：
 
 ```sh
 PYTHONDONTWRITEBYTECODE=1 python3 docs/experiments/ghcli-dev-eval-v0.2.0/launch.py \
   --check --freeze-sha256 1eee38194a758e2440aef3a40cfe86e643db7ba67342d73f6c2872c32ed8aa01
 ```
 
-需要当前工作区对应的 runs/ghcli-dev-eval-v0.2.0-preparation/snapshot/ 和固定 Docker 环境；预期 valid=true、model_queried=false、credentials_read=false、batch_created=false。材料不存在或摘要/环境不符必须停止，不能改旧 freeze。执行模式将实际读 Key、查询和生成，只能在本版具体授权后使用；旧许可已经用于 v0.1.0，不覆盖本版。一次执行的 40 次生成 / 80 次工具 / 250 万保守 Token、10 分钟 Run、12+1 分钟宿主停止规则见[准备记录](worklog/2026-10-23-ghcli-v02-preparation.md)。
+首次启动前需要对应源码/二进制副本和固定 Docker 环境，实际预检曾返回 valid=true、model_queried=false、credentials_read=false、batch_created=false。该记录保留在[准备记录](worklog/2026-10-23-ghcli-v02-preparation.md)；本版一次许可已使用，不自动追加查询、生成或额度。实际用量、参考/复核、审计和失败原因见本次报告，原冻结材料不改。

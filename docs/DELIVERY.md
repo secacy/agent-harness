@@ -39,6 +39,8 @@ Harness 已将固定输入、基线检查、Agent 修改/修复、独立门禁�
 
 随后完成[新证明的 Harness 交付验收](worklog/2026-10-23-ghcli-harness-delivery.md)：脚本模型经真实工具、预算、Docker 和 Runner 交付两个 Run，分别保留 ReadyForReview / NeedsAttention；补丁重放、审核导航和完整 Campaign 审计通过，证明文件副本的单独篡改被 API/CLI 审计定位。该结果补足工程集成证据，不增加自主迁移样本或改写原指标。
 
+采用新能力契约的[GHCLI 一次开发评测 v0.2.0](experiments/2026-10-23-ghcli-dev-real-model-02.md)随后完成：Completed / NeedsAttention，自动参考 pass，实际助手复核发现额外清空响应的返回值差异并记 fail。该轮 N=1、自动成功 0/1、A=0 时错误放行率无定义；17 次生成、25 次工具、140,909 Token。材料审计、补丁重放与 27 个容器回收核对通过，原四任务 1/4 不改，两个轮次不合并。
+
 ## 版本与复验材料
 
 | 材料 | 用途与版本边界 |
@@ -71,4 +73,4 @@ M0—M2 已在声明边界验收；M3/M4 已有范围内工程交付，原总体
 [GHCLI 有限来源与资源证明](worklog/2026-10-22-ghcli-bounded-proof.md#10-资源证据与完整边界的生产接入2026-10-23)已完成生产接入：保存候选在新证据下为 ReadyForReview，明确父来源/释放违规仍拒绝，未知 helper 或额外业务声明保留 NeedsAttention。这是已见候选的开发校准，不能把原有效自动成功 1/4 改成新的效果数字。Translation 暂缓。任何新效果评测均使用新实现身份和新协议，历史结果保留。严格留出及人员安排齐备后，再对照原总体验收条件推进。
 
 
-[GHCLI 一次开发观察](experiments/2026-10-23-ghcli-dev-real-model-01.md)已因 Models 附加元数据触发冻结身份不匹配而在生成前停止，没有 Run 或新候选。[能力契约分离](worklog/2026-10-23-capability-contract.md)已实现并验收；采用该策略的[新协议 v0.2.0](experiments/ghcli-dev-eval-v0.2.0/README.md)随后完成实际材料固定、离线绑定和完整启动预检，等待本版外发与用量授权。旧协议、失败记录和四任务指标保持，当前没有新的自主迁移效果结果。
+[v0.1.0 失败启动](experiments/2026-10-23-ghcli-dev-real-model-01.md)和[能力契约分离](worklog/2026-10-23-capability-contract.md)保留各自事实；采用新策略的[v0.2.0 实际报告](experiments/2026-10-23-ghcli-dev-real-model-02.md)已完成。本次不自动追加生成或修补候选，下一项先将新确认的响应＋错误反例形成离线回归与支持边界设计；不重复打包或回写旧指标。
