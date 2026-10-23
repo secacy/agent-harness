@@ -1,7 +1,7 @@
 # GHCLI 运行时响应契约：明确违规与未知边界
 
 - 日期：2026-10-23。
-- 状态：设计完成，待实现与验收；本轮只修改文档。
+- 状态：单元 A 的探针与事件归因已通过本地校准；单元 B/C 尚未接入与验收。
 - 代码基线：7b58a75。
 - 前置：[离线反例](2026-10-23-ghcli-response-regression.md)、[独立参考 v3](2026-10-23-ghcli-reference-v3.md)。
 - 目标：运行时能依据实际响应/错误观察拒绝已证实的行为变化，同时保留未覆盖修改的 NeedsAttention。
@@ -107,3 +107,31 @@ C 至少包含一个完整可放行正例、一个明确返回值违规和一个
 已核对实际门禁执行顺序、探针、事件解析、质量聚合和版本约束，完成上述取舍与验收设计。没有修改运行代码、参考数据或候选，没有执行 Go/Docker/模型实验；表中结果均为未来验收条件。下一步先实施 A，验证事件归因和正负对照，再进入门禁及交付集成。
 
 文档检查：本轮四份文档的 210 个本地链接目标、29 个锚点及代码围栏检查通过，git diff --check 通过；记录保存于 runs/ghcli-runtime-response-design-01/documentation.json。同步修正场景 README 中已过时的活跃参考 v2 描述为 v3，未更改任何冻结材料。
+
+## 8. 单元 A：返回值探针与事件归因
+
+- 实现基线：e7f280e；日期：2026-10-23。
+- 交付：[返回值探针](../../scenarios/rpcx/ghcli/probes/returns_test.go.txt)、[本地事件归因](../../scenarios/rpcx/ghcli/observations.go)和[机制/校准测试](../../scenarios/rpcx/ghcli/observations_test.go)。
+
+新增探针单独存放，复用同一 invokeHTTP 边界，便于在原 v1 上单独校准纯返回值义务；单元 B 再与旧探针一起安装到同一生产副本、由同一行为命令运行。本单元没有修改 behavior.go 的执行路径，没有产生新 Run 或更新原质量判定。
+
+四项契约只输出固定 BEHAVIOR-001 原因码，不输出任意响应或错误正文。归因函数核对固定包、测试目录、父子生命周期和退出状态；只有完整必需事件中，同一失败叶子报告了其允许原因，才输出 fail/findings。标记错配、缺失/重复事件、skip、panic、编译失败、无归因失败等均输出 unknown，且清空明确 findings。保守策略也覆盖“一项已有有效反例，但另一项执行不完整”的情况。
+
+局部 schema 1 先保存包、检查状态、逐项终态/原因与失败诊断；这是归因结构，不是已绑定输入的完整证据。单元 B 仍须增加命令/输入/探针身份及可信副本清单、保存并引用材料、接入审计。现有旧探针的 Rule/Detail 标记也要在 B 中适配固定原因目录，不能直接交给只接受 Rule/Code 的新归因函数。
+
+本地执行只使用固定、已审查的源码片段、标准库与两个本地 SDK，禁止依赖下载；不接受任意候选。本次校准不宣称具有 Docker 隔离或完整迁移正确性。
+
+| 对照 | 实际观察 |
+| --- | --- |
+| 原 v1 基线 | 四种契约通过 |
+| 原样 v2 错误候选 | response_missing_on_redirect_error |
+| 移除清空响应分支的 v2 对照 | 四种契约通过 |
+| 吞掉返回错误 | transport-error 与 redirect-declined 均报告 error_chain_changed |
+| Close 丢弃底层错误 | success 与 use-last-response 均报告 close_error_changed |
+| 提前关闭 Body | success 与 use-last-response 均报告 body_closed_before_caller |
+
+首轮 first.jsonl 有 4 项测试及子测试失败，其中三个 v2 子进程因沙箱无法读取默认 Go 缓存而编译失败，父测试随之失败；原 v1 与原样 v2 子项当轮通过。失败结果保留，没有把编译失败算成契约违规。后续使用 runs/go-cache 作为 GOCACHE；calibration.jsonl 的 36 项测试及子测试通过。补充提前关闭 Body 对照后，整个 ghcli 包的 race.jsonl 共 103 项测试及子测试通过、2 项 Docker 专用测试跳过，无竞态报告。跳过不计 Docker 验收；go vet 通过。
+
+证据保存在 runs/ghcli-runtime-response-a-01/；最终竞态日志包含六种输入的源码/探针摘要、结构化观察及原始子进程事件。未读取 .env、调用模型、执行 Docker 或修改冻结规范/参考数据。源码材料采用既有嵌入方式，因此当前实现材料摘要会变化，不能把旧材料摘要用于未来实验；这不代表新探针已经进入生产执行路径。
+
+下一步进入 B：接入旧/新探针的完整目录与受限命令，绑定可信副本及执行身份，完成报告和离线审计正反例，再用真实 Docker 验证 Rejected、可放行与未知边界。

@@ -1,0 +1,125 @@
+package delete
+
+import (
+	"errors"
+	"io"
+	"net/http"
+	"strings"
+	"testing"
+)
+
+type harnessReturnTransport func(*http.Request) (*http.Response, error)
+
+func (f harnessReturnTransport) RoundTrip(r *http.Request) (*http.Response, error) { return f(r) }
+
+type harnessReturnBody struct {
+	io.Reader
+	closed     bool
+	closeError error
+}
+
+func (b *harnessReturnBody) Close() error { b.closed = true; return b.closeError }
+
+func harnessReturnViolation(t *testing.T, code string) {
+	t.Helper()
+	t.Errorf("GHCLI_FINDING {\"Rule\":\"BEHAVIOR-001\",\"Code\":%q}", code)
+}
+
+func TestHarnessApplicationReturns(t *testing.T) {
+	for _, mode := range []string{"success", "transport-error", "redirect-declined", "use-last-response"} {
+		t.Run(mode, func(t *testing.T) {
+			sentinel := errors.New("return contract sentinel")
+			closeError := errors.New("return contract close error")
+			body := &harnessReturnBody{Reader: strings.NewReader("payload"), closeError: closeError}
+			calls := 0
+			client := &http.Client{Transport: harnessReturnTransport(func(r *http.Request) (*http.Response, error) {
+				calls++
+				if mode == "transport-error" {
+					return nil, sentinel
+				}
+				status := http.StatusAccepted
+				header := http.Header{"X-Contract": []string{"preserved"}}
+				if mode == "redirect-declined" || mode == "use-last-response" {
+					status = http.StatusFound
+					header.Set("Location", "/next")
+				}
+				return &http.Response{StatusCode: status, Header: header, Body: body, Request: r}, nil
+			})}
+			if mode == "redirect-declined" {
+				client.CheckRedirect = func(*http.Request, []*http.Request) error { return sentinel }
+			}
+			if mode == "use-last-response" {
+				client.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
+			}
+			req, err := http.NewRequest("GET", "http://example.invalid/contract", nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+			response, err := invokeHTTP(client, req)
+			if response != nil && response.Body != nil {
+				defer response.Body.Close()
+			}
+			// 调度异常不伪装成已观察到的返回值违规。
+			if calls != 1 {
+				t.Fatalf("expected one transport call, got %d", calls)
+			}
+			if mode == "transport-error" {
+				if !errors.Is(err, sentinel) {
+					harnessReturnViolation(t, "error_chain_changed")
+				}
+				if response != nil {
+					harnessReturnViolation(t, "unexpected_response_on_transport_error")
+				}
+				return
+			}
+			if mode == "redirect-declined" {
+				if !errors.Is(err, sentinel) {
+					harnessReturnViolation(t, "error_chain_changed")
+				}
+				if !body.closed {
+					harnessReturnViolation(t, "redirect_body_not_closed")
+				}
+				if response == nil {
+					harnessReturnViolation(t, "response_missing_on_redirect_error")
+					return
+				}
+			} else {
+				if err != nil {
+					harnessReturnViolation(t, "unexpected_error")
+				}
+				if response == nil {
+					harnessReturnViolation(t, "response_missing")
+					return
+				}
+			}
+			expectedStatus := http.StatusAccepted
+			if mode != "success" {
+				expectedStatus = http.StatusFound
+			}
+			if response.StatusCode != expectedStatus || response.Header.Get("X-Contract") != "preserved" {
+				harnessReturnViolation(t, "response_properties_changed")
+			}
+			// 普通重定向拒绝的 Body 已由 http.Client 关闭，不再读取。
+			if mode == "redirect-declined" {
+				return
+			}
+			if body.closed {
+				harnessReturnViolation(t, "body_closed_before_caller")
+			}
+			if response.Body == nil {
+				harnessReturnViolation(t, "response_body_missing")
+				return
+			}
+			data, readError := io.ReadAll(response.Body)
+			if readError != nil || string(data) != "payload" {
+				harnessReturnViolation(t, "body_read_changed")
+			}
+			if !errors.Is(response.Body.Close(), closeError) {
+				harnessReturnViolation(t, "close_error_changed")
+			}
+			if !body.closed {
+				harnessReturnViolation(t, "body_not_closed")
+			}
+		})
+	}
+}
