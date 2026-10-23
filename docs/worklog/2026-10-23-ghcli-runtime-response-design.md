@@ -1,7 +1,7 @@
 # GHCLI 运行时响应契约：明确违规与未知边界
 
 - 日期：2026-10-23。
-- 状态：单元 A 的探针与事件归因已通过本地校准；单元 B/C 尚未接入与验收。
+- 状态：单元 A 已验收；单元 B 已完成生产门禁与离线观察审计的范围验收；单元 C 的完整 Runner/Campaign 交付待验收。
 - 代码基线：7b58a75。
 - 前置：[离线反例](2026-10-23-ghcli-response-regression.md)、[独立参考 v3](2026-10-23-ghcli-reference-v3.md)。
 - 目标：运行时能依据实际响应/错误观察拒绝已证实的行为变化，同时保留未覆盖修改的 NeedsAttention。
@@ -135,3 +135,62 @@ C 至少包含一个完整可放行正例、一个明确返回值违规和一个
 证据保存在 runs/ghcli-runtime-response-a-01/；最终竞态日志包含六种输入的源码/探针摘要、结构化观察及原始子进程事件。未读取 .env、调用模型、执行 Docker 或修改冻结规范/参考数据。源码材料采用既有嵌入方式，因此当前实现材料摘要会变化，不能把旧材料摘要用于未来实验；这不代表新探针已经进入生产执行路径。
 
 下一步进入 B：接入旧/新探针的完整目录与受限命令，绑定可信副本及执行身份，完成报告和离线审计正反例，再用真实 Docker 验证 Rejected、可放行与未知边界。
+
+## 9. 单元 B：生产门禁、审核材料与离线审计
+
+- 实现基线：8f736a8；日期：2026-10-23。
+- 范围：接入已有 Evaluate 行为阶段、保存完整观察材料、复用审核链接并增加离线审计；完整 Runner/Campaign 交付仍归 C。
+
+### 接入与证据归属
+
+新旧探针安装到同一个剥离原测试的生产副本，以同一条既有受限命令运行；保留原有真实到期检查和资源/超时限制。旧探针改为固定 Rule/Code 标记，各子场景分别限定允许的原因与条款；新旧事件由同一个本地归因函数消费。行为检查仍在 request_scope=unknown 时执行，未修改静态消去规则或质量聚合原则。
+
+新增 behavior-observations.json：包含 schema 1、规范/基线/候选绑定、实际工具材料身份、命令与双日志摘要、候选生产文件投影、注入后文件清单、两个 SDK 清单及逐测试观察。注入后的实际目录必须等于候选生产投影加两份固定探针；原 command 方法继续在执行前后核对业务副本和 SDK。所有材料登记为 quality.Evidence，semantic_behavior 及具体 finding 引用观察、探针、命令/日志和 rule-map。
+
+审核渲染沿用现有证据导航，无须新建报告页面：具体原因能链接到测试观察、原始日志和规范映射。测试确认 response_missing_on_redirect_error、对应测试身份、BEHAVIOR-001 及三种链接都能呈现。
+
+### 离线核对与兼容
+
+[ValidateBehaviorEvidence](../../scenarios/rpcx/ghcli/behavior_evidence.go)不执行候选。它核对固定证据清单、摘要与绑定、命令所属原始 Run 目录、实际候选/可信副本/SDK、归档工具中的探针字节，并从原始 stdout 重新计算观察和 semantic_behavior。仅修改结论，或改日志后仅重算外层摘要，都不能通过。证据读取按固定顺序，避免多个材料缺失时因 map 遍历顺序产生不同诊断。
+
+[Runner 审计适配](../../scenarios/rpcx/runner/audit_behavior.go)以已经固定摘要的归档工具中是否包含 behavior_evidence.go 识别新格式；主动声明该观察材料的报告也必须接受检查。新格式已执行行为检查时，删除观察材料或引用不能降级为旧格式。旧材料不追溯要求新增文件，构建前置失败导致行为阶段 blocked 的记录也不伪造观察。归档迁移继续使用原始执行目录身份，读取路径由 audit.View 限制在当前归档内。
+
+局部 schema 1 的必需集合和原因语义构成该格式的消费契约；未来若改变它们导致旧观察不能重算，须另起局部格式版本。Evaluation、Profile、VerifierVersion 家族及公开规范保持既定契约，通过实际 MaterialsSHA256 区分实现；独立参考和历史报告不修改。
+
+### 验证记录
+
+首次 Docker 命令因沙箱无法访问本机 socket 失败，记录在 docker.jsonl；随后在已授权的本机 Docker 权限下使用新目录执行。首次 focused.jsonl 的失败来自两个测试构造问题：对 pass 样本设置 pass/替换不存在标记没有实际改动，以及审核断言未处理 HTML 转义。修正测试后通过，不将这些失败解释为已证实的生产缺陷。另一次目录细化编辑残留旧代码导致编译失败，保留 final-focused-race.jsonl；清理后定向检查通过。
+
+验证产物均位于 runs/ghcli-runtime-response-b-01/。实际结果见下表及最终验收说明。本轮未读取 .env、调用模型或修改冻结规范/参考；开发对照不计新的迁移效果指标。
+
+
+| Docker 对照 | 完整门禁结果 | 行为检查 |
+| --- | --- | --- |
+| 仅在原边界补显式期限 | ReadyForReview | pass |
+| 原样响应丢失候选 | Rejected | fail，response_missing_on_redirect_error |
+| 恒等 helper | NeedsAttention | pass，静态范围仍未知 |
+| 吞掉错误 | Rejected | fail，error_chain_changed |
+| 提前关闭 Body | Rejected | fail，body_closed_before_caller；原资源检查也保留违规 |
+| 丢弃 Close 错误 | Rejected | fail，close_error_changed |
+| 60 秒错误期限 | Rejected | fail，actual_expiry_changed 等原期限原因 |
+| 仅变量改名 | ReadyForReview | pass |
+| 等价分支重排 | NeedsAttention | pass，未扩大静态支持范围 |
+
+完整矩阵分为 docker-verified.jsonl 的七种输入及 docker-equivalent.jsonl 的两种等价写法；共九种输入，没有挑选最优候选。最终源码另在 docker-final.jsonl 单独复验原样候选及八项审计负例，仍为 Rejected。早期矩阵的工具材料为 dba292d7a62a0c7cf84bfe6cb1a563fef335060252c535cfaa6e046f257dd9b6；最终源码复验为 3319f7f4d04cccc963618a357e6d31edc74345e6ffe9105517e7f835ec00e064，分别按实际身份保留。后补的目录归属检查、按子测试细化目录和确定性读取顺序由最终定向竞态检测覆盖；final-recheck.json 用最终读取器逐份重算了全部十份报告，均通过。
+
+审计机制测试覆盖删除记录/引用、改变观察、修改日志并重算摘要、跨候选、跨 Run、改变生产投影/探针/报告、改变实际可信副本/SDK。Runner 格式选择测试区分旧记录、新格式缺材料、主动声明材料和未执行的 blocked 阶段。真实 Docker 报告已由同一离线消费函数复核；完整 Campaign 审计和生成的审核导航仍作为 C 的验收项，不以这次独立 Evaluate 代替。
+
+| 最终检查 | 结果与证据 |
+| --- | --- |
+| ghcli 与 runner 包级竞态回归 | 252 项测试及子测试通过，26 项条件测试跳过；package-race.jsonl |
+| 最终归因/审计/审核/校准竞态检测 | 82 项测试及子测试通过，1 项已有条件测试跳过；final-mechanism-race.jsonl；不与包级重复计数相加 |
+| 真实 Docker | 九种输入及最终原样复验全部符合预期；三份 docker 日志、各 evaluation.json 与 results.json |
+| 最终离线复核 | 十份报告通过；final-recheck.json |
+| 静态检查 | ghcli/runner 的 go vet 通过；vet-accepted.log |
+| 精确容器回收 | 十份报告的 60 个唯一容器 ID 全部不存在；container-cleanup.json |
+
+回收核对脚本首次大小写敏感匹配未识别 Docker 的小写 `error: no such object`，其原始 stderr、空 existing 集合和退出码保留在 container-cleanup-first.json。按大小写无关方式重读相同原始结果后，逐 ID 均确认已移除；没有因此删除或操作其他容器。
+
+B 在上述门禁、观察材料及离线消费范围验收。下一步 C 用脚本化模型经预算包装、仓库工具、Runner/Campaign 交付三种判定，验证补丁重放、审核导航与实际 Campaign 审计；不需要追加真实模型调用，也不改变历史实验指标。本单元代码、测试及对应文档作为一个工作单元提交。
+
+本轮五份文档的 247 个本地链接目标、31 个锚点及代码围栏校验通过，git diff --check 通过。最终日志、十份复核结果、回收证据及其摘要汇总在 runs/ghcli-runtime-response-b-01/summary.json；运行产物不入 Git。

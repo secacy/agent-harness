@@ -18,7 +18,7 @@
 
 离线参考位于 [l2/evaluation](../l2/evaluation/README.md)，当前活跃入口为 `EvaluateGHCLI`，数据版本为 `rpcx-l2-reference-ghcli-data-v3`。原 v1 参考额外要求命令入口上下文传播，作为诊断保留；v2 对齐已发布规范；[v3](../../../docs/worklog/2026-10-23-ghcli-reference-v3.md)增加响应/错误返回值和 Body 契约观察，旧版本材料保留。参考报告不修改原 Run 判定，未填写的复核仍为 inconclusive。
 
-[运行时响应契约增强](../../../docs/worklog/2026-10-23-ghcli-runtime-response-design.md)的独立返回值探针与本地事件归因已通过单元 A 校准；尚未接入 behavior.go、审核材料及审计。它不调用独立参考，也不以探针通过替代范围证明。生产门禁仍使用既有行为检查路径。
+[运行时响应契约增强](../../../docs/worklog/2026-10-23-ghcli-runtime-response-design.md)已完成 A/B：新旧探针在同一受限命令内执行，严格核对失败测试与原因归属；behavior-observations.json 绑定生产投影、可信副本、SDK、工具及命令/日志。离线审计重算事件并核对报告，审核链接指向观察和规范映射；旧报告按其归档材料保留。九种 Docker 对照及最终原样复验通过，完整 Runner/Campaign 交付仍待 C。它不调用独立参考，也不以探针通过替代范围证明。
 
 该固定切片已接入四任务 schema 2 有限开发评测，见[真实实验](../../../docs/experiments/2026-10-22-rpcx-fixed-real-model-01.md)。本次来源追踪只重验已保存候选和构造变体，不新增模型效果或严格留出证据。
 

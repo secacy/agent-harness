@@ -202,3 +202,35 @@ func observeBehavior(data []byte, pkg string, required []behaviorTest, exit int)
 	}
 	return out
 }
+
+const behaviorPackage = "github.com/cli/cli/v2/pkg/cmd/release/delete"
+
+func behaviorContracts() []behaviorTest {
+	tests := []behaviorTest{{Name: "TestHarnessApplicationBoundary"}}
+	for _, mode := range []string{"default", "short", "long", "cancelled", "transport-error", "close-error"} {
+		reasons := map[string]string{"request_properties_changed": "BEHAVIOR-001", "request_body_changed": "BEHAVIOR-001", "call_deadline_changed": "TIME-001"}
+		if mode == "short" {
+			reasons["short_parent_deadline_lost"] = "CTX-001"
+		}
+		switch mode {
+		case "cancelled":
+			reasons["parent_cancellation_lost"] = "CTX-001"
+		case "transport-error":
+			reasons["transport_not_dispatched"] = "BEHAVIOR-001"
+			reasons["transport_error_changed"] = "BEHAVIOR-001"
+			reasons["transport_context_not_released"] = "TIME-002"
+		default:
+			for _, code := range []string{"transport_not_dispatched", "response_changed", "response_properties_changed", "body_read_changed", "close_error_changed", "body_not_closed"} {
+				reasons[code] = "BEHAVIOR-001"
+			}
+			reasons["body_ended_before_caller"] = "TIME-002"
+			reasons["body_context_not_released"] = "TIME-002"
+		}
+		tests = append(tests, behaviorTest{Name: "TestHarnessApplicationBoundary/" + mode, Reasons: reasons})
+	}
+	tests = append(tests,
+		behaviorTest{Name: "TestHarnessApplicationBodyParent", Reasons: map[string]string{"body_response_missing": "BEHAVIOR-001", "body_ended_at_dispatch": "TIME-002", "body_parent_cancellation_lost": "CTX-001"}},
+		behaviorTest{Name: "TestHarnessApplicationExpiry", Reasons: map[string]string{"actual_expiry_changed": "TIME-001"}},
+	)
+	return append(tests, returnContracts()...)
+}

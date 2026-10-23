@@ -176,6 +176,7 @@ func (a *runAudit) checkValidation(v checks.Evaluation, completed, stale bool) {
 		}
 	}
 	a.checkMaterials(v)
+	a.checkGHCLIBehavior(v)
 	a.checkPolicy(v)
 	if !stale {
 		a.checkInputSnapshots(v, completed)

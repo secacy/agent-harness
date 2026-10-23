@@ -2,20 +2,16 @@ package ghcli
 
 import (
 	"context"
-	"github.com/secacy/agent-harness/internal/quality"
-	"github.com/secacy/agent-harness/scenarios/rpcx/gate"
+	"errors"
+	"maps"
 	"path/filepath"
-	"strings"
+
+	"github.com/secacy/agent-harness/scenarios/rpcx/gate"
 )
 
 func (e *evaluation) behavior(ctx context.Context, candidate, fixtures map[string][]byte) error {
 	root := filepath.Join(e.req.EvidenceDir, "trusted/ghcli")
-	production := map[string][]byte{}
-	for name, data := range candidate {
-		if !strings.HasSuffix(name, "_test.go") {
-			production[name] = data
-		}
-	}
+	production := productionFiles(candidate)
 	if err := gate.CopyFiles(root, production); err != nil {
 		return err
 	}
@@ -34,29 +30,48 @@ func (e *evaluation) behavior(ctx context.Context, candidate, fixtures map[strin
 	if err = e.save("behavior-probe", "trusted_probe", "probe.go.txt", probe); err != nil {
 		return err
 	}
-	prefix := "github.com/cli/cli/v2/pkg/cmd/release/delete/"
-	names := []string{"TestHarnessApplicationBoundary", "TestHarnessApplicationBodyParent", "TestHarnessApplicationExpiry"}
-	for _, mode := range []string{"default", "short", "long", "cancelled", "transport-error", "close-error"} {
-		names = append(names, "TestHarnessApplicationBoundary/"+mode)
-	}
-	required := []string{}
-	for _, name := range names {
-		required = append(required, prefix+name)
-	}
-	r, err := e.command(ctx, "behavior", root, []string{"go", "test", "-json", "-count=1", "-timeout=45s", "-run=^TestHarnessApplication", "./pkg/cmd/release/delete"})
+	returnProbe, err := materials.ReadFile("probes/returns_test.go.txt")
 	if err != nil {
 		return err
 	}
-	s, findings := gate.Observe(r.Stdout, required, r.ExitCode, rules("semantic_behavior"), "GHCLI_FINDING ")
-	if s == quality.StatusFail && len(findings) == 0 {
-		s = quality.StatusUnknown
+	if err = gate.Write(filepath.Join(root, "pkg/cmd/release/delete/harness_returns_test.go"), returnProbe); err != nil {
+		return err
 	}
-	refs := []string{"behavior-probe", "behavior", "behavior-stdout", "behavior-stderr"}
-	c := check("semantic_behavior", s, "independent request/parent/expiry/ownership observations: "+s, refs...)
-	for i := range findings {
-		findings[i].EvidenceIDs = refs
+	if err = e.save("behavior-return-probe", "trusted_probe", "returns-probe.go.txt", returnProbe); err != nil {
+		return err
 	}
-	c.Findings = append(c.Findings, findings...)
-	e.result.Checks["semantic_behavior"] = c
+	trusted := maps.Clone(production)
+	trusted["pkg/cmd/release/delete/harness_application_test.go"] = probe
+	trusted["pkg/cmd/release/delete/harness_returns_test.go"] = returnProbe
+	actual, err := gate.ReadFiles(root)
+	if err != nil {
+		return err
+	}
+	if gate.TreeHash(actual) != gate.TreeHash(trusted) {
+		return errors.New("behavior copy differs from candidate production and trusted probes")
+	}
+	r, err := e.command(ctx, "behavior", root, behaviorArgs)
+	if err != nil {
+		return err
+	}
+	observation := observeBehavior(r.Stdout, behaviorPackage, behaviorContracts(), r.ExitCode)
+	record := behaviorEvidence{SchemaVersion: 1, Binding: e.binding(), ToolSHA256: e.result.MaterialsSHA256, Production: gate.Hashes(production), Trusted: gate.Hashes(trusted), SDKs: map[string]map[string]string{}, Observation: observation}
+	for _, sdk := range []string{"rpcx-v1", "rpcx-v2"} {
+		record.SDKs[sdk] = gate.Hashes(gate.Module(fixtures, sdk))
+	}
+	for _, entry := range e.result.Evidence {
+		switch entry.ID {
+		case "behavior":
+			record.CommandSHA256 = entry.SHA256
+		case "behavior-stdout":
+			record.StdoutSHA256 = entry.SHA256
+		case "behavior-stderr":
+			record.StderrSHA256 = entry.SHA256
+		}
+	}
+	if err = e.saveJSON(behaviorEvidenceID, "behavior_observations", "behavior-observations.json", record); err != nil {
+		return err
+	}
+	e.result.Checks["semantic_behavior"] = behaviorCheck(observation)
 	return nil
 }

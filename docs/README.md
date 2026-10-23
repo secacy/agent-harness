@@ -57,7 +57,7 @@ M3.4 已完成[样本设计与选择](worklog/2026-10-19-m3-4-sample-selection.m
 
 [新版 GHCLI 协议 v0.2.0](experiments/ghcli-dev-eval-v0.2.0/README.md)和[准备记录](worklog/2026-10-23-ghcli-v02-preparation.md)固定新策略及实际材料；随后获授权的[唯一真实执行](experiments/2026-10-23-ghcli-dev-real-model-02.md)已完成：NeedsAttention、自动参考 pass、实际助手复核 fail，额外清空错误响应的分支改变返回值。没有自动放行或重试，旧指标保持。随后[响应返回值的离线回归](worklog/2026-10-23-ghcli-response-regression.md)已在 Git 中保存原样反例、基线及正负对照，默认离线运行。随后[独立参考 v3](worklog/2026-10-23-ghcli-reference-v3.md)以新数据版本纳入四种返回值观察，并保留旧参考/报告；原运行时判定及效果指标不改。
 
-[GHCLI 运行时响应契约设计](worklog/2026-10-23-ghcli-runtime-response-design.md)已完成方案权衡；单元 A 的四种返回值探针及本地事件归因已通过基线/正反例校准和包级竞态检测，尚未接入生产门禁。后续依次验收门禁/审计及完整 Harness 交付，有限通过不覆盖范围未知。
+[GHCLI 运行时响应契约](worklog/2026-10-23-ghcli-runtime-response-design.md)已完成 A/B：新旧探针、严格事件归因和绑定观察材料已接入生产门禁，离线审计可重算原始事件；九种 Docker 输入及最终源码原样复验通过。原样响应丢失可直接 Rejected，未知 helper/分支重排仍 NeedsAttention。后续 C 验收完整 Runner/Campaign 交付，原效果指标保持。
 
 ## 记录原则
 

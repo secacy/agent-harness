@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/secacy/agent-harness/internal/audit"
+	"github.com/secacy/agent-harness/internal/quality"
+	"github.com/secacy/agent-harness/scenarios/rpcx/checks"
 	"github.com/secacy/agent-harness/scenarios/rpcx/l2"
 	"path/filepath"
 	"strings"
@@ -70,6 +72,42 @@ func TestGHCLIAuditBundleActualBytesAndOrder(t *testing.T) {
 				}
 			} else if !auditHas(findings, "host_material_mismatch") {
 				t.Fatal("invalid bundle accepted", mode)
+			}
+		})
+	}
+}
+
+func TestGHCLIAuditBehaviorFormatSelection(t *testing.T) {
+	for _, mode := range []string{"legacy", "new-format-missing", "declared-missing", "blocked"} {
+		t.Run(mode, func(t *testing.T) {
+			f := newAuditFixture(t, ProfileT1T2)
+			profile, err := lookupProfile(ProfileGHCLI)
+			if err != nil {
+				t.Fatal(err)
+			}
+			var findings []audit.Finding
+			inspector := func(_ context.Context, v *audit.View, ref audit.RunRef) (audit.RunInspection, error) {
+				a := &runAudit{view: v, ref: ref, profile: profile, trees: map[string]map[string]string{"evidence/tool": {}}}
+				evaluation := checks.Evaluation{Checks: map[string]quality.Check{"semantic_behavior": {Status: quality.StatusPass}}}
+				if mode == "new-format-missing" || mode == "blocked" {
+					a.trees["evidence/tool"]["behavior_evidence.go"] = "archived-digest"
+				}
+				if mode == "declared-missing" {
+					evaluation.Evidence = []quality.Evidence{{ID: "behavior-observations", Path: "behavior-observations.json"}}
+				}
+				if mode == "blocked" {
+					evaluation.Checks["semantic_behavior"] = quality.Check{Status: quality.StatusBlocked}
+				}
+				a.checkGHCLIBehavior(evaluation)
+				findings = a.findings
+				return audit.RunInspection{Complete: true, Findings: findings}, nil
+			}
+			if _, err := audit.Inspect(context.Background(), audit.Request{CampaignDir: f.root, OutputDir: filepath.Join(t.TempDir(), "audit")}, inspector); err != nil {
+				t.Fatal(err)
+			}
+			want := mode == "new-format-missing" || mode == "declared-missing"
+			if auditHas(findings, "behavior_evidence_mismatch") != want {
+				t.Fatalf("wrong format selection: %+v", findings)
 			}
 		})
 	}
