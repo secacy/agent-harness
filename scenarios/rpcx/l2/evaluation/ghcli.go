@@ -25,15 +25,15 @@ import (
 	"github.com/secacy/agent-harness/scenarios/rpcx/l2/baseline"
 )
 
-const GHCLIVersion = "rpcx-l2-reference-ghcli-v2"
-const GHCLIDataVersion = "rpcx-l2-reference-ghcli-data-v2"
+const GHCLIVersion = "rpcx-l2-reference-ghcli-v3"
+const GHCLIDataVersion = "rpcx-l2-reference-ghcli-data-v3"
 const ghcliSpecSHA256 = "6e3a87056ec102536b52e1ffc340dbd8dd541d8d28589c555b9b08bafc1e40e8"
-const ghcliFreezeSHA256 = "feb693bc5eb75aa1876bcf7ddc5bde5b8d28bedca92ff9b32fd0f7dea88acf8f"
+const ghcliFreezeSHA256 = "ec6280258bb5fb95566d671d88a48d32ede2f859cc9f29baf63b58362f72e12d"
 const ghcliPackage = "github.com/cli/cli/v2/pkg/cmd/release/delete"
 const ghcliDir = "pkg/cmd/release/delete"
 
 func ghcliData() (map[string][]byte, error) {
-	return loadReferenceData("data/ghcli-v2", GHCLIDataVersion, ghcliFreezeSHA256, ghcliSpecSHA256)
+	return loadReferenceData("data/ghcli-v3", GHCLIDataVersion, ghcliFreezeSHA256, ghcliSpecSHA256)
 }
 
 // EvaluateGHCLI 使用单独生产副本与固定参考探针，不接受基线豁免或调用方测试选择。
@@ -203,6 +203,7 @@ func EvaluateGHCLI(ctx context.Context, req Request) (report Report, err error) 
 	}
 	layouts["production"][ghcliDir+"/reference_test.go"] = data["probes_test.go.txt"]
 	layouts["production"][ghcliDir+"/reference_command_expiry_test.go"] = data["command_expiry_test.go.txt"]
+	layouts["production"][ghcliDir+"/reference_response_return_test.go"] = data["response_return_test.go.txt"]
 	for name, files := range layouts {
 		root := filepath.Join(req.EvidenceDir, name)
 		all := map[string][]byte{}
@@ -325,7 +326,7 @@ func EvaluateGHCLI(ctx context.Context, req Request) (report Report, err error) 
 			report.Checks["candidate_tests"] = combineObservations(report.Checks["candidate_tests"], observation)
 		}
 	}
-	result, err := run("behavior", "production", "go", "test", "-json", "-count=1", "-timeout=40s", "-run=^TestReference(MappingAndRelease|ErrorAndRelease|ParentContexts|FreshPerCallCeilings|LongParentCeiling|ResponseBodyParentCancellation|CommandOrderAndStop)$", "./"+ghcliDir)
+	result, err := run("behavior", "production", "go", "test", "-json", "-count=1", "-timeout=40s", "-run=^TestReference(MappingAndRelease|ErrorAndRelease|ParentContexts|FreshPerCallCeilings|LongParentCeiling|ResponseBodyParentCancellation|CommandOrderAndStop|ResponseReturn(Success|TransportError|RedirectDeclined|UseLastResponse))$", "./"+ghcliDir)
 	if err != nil {
 		return report, err
 	}
@@ -438,7 +439,7 @@ func ghcliProtected(base, candidate map[string][]byte) Observation {
 }
 
 func ghcliBehaviorTests() []string {
-	names := []string{"MappingAndRelease", "ErrorAndRelease", "ParentContexts", "ParentContexts/pre", "ParentContexts/during", "ParentContexts/short", "FreshPerCallCeilings", "LongParentCeiling", "ResponseBodyParentCancellation", "ResponseBodyParentCancellation/cancel", "ResponseBodyParentCancellation/short", "CommandOrderAndStop", "CommandOrderAndStop/complete", "CommandOrderAndStop/stop"}
+	names := []string{"MappingAndRelease", "ErrorAndRelease", "ParentContexts", "ParentContexts/pre", "ParentContexts/during", "ParentContexts/short", "FreshPerCallCeilings", "LongParentCeiling", "ResponseBodyParentCancellation", "ResponseBodyParentCancellation/cancel", "ResponseBodyParentCancellation/short", "CommandOrderAndStop", "CommandOrderAndStop/complete", "CommandOrderAndStop/stop", "ResponseReturnSuccess", "ResponseReturnTransportError", "ResponseReturnRedirectDeclined", "ResponseReturnUseLastResponse"}
 	out := make([]string, len(names))
 	for i, n := range names {
 		out[i] = ghcliPackage + "/TestReference" + n

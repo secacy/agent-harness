@@ -76,6 +76,9 @@ func TestGHCLIProtocolRejectsChangedEnrollmentAndPlan(t *testing.T) {
 		"old-reference": func(e *Enrollment, _ *campaign.Plan) {
 			e.Targets[3].ReferenceVersion = "rpcx-l2-reference-ghcli-data-v1"
 		},
+		"old-reference-v2": func(e *Enrollment, _ *campaign.Plan) {
+			e.Targets[3].ReferenceVersion = "rpcx-l2-reference-ghcli-data-v2"
+		},
 		"reference-data":   func(e *Enrollment, _ *campaign.Plan) { e.Targets[3].ReferenceSHA256 = strings.Repeat("c", 64) },
 		"reference-tool":   func(e *Enrollment, _ *campaign.Plan) { e.Targets[3].ToolSHA256 = strings.Repeat("c", 64) },
 		"missing-reviewer": func(e *Enrollment, _ *campaign.Plan) { delete(e.Protocol.Reviewers, "ghcli") },

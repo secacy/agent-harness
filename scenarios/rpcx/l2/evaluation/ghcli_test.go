@@ -1,6 +1,7 @@
 package evaluation
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -161,7 +162,7 @@ func TestGHCLIReferenceExecutionBinding(t *testing.T) {
 						t.Fatal(e)
 					}
 					for n := range gate.TestFiles(f) {
-						if n != ghcliDir+"/reference_test.go" && n != ghcliDir+"/reference_command_expiry_test.go" {
+						if n != ghcliDir+"/reference_test.go" && n != ghcliDir+"/reference_command_expiry_test.go" && n != ghcliDir+"/reference_response_return_test.go" {
 							t.Fatal("candidate tests entered trusted production copy")
 						}
 					}
@@ -235,7 +236,7 @@ func TestGHCLIReferenceExecutionBinding(t *testing.T) {
 				if assessment, e := Assess(reference, review); e != nil || assessment.Status != Inconclusive {
 					t.Fatalf("review template: %v", e)
 				}
-				for _, field := range []string{"reference", "host", "sdk", "production", "schema"} {
+				for _, field := range []string{"reference", "host", "sdk", "production", "schema", "version"} {
 					tampered := report
 					tampered.SDKs = map[string]string{}
 					for k, v := range report.SDKs {
@@ -252,6 +253,8 @@ func TestGHCLIReferenceExecutionBinding(t *testing.T) {
 						tampered.ProductionSHA256 = ""
 					case "schema":
 						tampered.SchemaVersion = 2
+					case "version":
+						tampered.Version = "rpcx-l2-reference-ghcli-v2"
 					}
 					b, _ := json.Marshal(tampered)
 					r := reviewTemplate(tampered, gate.Digest(b))
@@ -381,15 +384,27 @@ func TestGHCLIReferencePublishedScope(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if GHCLIVersion != "rpcx-l2-reference-ghcli-v2" || GHCLIDataVersion != "rpcx-l2-reference-ghcli-data-v2" {
+	if GHCLIVersion != "rpcx-l2-reference-ghcli-v3" || GHCLIDataVersion != "rpcx-l2-reference-ghcli-data-v3" {
 		t.Fatal("active reference version not advanced")
 	}
-	old, err := loadReferenceData("data/ghcli-v1", "rpcx-l2-reference-ghcli-data-v1", "3a4891984417a8bb82c1ad2f69693f019b982d1c5c123e1cbd5efd3f28c513a0", ghcliSpecSHA256)
-	if err != nil || len(old) != 5 {
-		t.Fatal("prior reference archive changed")
-	}
-	if _, err = PublishedIdentity("rpcx-l2-reference-ghcli-data-v1"); err == nil {
-		t.Fatal("current API claims to rerun archived reference version")
+	for _, prior := range []struct{ dir, version, hash string }{
+		{"data/ghcli-v1", "rpcx-l2-reference-ghcli-data-v1", "3a4891984417a8bb82c1ad2f69693f019b982d1c5c123e1cbd5efd3f28c513a0"},
+		{"data/ghcli-v2", "rpcx-l2-reference-ghcli-data-v2", "feb693bc5eb75aa1876bcf7ddc5bde5b8d28bedca92ff9b32fd0f7dea88acf8f"},
+	} {
+		old, err := loadReferenceData(prior.dir, prior.version, prior.hash, ghcliSpecSHA256)
+		if err != nil || len(old) != 5 {
+			t.Fatalf("prior reference archive changed: %s %v", prior.version, err)
+		}
+		if prior.version == "rpcx-l2-reference-ghcli-data-v2" {
+			for _, name := range []string{"probes_test.go.txt", "command_expiry_test.go.txt"} {
+				if !bytes.Equal(data[name], old[name]) {
+					t.Fatalf("existing reference observations changed: %s", name)
+				}
+			}
+		}
+		if _, err := PublishedIdentity(prior.version); err == nil {
+			t.Fatal("current API claims to rerun archived reference version")
+		}
 	}
 	file, err := parser.ParseFile(token.NewFileSet(), "reference.go", data["probes_test.go.txt"], 0)
 	if err != nil {
@@ -449,11 +464,44 @@ func TestGHCLIReferencePublishedScope(t *testing.T) {
 			t.Fatal("published boundary observation omitted from required events")
 		}
 	}
+	response, err := parser.ParseFile(token.NewFileSet(), "response.go", data["response_return_test.go.txt"], 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	responseTests := 0
+	for _, decl := range response.Decls {
+		if function, ok := decl.(*ast.FuncDecl); ok && strings.HasPrefix(function.Name.Name, "TestReference") {
+			responseTests++
+			if !slices.Contains(required, ghcliPackage+"/"+function.Name.Name) {
+				t.Fatalf("response observation omitted from required events: %s", function.Name.Name)
+			}
+		}
+	}
+	if responseTests != 4 {
+		t.Fatal("response reference must retain all four observations")
+	}
 	var protocol struct {
 		ScopeAuthority      string   `json:"scope_authority"`
 		AutomaticExclusions []string `json:"automatic_exclusions"`
 	}
 	if err = json.Unmarshal(data["protocol.json"], &protocol); err != nil || protocol.ScopeAuthority == "" || len(protocol.AutomaticExclusions) != 1 {
 		t.Fatal("published scope authority not recorded")
+	}
+}
+
+// 旧探针全部通过也不能替代任何一项新增返回值证据。
+func TestGHCLIResponseReferenceRequiresEveryObservation(t *testing.T) {
+	for _, name := range []string{"ResponseReturnSuccess", "ResponseReturnTransportError", "ResponseReturnRedirectDeclined", "ResponseReturnUseLastResponse"} {
+		t.Run(name, func(t *testing.T) {
+			required := ghcliBehaviorTests()
+			key := ghcliPackage + "/TestReference" + name
+			without := slices.DeleteFunc(slices.Clone(required), func(s string) bool { return s == key })
+			if len(without) != len(required)-1 {
+				t.Fatal("response contract is not required")
+			}
+			if got := ghcliObserve(passedEvents(without, []string{ghcliPackage}), 0, required); got.Status != Inconclusive {
+				t.Fatalf("missing response observation accepted: %+v", got)
+			}
+		})
 	}
 }

@@ -645,3 +645,14 @@ go test ./scenarios/rpcx/ghcli/regression -count=1
 ```
 
 比较原基线、原样模型候选、保留响应对照及吞错负例，检查四种响应/错误与 Body 契约。外层通过表示实际正反例符合预期，不表示原候选正确。默认用临时目录，无需 Docker、runs 或密钥，不访问网络；显式保留输入和日志的方式见[包说明](../scenarios/rpcx/ghcli/regression/README.md)。这是已见开发回归，不更新运行时判定、正式参考或历史指标，实际验收见[工作记录](worklog/2026-10-23-ghcli-response-regression.md)。
+
+## GHCLI 独立参考 v3 的已见开发校准
+
+```sh
+mkdir -p runs/ghcli-reference-local
+HARNESS_GHCLI_RESPONSE_REFERENCE=1 \
+HARNESS_GHCLI_RESPONSE_REFERENCE_OUTPUT="$PWD/runs/ghcli-reference-local/cases" \
+go test ./scenarios/rpcx/l2/evaluation -run '^TestGHCLIResponseReferenceDocker$' -count=1 -timeout=10m
+```
+
+使用已安装的固定 Docker 镜像和只读依赖，运行原样候选、保留响应对照及吞错负例。cases 必须尚不存在；每次另选目录。预期 fail/pass/fail，正例包括原有两个实际 30 秒到期检查；缺失、设施错误或跳过不能算作预期业务失败。本命令不调用模型，不修改历史结果，当前活动参考为 data-v3；旧协议不能用新工具冒充原执行。设计及实际验收见[工作记录](worklog/2026-10-23-ghcli-reference-v3.md)，详细输入与范围见[参考说明](../scenarios/rpcx/l2/evaluation/README.md)。
