@@ -27,7 +27,7 @@ M3 是最低项目交付点，但不代表全部项目目标完成：进程中�
 2. 以[项目首页](../README.md)、[离线演示](DEMO.md)和[当前交付说明](DELIVERY.md)统一阅读入口；复用原脚本/包内工具，不新增模型调用或重复打包。[入口收敛记录](worklog/2026-10-22-delivery-entry.md)记录命令验证与版本边界。
 3. 后续针对具体证据缺口选择有边界的支持扩展；Translation 暂缓。[GHCLI 有限证明设计](worklog/2026-10-22-ghcli-bounded-proof.md)已明确函数内来源、受限 Body 资源转移和完整剩余比较的边界及正反例；来源、有限 Body 资源和完整剩余比较已接入生产门禁，见[接入验收](worklog/2026-10-22-ghcli-bounded-proof.md#10-资源证据与完整边界的生产接入2026-10-23)；原样已见候选在新证据下为 ReadyForReview。此为生成后开发回归，原指标保持。 随后的[完整 Harness 交付验收](worklog/2026-10-23-ghcli-harness-delivery.md)已覆盖新证明的预算、工具、Runner、审核导航和 Campaign 审计；脚本化重放不计新迁移效果。严格未见留出与人员条件齐备后再推进原总体验收，不将当前小样本结果视为普遍效果。
 
-[下一次 GHCLI 开发观察](experiments/ghcli-dev-eval-v0.1.0/README.md)已完成本地协议/实现/环境固定和离线预检，当前等待本次外发与用量授权；未执行查询或生成。仅一个已见输入的一次新尝试，不改变原 M3—M5 总体验收、人员或留出条件。
+[GHCLI 开发观察](experiments/2026-10-23-ghcli-dev-real-model-01.md)获授权后已启动一次：Models 响应新增附加元数据，整份原文摘要与冻结计划不同，生成前准入拒绝；Campaign Failed，0 Target / 0 Run / 0 生成，未重试。失败记录审计自洽，未得到新迁移效果证据。下一项先权衡所用能力契约与原文身份的校验边界；原 M3—M5 总体验收、人员、留出条件及四任务 1/4 保持。
 
 以下保留此前阶段交付与实际复核的边界。M3 [逐项验收评审](worklog/2026-10-20-m3-closeout-review.md)和受托复核已完成；A1—A5 有范围内证据，A6/A7 的原人员口径与实际留出缺口保留。M4 的[收尾核对](worklog/2026-10-21-m4-closeout-review.md)、[持久化窗口补充](worklog/2026-10-21-m4-persistence-windows.md)及[连接故障链](worklog/2026-10-21-m4-docker-connection.md)分别记录其工程范围。[旧工程包](worklog/2026-10-21-engineering-delivery.md)和后续四任务归档保持各自版本，不能用来替代未来实验的实现/环境/模型/预算冻结。严格留出原协议仍为草案，四任务有限协议已单独完成冻结与执行。
 

@@ -53,7 +53,7 @@ M3.4 已完成[样本设计与选择](worklog/2026-10-19-m3-4-sample-selection.m
 
 [工程交付包](worklog/2026-10-21-engineering-delivery.md)说明显式材料选择、工作区源码/二进制身份、原文保留、请求路径映射和离线迁移验收；[材料清单](delivery/engineering-v0.1.1.json)不包含构建缓存或凭证。归档中的工具可重做运行审计和三个原轮次的指标汇总，不重新生成候选或执行 Docker。
 
-[GHCLI 一次新生成协议](experiments/ghcli-dev-eval-v0.1.0/README.md)和[准备记录](worklog/2026-10-23-ghcli-generation-preparation.md)已固定当前实现与一个已见 Target，离线 --check 通过；当前未授权、未查询、未生成，不作为新的效果结果。
+[GHCLI 一次新生成协议](experiments/ghcli-dev-eval-v0.1.0/README.md)和[准备记录](worklog/2026-10-23-ghcli-generation-preparation.md)已固定当前实现与一个已见 Target。随后[获授权的一次启动](experiments/2026-10-23-ghcli-dev-real-model-01.md)因 Models 附加元数据改变原文摘要而在生成前停止，0 Run / 0 生成；失败记录审计自洽，未重试。下一项先权衡能力契约与原文身份的校验边界；旧指标不改。
 
 ## 记录原则
 
