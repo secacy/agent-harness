@@ -9,7 +9,7 @@ import (
 	"github.com/secacy/agent-harness/scenarios/rpcx/l2/evaluation"
 )
 
-const Version = "rpcx-l2-round-v2"
+const Version = "rpcx-l2-round-v3"
 const Calibration = "development_calibration"
 const Development = "development_evaluation"
 

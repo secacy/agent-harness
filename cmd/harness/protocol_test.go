@@ -21,7 +21,7 @@ import (
 	"github.com/secacy/agent-harness/scenarios/rpcx/l2/round"
 )
 
-func protocolBatch(t *testing.T, config batchConfig) (batchConfig, round.Enrollment) {
+func protocolBatch(t *testing.T, config batchConfig, binding string) (batchConfig, round.Enrollment) {
 	t.Helper()
 	loaded, plan, err := loadBatchConfig(writeBatchTestConfig(t, config))
 	if err != nil {
@@ -30,17 +30,17 @@ func protocolBatch(t *testing.T, config batchConfig) (batchConfig, round.Enrollm
 	// 只声明本机模拟服务的已知响应，绝不认证真实供应商上界。
 	plan.Profile = budget.Profile{Provider: "deepseek", Endpoint: config.Model.Endpoint, Model: config.Model.Name,
 		ContextTokens: 2000, MaxOutputTokens: int64(config.Model.MaxTokens), SourceSHA256: gate.Digest([]byte(batchMetadata)), VerifiedAt: time.Now().UTC()}
-	hash, err := round.PlanSettingsSHA256(plan)
-	if err != nil {
-		t.Fatal(err)
-	}
 	var enrollment round.Enrollment
 	if err := round.Decode(loaded.enrollmentData, &enrollment); err != nil {
 		t.Fatal(err)
 	}
 	enrollment.SchemaVersion, enrollment.Kind = 2, round.Formal
 	enrollment.Protocol = &round.Protocol{ID: "mock-protocol-v1", Split: round.DevelopmentSplit, AttemptsPerTarget: 1,
-		PlanSettingsSHA256: hash, Execution: execution.Info{Kind: execution.KindLocal}, Reviewers: map[string]string{}, Materials: map[string]round.Artifact{}}
+		CapabilityBinding: binding, Execution: execution.Info{Kind: execution.KindLocal}, Reviewers: map[string]string{}, Materials: map[string]round.Artifact{}}
+	enrollment.Protocol.PlanSettingsSHA256, err = enrollment.Protocol.SettingsSHA256(plan)
+	if err != nil {
+		t.Fatal(err)
+	}
 	for _, target := range enrollment.Targets {
 		enrollment.Protocol.Reviewers[target.ID] = "synthetic-test-only"
 	}
@@ -98,7 +98,7 @@ func TestBatchProtocolPublishedBeforeGenerationAndConsumedOffline(t *testing.T) 
 	}))
 	defer server.Close()
 	config.Model.Endpoint = server.URL + "/chat/completions"
-	config, enrollment = protocolBatch(t, config)
+	config, enrollment = protocolBatch(t, config, "")
 	var stdout, stderr bytes.Buffer
 	if code := run(context.Background(), []string{"batch", "--config", writeBatchTestConfig(t, config)}, &stdout, &stderr); code != 0 || gets.Load() != 1 || posts.Load() != 1 {
 		t.Fatalf("protocol batch failed: exit=%d gets=%d posts=%d stdout=%s stderr=%s", code, gets.Load(), posts.Load(), &stdout, &stderr)
@@ -137,7 +137,7 @@ func TestBatchProtocolDriftStopsBeforeGeneration(t *testing.T) {
 			}))
 			defer server.Close()
 			config.Model.Endpoint = server.URL + "/chat/completions"
-			config, enrollment := protocolBatch(t, config)
+			config, enrollment := protocolBatch(t, config, "")
 			wantGets, wantExit := int32(1), 1
 			if mode == "settings" {
 				config.Budget.MaxCalls++
@@ -168,7 +168,7 @@ func TestBatchProtocolDriftStopsBeforeGeneration(t *testing.T) {
 func TestBatchProtocolMaterialPublicationFailure(t *testing.T) {
 	config := enrolledBatch(t, false)
 	config.Model.Endpoint = "https://example.invalid/chat/completions"
-	config, _ = protocolBatch(t, config)
+	config, _ = protocolBatch(t, config, "")
 	config, plan, err := loadBatchConfig(writeBatchTestConfig(t, config))
 	if err != nil {
 		t.Fatal(err)

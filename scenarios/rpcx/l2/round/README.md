@@ -43,14 +43,17 @@ v1 继续读取原开发记录。v2 的 Enrollment 和 Manifest 都必须携带 
 | --- | --- |
 | `id` | 宿主发布的版本化协议标识；实质变更另起版本 |
 | `split` / `attempts_per_target` | 当前仅 development / 1；未接入的 heldout 和多次尝试拒绝 |
-| `plan_settings_sha256` | 使用 `PlanSettingsSHA256(plan)` 计算，冻结实际计划中的模型能力、输入、顺序、两级额度、Agent 限制、时限、并发与资源归属策略 |
+| `plan_settings_sha256` | 使用 `protocol.SettingsSHA256(plan)` 计算，冻结实际计划中的模型能力、输入、顺序、两级额度、Agent 限制、时限、并发与资源归属策略；旧 `PlanSettingsSHA256` 函数保持原算法 |
+| `capability_binding` | 可选；缺省要求能力原文摘要一致，`model-contract-v1` 只从设置比较中额外排除原文摘要；未知值拒绝 |
 | `execution` | 实际 `execution.Info`；Docker 必须是 sha256 镜像 ID 和明确 CPU/内存/PID 限额；在准备屏障比较真实后端，不靠标签猜镜像 |
 | `reviewers` | 精确的 Target ID → 预定 Reviewer；缺人、空值或额外 Target 拒绝；不证明此人实际签署 |
 | `materials` | protocol/dataset/implementation/environment 四项，每项含绝对 path 和实际 SHA-256，单文件为 1 MiB 以内的非空说明或身份清单；不在此直接塞整个源码包 |
 
 准备顺序：宿主先审查实际协议和四份材料，使用已核实的模型能力及计划构造设置摘要，再发布 v2 Enrollment；之后沿用 batch 的 enrollment 文件/摘要引用。`--check` 在无凭证、无网络时检查静态任务及材料，并不确认尚未查询的实际 Profile/后端。实际启动取得新能力声明、初始化后端后，在任务接纳前比较设置与后端，再发布材料快照、Enrollment、Manifest 和 Request。材料加载后原文件的变动不会替换已固定副本。
 
-设置摘要只排除动态 Campaign ID 和本次查询时间；不排除能力响应原文摘要。服务即使仅改变 JSON 空白也会使能力身份不同而停止生成，接受这项保守拒绝成本；不能把旧响应当作本次仍然有效的能力。镜像/限额在 execution 字段另行绑定。整个源码、当前二进制和说明是否一致仍由可信宿主在冻结时核实，局部设置摘要不是完整环境证明。
+缺省设置摘要只排除动态 Campaign ID 和本次查询时间，保留能力原文摘要；服务仅改变 JSON 空白也会停止生成。这是旧协议保持的严格语义。新协议可在冻结前显式选择 `capability_binding: "model-contract-v1"`，并用该 Protocol 的 `SettingsSHA256(plan)` 生成期望摘要：仅额外排除 SourceSHA256，provider/endpoint/model/context/请求输出限制及其他 Plan 设置仍精确匹配。上下文上限增大也须拒绝；所用模型存在性、文本能力及服务输出容量仍由本次 Discover 检查。服务新增无关字段、其他模型或改变排版可以接受；不证明同一别名下模型行为不变。
+
+实际 Plan、预算 Profile 和查询原文不删除、归一化或覆盖；Manifest 继续绑定实际 Plan 全字节。`rpcx-l2-round-v3` 对新策略另要求根目录 models.json 摘要等于实际 Profile.SourceSHA256、capabilities.json 的 Profile 等于实际计划，并把两份文件登记到离线来源；原文缺失/篡改或 Profile 冲突不发布有效指标。旧策略不新增这些历史材料要求。整个源码、当前二进制和说明是否一致仍由可信宿主核实，局部设置摘要不是完整环境证明；取舍与验收见[工作记录](../../../../docs/worklog/2026-10-23-capability-contract.md)和[ADR-011](../../../../docs/adr/011-capability-contract-binding.md)。
 
 v2 汇总要求批次根目录中的 `enrollment.json`、`round-manifest.json`、`execution.json` 和 `protocol-materials/{protocol,dataset,implementation,environment}`。它从这些发布副本重新关联实际 Plan，核对 Request 指向的 Manifest 原文字节，复核四份材料及后端身份；不能仅改一份事后清单来重标旧 Campaign。原材料的绝对路径仅作来源记录，离线重算不再读取它们；迁移时保留批次根目录与 campaign 子目录关系，并重写新 Request 的路径。
 

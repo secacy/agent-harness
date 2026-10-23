@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/secacy/agent-harness/internal/budget"
 	"github.com/secacy/agent-harness/internal/campaign"
 	"github.com/secacy/agent-harness/internal/execution"
 	"github.com/secacy/agent-harness/scenarios/rpcx/gate"
@@ -19,6 +20,9 @@ import (
 
 const Formal = "formal_evaluation"
 const DevelopmentSplit = "development"
+
+// ModelContractBinding 只固定运行所用设置，实际查询原文由实际计划另行绑定。
+const ModelContractBinding = "model-contract-v1"
 
 var protocolMaterialNames = []string{"protocol", "dataset", "implementation", "environment"}
 
@@ -28,6 +32,7 @@ type Protocol struct {
 	Split              string              `json:"split"`
 	AttemptsPerTarget  int                 `json:"attempts_per_target"`
 	PlanSettingsSHA256 string              `json:"plan_settings_sha256"`
+	CapabilityBinding  string              `json:"capability_binding,omitempty"`
 	Execution          execution.Info      `json:"execution"`
 	Reviewers          map[string]string   `json:"reviewers"`
 	Materials          map[string]Artifact `json:"materials"`
@@ -51,6 +56,9 @@ func validateProtocol(schema int, kind string, targets []TargetPin, p *Protocol)
 	}
 	if !identifier.MatchString(p.ID) || p.Split != DevelopmentSplit || p.AttemptsPerTarget != 1 || !digest(p.PlanSettingsSHA256) {
 		return errors.New("a versioned protocol ID, supported development split, one attempt and settings digest are required")
+	}
+	if p.CapabilityBinding != "" && p.CapabilityBinding != ModelContractBinding {
+		return errors.New("unsupported protocol capability binding")
 	}
 	if len(p.Reviewers) != len(targets) || len(p.Materials) != len(protocolMaterialNames) {
 		return errors.New("protocol requires exact target reviewers and four frozen material identities")
@@ -99,6 +107,18 @@ func PlanSettingsSHA256(plan campaign.Plan) (string, error) {
 	return gate.Digest(raw), nil
 }
 
+// SettingsSHA256 按协议的显式策略计算设置身份；缺省保留历史原文匹配语义。
+func (p *Protocol) SettingsSHA256(plan campaign.Plan) (string, error) {
+	switch p.CapabilityBinding {
+	case "":
+	case ModelContractBinding:
+		plan.Profile.SourceSHA256 = ""
+	default:
+		return "", errors.New("unsupported protocol capability binding")
+	}
+	return PlanSettingsSHA256(plan)
+}
+
 func (p *Protocol) validatePlan(plan campaign.Plan) error {
 	if p == nil {
 		return nil
@@ -106,7 +126,7 @@ func (p *Protocol) validatePlan(plan campaign.Plan) error {
 	if plan.Recovery != nil {
 		return errors.New("single-attempt evaluation does not allow a recovery policy")
 	}
-	hash, err := PlanSettingsSHA256(plan)
+	hash, err := p.SettingsSHA256(plan)
 	if err != nil {
 		return err
 	}
@@ -188,6 +208,15 @@ func verifyProtocol(r *reader, manifest Manifest, planJSON []byte, campaignDir s
 	if err != nil || !reflect.DeepEqual(bound, manifest) {
 		return fmt.Errorf("%w: protocol enrollment binding mismatch: %v", ErrInvalid, err)
 	}
+	if manifest.Protocol.CapabilityBinding == ModelContractBinding {
+		var plan campaign.Plan
+		if err := Decode(planJSON, &plan); err != nil {
+			return err
+		}
+		if err := verifyCapabilitySources(r, root, plan.Profile); err != nil {
+			return err
+		}
+	}
 	if _, exists, err = r.read(filepath.Join(root, "round-manifest.json"), manifestSHA256); err != nil {
 		return err
 	} else if !exists {
@@ -205,6 +234,24 @@ func verifyProtocol(r *reader, manifest Manifest, planJSON []byte, campaignDir s
 		} else if !exists {
 			return fmt.Errorf("%w: protocol material is required: %s", ErrInvalid, name)
 		}
+	}
+	return nil
+}
+
+// verifyCapabilitySources 核对本次原文归属；宿主对供应商声明的解释仍是可信边界。
+func verifyCapabilitySources(r *reader, root string, profile budget.Profile) error {
+	if _, exists, err := r.read(filepath.Join(root, "models.json"), profile.SourceSHA256); err != nil {
+		return err
+	} else if !exists {
+		return fmt.Errorf("%w: current model response is required", ErrInvalid)
+	}
+	var capabilities struct {
+		Profile budget.Profile `json:"profile"`
+	}
+	if exists, err := r.json(filepath.Join(root, "capabilities.json"), "", &capabilities); err != nil {
+		return err
+	} else if !exists || capabilities.Profile != profile {
+		return fmt.Errorf("%w: discovered capability profile differs from the actual plan", ErrInvalid)
 	}
 	return nil
 }

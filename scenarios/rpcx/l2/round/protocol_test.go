@@ -76,6 +76,7 @@ func TestProtocolRejectsIncompleteOrMisclassifiedEnrollment(t *testing.T) {
 		"heldout-relabel":  func(e *Enrollment) { e.Protocol.Split = "heldout" },
 		"extra-attempt":    func(e *Enrollment) { e.Protocol.AttemptsPerTarget = 2 },
 		"missing-settings": func(e *Enrollment) { e.Protocol.PlanSettingsSHA256 = "" },
+		"unknown-binding":  func(e *Enrollment) { e.Protocol.CapabilityBinding = "unknown" },
 		"missing-executor": func(e *Enrollment) { e.Protocol.Execution = execution.Info{} },
 		"mutable-image": func(e *Enrollment) {
 			e.Protocol.Execution = execution.Info{Kind: execution.KindDocker, Image: "golang:latest", CPUs: 2, MemoryBytes: 2 << 30, Pids: 128}
