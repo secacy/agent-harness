@@ -1,7 +1,7 @@
 # GHCLI 运行时响应契约：明确违规与未知边界
 
 - 日期：2026-10-23。
-- 状态：单元 A 已验收；单元 B 已完成生产门禁与离线观察审计的范围验收；单元 C 的完整 Runner/Campaign 交付待验收。
+- 状态：A/B/C 均在声明范围验收；完整三任务 Runner/Campaign 交付、审核导航和实际批次审计已通过。
 - 代码基线：7b58a75。
 - 前置：[离线反例](2026-10-23-ghcli-response-regression.md)、[独立参考 v3](2026-10-23-ghcli-reference-v3.md)。
 - 目标：运行时能依据实际响应/错误观察拒绝已证实的行为变化，同时保留未覆盖修改的 NeedsAttention。
@@ -194,3 +194,56 @@ C 至少包含一个完整可放行正例、一个明确返回值违规和一个
 B 在上述门禁、观察材料及离线消费范围验收。下一步 C 用脚本化模型经预算包装、仓库工具、Runner/Campaign 交付三种判定，验证补丁重放、审核导航与实际 Campaign 审计；不需要追加真实模型调用，也不改变历史实验指标。本单元代码、测试及对应文档作为一个工作单元提交。
 
 本轮五份文档的 247 个本地链接目标、31 个锚点及代码围栏校验通过，git diff --check 通过。最终日志、十份复核结果、回收证据及其摘要汇总在 runs/ghcli-runtime-response-b-01/summary.json；运行产物不入 Git。
+
+## 10. 单元 C：预算、工具、交付与实际 Campaign 审计
+
+- 实现基线：9117ab2；日期：2026-10-23。
+- 状态：完整三任务竞态联调、最终审计与资源回收已通过。
+- 入口：[TestGHCLIResponseDeliveryCampaign](../../scenarios/rpcx/runner/ghcli_response_delivery_test.go)。
+
+本单元沿用已选择的生产路径，不增加工作流接口或新质量规则。验收代码复用既有 closureModel 与工具协议、CampaignExecutor、补丁工具、审核导航检查及 audit.Inspect。新增测试从 Git 管理的基线和已暴露响应反例构造固定输入，不依赖旧 runs 的候选目录，也不读取独立参考。输入与期望在启动前固定，补丁只能由 Agent 的 replace_text 工具写入工作区。
+
+三类任务分别是：原边界补显式期限的正例、原样响应丢失候选，以及正例加入恒等 helper。预期为 ReadyForReview / Rejected / NeedsAttention 各一；明确拒绝仍是 Completed 交付，不应变成执行失败。每个任务的预算为 3 次调用、300 Token，全批为 9 次、900 Token；受控模型每次声明 20 Token。采用两任务/两命令槽位，继续记录每次调用与实际 Run 绑定、已知/在途/未知用量，不把受控声明当供应商账单。
+
+每项交付核对 Campaign/Target/Run、候选、预算、门禁状态与原始 finding；在新基线上重放 candidate.patch 后重新计算完整候选摘要。审核导航核对边界证明、返回值探针、观察材料、原始日志和 rule-map 的链接真实存在，响应丢失原因保持可见。
+
+完整 Campaign 审计先核对原批次，再将其实际读取的 Sources 按摘要复制到新位置，要求迁移副本也能通过。随后在同一副本逐项注入删除观察材料、改变观察结论、改日志并重算报告内摘要、跨 Target 使用观察材料、改变可信 SDK 字节；每次必须找到 behavior_evidence_mismatch，不能只凭外层 report 摘要不一致认为验收通过。每项后恢复原字节，最终副本重新通过，并复查所有原始审计文件摘要保持不变。
+
+首次 docker.jsonl 因沙箱无法连接本机 Docker socket 失败；已保留该结果，并在授权的本机 Docker 权限下使用新的 delivery-verified 目录执行。最终结果见下文；本轮未读取 .env、发起付费 API 或运行独立参考。
+
+
+### 实现复核发现与修正
+
+检查 actual Campaign 的 Sources 义务时，发现 B 的审计适配只给 behavior_evidence_mismatch 挂上报告、观察材料及 Run，没有完整列出消费的原始日志与候选/可信副本/SDK。审计核心会依据 Finding.Sources 的稳定性降级结论，因此不能只保留最外层文件。
+
+本单元在 read/tree 回调收集实际来源，并纳入违规依赖；工具格式识别使用的归档工具来源也保留。针对日志和 SDK 的篡改测试要求违规记录明确引用对应文件。修改不影响生成或质量判定：原批次生成一次后，在 final-audit-race.jsonl 中以最终源码只读重跑完整审计及副本负例，未重新调用模型或执行候选。
+
+### 实际交付与验证
+
+| Target | 执行 / 质量 | 行为 / 范围 | 交付检查 |
+| --- | --- | --- | --- |
+| ready | Completed / ReadyForReview | pass / pass | 真实工具提交、补丁重放及全部审核链接通过 |
+| response-loss | Completed / Rejected | fail / unknown | 保留 response_missing_on_redirect_error 及条款/日志/观察入口 |
+| helper | Completed / NeedsAttention | pass / unknown | 行为通过不覆盖静态缺口，补丁及证据独立归属 |
+
+三个 Run 各为 3 次模型调用尝试、7 次工具调用，账本各准入 3 次并结算 60 个受控声明 Token；全批 9 次、180 Token，reserved/unknown 均为 0。脚本包含越界路径与不可见 reference 根的拒绝对照；合法编辑和本地构建/测试反馈均按预期返回。三份补丁在全新基线上应用后的完整目录摘要与各自候选 pin 一致。
+
+各 Run 的运行时材料均为 3319f7f4d04cccc963618a357e6d31edc74345e6ffe9105517e7f835ec00e064，与 B 的最终运行时材料相同；本单元只增加验收入口并补齐 Runner 审计的来源依赖。旧候选、原实验、归档与效果指标保持。受控调用数/Token 只用于证明账本与交付机制，不代表供应商消耗或模型迁移效果。
+
+最终读取器确认：原批次一致性 pass、扫描完整、资源记录为 recorded_removed；迁移副本 before 与恢复后均 pass。删除观察、改变结论、修改日志并重算报告内摘要、跨 Target 引用、改变 SDK 五类负例均为 violated，并定位 behavior_evidence_mismatch。删除材料同时保留 scan_complete=false，其余四例扫描完整。日志和 SDK 的违规 Sources 均包含实际消费文件；所有原始审计文件摘要未变。
+
+| 验证 | 实际结果 | 证据（runs/ghcli-runtime-response-c-01/） |
+| --- | --- | --- |
+| 完整 Campaign、补丁/审核与实际审计竞态联调 | 主测试及 5 个审计子测试通过 | docker-verified.jsonl；delivery-verified/delivery-result.json |
+| 最终源码的只读完整审计及相同负例竞态复验 | 主测试及 5 个子测试通过，含来源依赖断言 | final-audit-race.jsonl；final-audit/audit-tamper-results.json |
+| 来源稳定性、格式选择及审核机制竞态对照 | 30 项测试及子测试通过，1 项已有条件测试跳过 | dependencies-race.jsonl；含核心 source drift/取消与缺来源对照 |
+| 静态检查 | runner 的 go vet 通过 | vet-final.log |
+| Docker 实际回收 | 资源记录中的 42 个唯一容器 ID 均已移除 | container-cleanup.json |
+
+首次 Docker 权限失败仍保留，没有覆盖或计入成功。未重跑完整 L1 或全项目回归；生成、预算、质量规则未改，验证针对新增联调与审计依赖修正。复验命令已补入 command.md，输出目录独占创建；单独审计入口接受已停写批次，篡改只发生在输出副本。
+
+### 本项增强收尾
+
+A 的探针/归因、B 的生产门禁与绑定材料、C 的完整交付链均有范围证据。当前可以从 Campaign 汇总进入各 Run 的补丁和审核材料，看到明确返回值违规及未知缺口，并用离线审计核对关联关系。不存在新的模型调用或归档发布待办；后续按具体需求选择支持扩展，或回到项目交付收敛，不把重跑同一已见样本当新阶段目标。原 M3—M5 的严格留出/人员总体验收条件不由本次机制验收替代。
+
+本轮七份文档的 321 个本地链接目标、44 个锚点及代码围栏校验通过，git diff --check 通过。日志、实际三任务交付、最终审计正反例与资源回收的摘要汇总位于 runs/ghcli-runtime-response-c-01/summary.json；运行产物不入 Git。

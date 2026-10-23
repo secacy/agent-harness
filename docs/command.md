@@ -656,3 +656,27 @@ go test ./scenarios/rpcx/l2/evaluation -run '^TestGHCLIResponseReferenceDocker$'
 ```
 
 使用已安装的固定 Docker 镜像和只读依赖，运行原样候选、保留响应对照及吞错负例。cases 必须尚不存在；每次另选目录。预期 fail/pass/fail，正例包括原有两个实际 30 秒到期检查；缺失、设施错误或跳过不能算作预期业务失败。本命令不调用模型，不修改历史结果，当前活动参考为 data-v3；旧协议不能用新工具冒充原执行。设计及实际验收见[工作记录](worklog/2026-10-23-ghcli-reference-v3.md)，详细输入与范围见[参考说明](../scenarios/rpcx/l2/evaluation/README.md)。
+
+## GHCLI 响应契约的完整 Harness 交付验收
+
+从固定基线和 Git 中保存的已见响应反例构造三个任务，通过真实编辑工具、共享预算、独立门禁及 Docker 交付。需要已准备的固定本地镜像；输出目录必须尚不存在，不需要旧 runs 候选目录或模型密钥。
+
+```sh
+mkdir -p runs/ghcli-response-delivery-local
+HARNESS_GHCLI_RESPONSE_DELIVERY_OUTPUT="$PWD/runs/ghcli-response-delivery-local/delivery" \
+GOCACHE="$PWD/runs/go-cache" \
+go test -race ./scenarios/rpcx/runner -run '^TestGHCLIResponseDeliveryCampaign$' -count=1 -timeout=20m
+```
+
+预期为 3 个 Completed，ReadyForReview / Rejected / NeedsAttention 各 1；9 次受控调用声明 180 Token，无在途/未知占用。这是机制验收，不是新模型效果评测。测试重放三份补丁，核对审核链接，再审计原批次、迁移副本和五类篡改；详细结果保存到 delivery-result.json、audit-tamper-results.json 和各 audit 目录。
+
+对已停写批次可只读复验最终审计实现，不执行 Docker 或重新生成候选：
+
+```sh
+HARNESS_GHCLI_RESPONSE_AUDIT_CAMPAIGN="$PWD/runs/ghcli-response-delivery-local/delivery/campaign" \
+HARNESS_GHCLI_RESPONSE_AUDIT_OUTPUT="$PWD/runs/ghcli-response-delivery-local/final-audit" \
+GOCACHE="$PWD/runs/go-cache" \
+go test -race ./scenarios/rpcx/runner -run '^TestGHCLIResponseDeliveryAudit$' -count=1 -timeout=7m
+```
+
+该输出目录也必须尚不存在，且不能与原批次包含或重叠。原始批次保持只读，篡改只发生在新建副本。实际验收及审计来源依赖的修正见[单元 C 记录](worklog/2026-10-23-ghcli-runtime-response-design.md#10-单元-c预算工具交付与实际-campaign-审计)。

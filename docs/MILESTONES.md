@@ -29,7 +29,7 @@ M3 是最低项目交付点，但不代表全部项目目标完成：进程中�
 
 [GHCLI 开发观察 v0.1.0](experiments/2026-10-23-ghcli-dev-real-model-01.md)在生成前因原文身份变化停止，原记录保留。[能力契约分离](worklog/2026-10-23-capability-contract.md)及[新版协议](experiments/ghcli-dev-eval-v0.2.0/README.md)完成验收后，[v0.2.0 唯一真实执行](experiments/2026-10-23-ghcli-dev-real-model-02.md)已获授权并完成：Completed / NeedsAttention，固定自动参考 pass、实际助手复核 fail，发现额外清空错误响应改变函数返回值；17 次生成、25 次工具、140,909 Token。未自动放行，不重试；随后[响应与错误返回值的离线回归](worklog/2026-10-23-ghcli-response-regression.md)已固化原样反例及正负对照。随后[独立参考 v3](worklog/2026-10-23-ghcli-reference-v3.md)新增响应/错误与 Body 契约，保留旧版数据和原报告；这是已见开发支持扩展，运行时门禁不变。原 M3—M5 总体验收、人员、留出条件及旧四任务 1/4 保持。
 
-[运行时响应契约](worklog/2026-10-23-ghcli-runtime-response-design.md)的 A/B 已完成：生产行为检查与绑定观察材料、审核链接及离线审计消费已接入，九种 Docker 输入及最终源码原样复验通过。明确响应丢失被拒绝，探针通过不消除未知修改。下一单元 C 验证完整 Runner/Campaign 交付，不将本次独立 Evaluate 验收计作完整交付或新效果指标。
+[运行时响应契约](worklog/2026-10-23-ghcli-runtime-response-design.md)的 A/B/C 已在声明范围验收：生产门禁、绑定观察、审核与审计已接入，完整三任务 Runner/Campaign 交付 ReadyForReview / Rejected / NeedsAttention 各一，补丁重放、导航、实际批次审计及五类篡改对照通过。消费来源依赖已补齐，42 个容器实际回收；受控联调不计新效果指标，也不改变原总体验收缺口。
 
 以下保留此前阶段交付与实际复核的边界。M3 [逐项验收评审](worklog/2026-10-20-m3-closeout-review.md)和受托复核已完成；A1—A5 有范围内证据，A6/A7 的原人员口径与实际留出缺口保留。M4 的[收尾核对](worklog/2026-10-21-m4-closeout-review.md)、[持久化窗口补充](worklog/2026-10-21-m4-persistence-windows.md)及[连接故障链](worklog/2026-10-21-m4-docker-connection.md)分别记录其工程范围。[旧工程包](worklog/2026-10-21-engineering-delivery.md)和后续四任务归档保持各自版本，不能用来替代未来实验的实现/环境/模型/预算冻结。严格留出原协议仍为草案，四任务有限协议已单独完成冻结与执行。
 
