@@ -16,7 +16,9 @@
 
 依赖使用固定发布的清单、索引与五个分片，装配和审计逐件认证；不提高普通业务快照、工具树或审计的全局读取上界。生成工具只看自己的业务、SDK 与纯规范，独立门禁和参考在生成结束后使用各自副本。
 
-离线参考位于 [l2/evaluation](../l2/evaluation/README.md)，当前活跃入口为 `EvaluateGHCLI`，数据版本为 `rpcx-l2-reference-ghcli-data-v2`。原 v1 参考额外要求命令入口上下文传播，作为诊断保留；v2 对齐已发布规范。参考报告不修改原 Run 判定，未填写的复核仍为 inconclusive。
+离线参考位于 [l2/evaluation](../l2/evaluation/README.md)，当前活跃入口为 `EvaluateGHCLI`，数据版本为 `rpcx-l2-reference-ghcli-data-v3`。原 v1 参考额外要求命令入口上下文传播，作为诊断保留；v2 对齐已发布规范；[v3](../../../docs/worklog/2026-10-23-ghcli-reference-v3.md)增加响应/错误返回值和 Body 契约观察，旧版本材料保留。参考报告不修改原 Run 判定，未填写的复核仍为 inconclusive。
+
+[运行时响应契约增强](../../../docs/worklog/2026-10-23-ghcli-runtime-response-design.md)目前仅完成设计：拟扩展可信探针与事件归因，不调用独立参考，也不以探针通过替代范围证明。尚未纳入本包已验收能力。
 
 该固定切片已接入四任务 schema 2 有限开发评测，见[真实实验](../../../docs/experiments/2026-10-22-rpcx-fixed-real-model-01.md)。本次来源追踪只重验已保存候选和构造变体，不新增模型效果或严格留出证据。
 
