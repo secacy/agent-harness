@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "method": "assistant",
+  "review_kind": "candidate_review",
+  "reviewers": {
+    "ghcli": "codex:/root"
+  },
+  "role": "current main assistant; prior gate developer, protocol preparer and execution coordinator; separate conversation from each DeepSeek generator",
+  "relationship": "already saw the input and previous candidate, authored bounded gate rules and reviewed deterministic delivery; not independent human or blind review",
+  "sections": {
+    "test_preservation": "compare changed tests, assertions, helper/skip/build tags and actual events",
+    "change_coverage": "review every production diff and call chain against pinned spec; unsupported changes remain unknown",
+    "delivery_evidence": "check report statements, configuration/log provenance, candidate identities and unresolved issues"
+  },
+  "recording": "actual reviewer, RFC3339 activity time, reason, file/spec/log locations; no prefilled conclusions; unknown without evidence",
+  "fallback": "no silent substitution; unavailable reviewer is a recorded deviation and unresolved result"
+}

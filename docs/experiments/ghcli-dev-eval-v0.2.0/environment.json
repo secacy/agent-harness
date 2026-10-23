@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "observed_on": "2026-10-23",
+  "host": {
+    "go_version": "go version go1.26.5 darwin/arm64",
+    "os": "Darwin",
+    "release": "25.6.0",
+    "architecture": "arm64"
+  },
+  "execution": {
+    "kind": "docker",
+    "image": "sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd",
+    "cpus": 2,
+    "memory_bytes": 2147483648,
+    "pids": 128
+  },
+  "resources": {
+    "protocol": "docker-intent-v1",
+    "context": "orbstack",
+    "engine_id": "95b87743-1537-475b-8696-249766a578a8"
+  },
+  "docker": {
+    "image_reference": "sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd",
+    "image_os": "linux",
+    "image_architecture": "arm64",
+    "initialization": "current read-only NewDocker/image inspect and ResourcePolicy; no pull, container creation or candidate execution"
+  },
+  "network": "repository execution network disabled; host models GET and chat POST only after explicit authorization",
+  "cache": "per-Run writable cache; SDK/dependency/input material read-only",
+  "artifact_scope": "local source/build/metadata preparation only; no model GET/POST"
+}

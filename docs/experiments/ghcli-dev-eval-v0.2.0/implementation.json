@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "parent_revision": "75554dcdfbab776f64a4dcb944c4c29de3c83013",
+  "source_file_count": 781,
+  "source_sha256": "15ab881ea3d394ba7cb8382be04917c633736a4e7d4b7977afc66bb440ca0e9f",
+  "total_bytes": 53784435,
+  "source_scope": [
+    "cmd/",
+    "internal/",
+    "scenarios/",
+    "scripts/",
+    "go.mod",
+    "go.sum (if present)"
+  ],
+  "source_algorithm": "SHA256 of compact UTF-8 JSON object {repository-relative-path: file-SHA256}, sorted by path; no final newline; tracked source only; excludes docs, runs, credentials and metadata directories",
+  "source_files": "source-files.json",
+  "snapshot": "runs/ghcli-dev-eval-v0.2.0-preparation/snapshot/source",
+  "build": {
+    "go_version": "go version go1.26.5 darwin/arm64",
+    "arguments": [
+      "go",
+      "build",
+      "-trimpath",
+      "-buildvcs=false"
+    ],
+    "network": {
+      "GOPROXY": "off",
+      "GOSUMDB": "off",
+      "GOWORK": "off",
+      "GOTOOLCHAIN": "local",
+      "GOFLAGS": "-mod=readonly"
+    },
+    "built_from": "exported snapshot/source",
+    "goos": "darwin",
+    "goarch": "arm64",
+    "cgo_enabled": "1"
+  },
+  "binaries": {
+    "harness": {
+      "path": "runs/ghcli-dev-eval-v0.2.0-preparation/snapshot/bin/harness",
+      "sha256": "f173e24924a02c0b39537475efe4e943190c39fcb0fe7e6464f26d8ca2cd9ce4",
+      "size": 63012786
+    },
+    "summarize": {
+      "path": "runs/ghcli-dev-eval-v0.2.0-preparation/snapshot/bin/summarize",
+      "sha256": "b304c74078466a8b30af74f836680ac998e60a7394e8f3e2ff786bf3c5639388",
+      "size": 54567090
+    }
+  },
+  "archive": null,
+  "scope": "local immutable source snapshot and binaries; no new delivery archive; protocol documents versioned separately"
+}

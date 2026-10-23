@@ -55,6 +55,8 @@ M3.4 已完成[样本设计与选择](worklog/2026-10-19-m3-4-sample-selection.m
 
 [GHCLI 一次新生成协议](experiments/ghcli-dev-eval-v0.1.0/README.md)和[准备记录](worklog/2026-10-23-ghcli-generation-preparation.md)已固定当前实现与一个已见 Target。[获授权的一次启动](experiments/2026-10-23-ghcli-dev-real-model-01.md)因 Models 附加元数据改变原文摘要而在生成前停止，0 Run / 0 生成，未重试。[能力契约分离](worklog/2026-10-23-capability-contract.md)随后已实现并在模拟服务及旧轮次离线复验中通过；新策略必须显式用于另版协议，原结果保持。长期选择见 [ADR-011](adr/011-capability-contract-binding.md)。
 
+[新版 GHCLI 协议 v0.2.0](experiments/ghcli-dev-eval-v0.2.0/README.md)已固定该策略、当前源码/二进制及本地环境，[准备记录](worklog/2026-10-23-ghcli-v02-preparation.md)给出实际绑定和启动预检结果；本版未获外发授权、未查询或生成，不能用旧许可自动启动。
+
 ## 记录原则
 
 **里程碑与工程记录**：`MILESTONES.md` 只跟踪已确定的开发目标及其验收状态。`worklog/` 按需记录重要的设计与开发过程，也可暂存尚未确定的技术问题；不要求每天或每次修改都写日志。
