@@ -3,14 +3,12 @@ package workouts
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
-	"time"
 
 	"github.com/secacy/agent-harness/internal/execution"
 	"github.com/secacy/agent-harness/internal/quality"
@@ -30,23 +28,16 @@ type evaluation struct {
 func (e *evaluation) binding() quality.Binding {
 	return quality.Binding{SpecSHA256: e.result.SpecSHA256, BaselineSHA256: e.result.BaselineSHA256, CandidateSHA256: e.result.CandidateSHA256}
 }
+func (e *evaluation) recorder() gate.Recorder {
+	return gate.Recorder{Directory: e.req.EvidenceDir, Binding: e.binding(), Commands: &e.result.Commands, Evidence: &e.result.Evidence}
+}
 func (e *evaluation) save(id, kind, path string, data []byte) error {
-	if err := gate.Write(filepath.Join(e.req.EvidenceDir, path), data); err != nil {
-		return err
-	}
-	e.result.Evidence = append(e.result.Evidence, quality.Evidence{ID: id, Kind: kind, Path: path, SHA256: gate.Digest(data), Binding: e.binding()})
-	return nil
+	return e.recorder().Save(id, kind, path, data)
 }
 func (e *evaluation) saveJSON(id, kind, path string, value any) error {
-	data, err := json.MarshalIndent(value, "", "  ")
-	if err != nil {
-		return err
-	}
-	return e.save(id, kind, path, append(data, '\n'))
+	return e.recorder().SaveJSON(id, kind, path, value)
 }
-func (e *evaluation) command(parent context.Context, name, root string, args []string) (execution.Result, error) {
-	ctx, cancel := context.WithTimeout(parent, 90*time.Second)
-	defer cancel()
+func (e *evaluation) command(ctx context.Context, name, root string, args []string) (execution.Result, error) {
 	mounts := []string{root}
 	for _, name := range []string{"rpcx-v1", "rpcx-v2", "common"} {
 		path := filepath.Join(filepath.Dir(root), name)
@@ -54,29 +45,7 @@ func (e *evaluation) command(parent context.Context, name, root string, args []s
 			mounts = append(mounts, path)
 		}
 	}
-	before := map[string]string{}
-	for _, path := range mounts {
-		files, err := gate.ReadFiles(path)
-		if err != nil {
-			return execution.Result{}, err
-		}
-		before[path] = gate.TreeHash(files)
-	}
-	start := time.Now()
-	result, err := e.backend.Run(ctx, execution.Request{Args: args, Directory: root, ReadOnlyDirs: mounts, CacheDir: e.req.CacheDir, MaxBytes: 4 << 20})
-	actual := append([]string{"env", "GOMODCACHE=" + e.backend.Environment()["GOMODCACHE"]}, args...)
-	e.result.Commands = append(e.result.Commands, checks.Command{Args: actual, Directory: root, Log: "logs/" + name + ".stdout.log", ExitCode: result.ExitCode, TimedOut: errors.Is(ctx.Err(), context.DeadlineExceeded), Cancelled: errors.Is(ctx.Err(), context.Canceled), DurationMS: time.Since(start).Milliseconds(), Backend: e.backend.Info(), ContainerID: result.ContainerID, OOMKilled: result.OOMKilled, OutputLimit: result.OutputLimit})
-	err = errors.Join(err, e.save(name+"-stdout", "command_stdout", "logs/"+name+".stdout.log", result.Stdout), e.save(name+"-stderr", "command_stderr", "logs/"+name+".stderr.log", result.Stderr), e.saveJSON(name, "command", "commands/"+name+".json", e.result.Commands[len(e.result.Commands)-1]))
-	if result.ExitCode < 0 || result.OOMKilled || result.OutputLimit {
-		err = errors.Join(err, errors.New("command did not complete within execution limits"))
-	}
-	for path, hash := range before {
-		files, readErr := gate.ReadFiles(path)
-		if readErr != nil || gate.TreeHash(files) != hash {
-			err = errors.Join(err, readErr, fmt.Errorf("command input changed: %s", path))
-		}
-	}
-	return result, err
+	return e.recorder().Run(ctx, name, e.backend, execution.Request{Args: args, Directory: root, ReadOnlyDirs: mounts, CacheDir: e.req.CacheDir, MaxBytes: 4 << 20})
 }
 
 // Evaluate 接受单个候选；预期清单与参考补丁不属于输入或门禁材料。

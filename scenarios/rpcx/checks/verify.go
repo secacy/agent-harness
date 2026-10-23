@@ -24,6 +24,7 @@ import (
 
 	"github.com/secacy/agent-harness/internal/execution"
 	"github.com/secacy/agent-harness/internal/quality"
+	"github.com/secacy/agent-harness/scenarios/rpcx/gate"
 )
 
 //go:embed probes/*.txt
@@ -44,19 +45,10 @@ type Manifest struct {
 	Cases         []Case `json:"cases"`
 }
 type Check = quality.Check
-type Command struct {
-	Args        []string       `json:"args"`
-	Directory   string         `json:"directory"`
-	Log         string         `json:"log"`
-	ExitCode    int            `json:"exit_code"`
-	TimedOut    bool           `json:"timed_out"`
-	Cancelled   bool           `json:"cancelled,omitempty"`
-	DurationMS  int64          `json:"duration_ms"`
-	Backend     execution.Info `json:"backend"`
-	ContainerID string         `json:"container_id,omitempty"`
-	OOMKilled   bool           `json:"oom_killed,omitempty"`
-	OutputLimit bool           `json:"output_limit,omitempty"`
-}
+
+// Command 沿用场景公共命令记录，保持原 JSON 契约。
+type Command = gate.Command
+
 type Result struct {
 	EvidenceDirectory  string             `json:"evidence_directory"`
 	Evidence           []quality.Evidence `json:"evidence"`
