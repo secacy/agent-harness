@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "id": "l2-current-dev-v0_1_0",
+  "files": {
+    "README.md": "75bf63c0d6a17695073620455a2b473325007b929a91ff5eccb21fcdda535ed8",
+    "batch.json": "fa38238c12c4c60f093671fee5e082be49e9d919044eb53ddec4f26ac09c7d99",
+    "capabilities-observed.json": "75ca135dad7601f0371ceb06a9d63e9ac7921c5d3d74f5b3a3583033e935d312",
+    "dataset.json": "c1f1b9e118278cc4bd6df764507048dd8754d3314c193efa8de3d67353ce874e",
+    "enrollment.json": "75a6708bf13727daaf72b8fc60398bcacbf6a45f6ccf27145c279c867d3b762d",
+    "environment.json": "59b3f6788b19de0c2ecf808010486025647db6a56befd2619eb775bf6848db9b",
+    "expected-plan.json": "2717b3f0dcd8f6693e8030a7254da4e5f68fa0c70f7d9a8c0e090f3211856ea2",
+    "implementation.json": "2b1f938984a177b006b3f8570c2e840e74ed62615c3e15063a2c7d982f4440fc",
+    "launch.py": "1fe4cd9b2ae7ff5ed466295a1244a626540598779ac62f24c89d11492d03bcf7",
+    "models-observed.json": "b4a502059eb2dafad6380e0a57b2debf31219ae859cba9f0e019d48ae473be2f",
+    "reviewers.json": "9b9b355bf4b8217e72cd73f3693c64399a8f691b754d026fd61991496b595a4d",
+    "source-files.json": "44cbf2a486d5e3d2b3108737cc6f94fd7e4b8590dbd46a3c98aa8a1578adae57"
+  }
+}
