@@ -29,7 +29,7 @@ M3 是最低项目交付点，但不代表全部项目目标完成：进程中�
 4. **当前观察已完成**：[四任务真实开发观察](experiments/2026-10-24-rpcx-current-dev-real-model-01.md)按一次授权执行并完成参考/实际助手复核：4 Completed、3 NeedsAttention、1 Rejected，自动成功 0/4，A=0 时错误放行率无定义。完整复核两 pass/两 fail；107 次生成、201 次工具、1,642,276 Token。[实施记录](worklog/2026-10-24-current-development-observation.md#7-授权后的唯一实际执行)保留原候选/结果及收尾；不与旧轮合并指标。
 5. **生成改进**：[基线对照与提交前自检](worklog/2026-10-24-generation-baseline-review.md)选择先让 Agent 经已有文件工具读取本 Run 的只读原始业务基线，并明确对照原测试和逐 RPC 边界。完整门禁反馈循环与更多证明形式暂缓；本项访问边界与生成提示接入已验收，T3 三类独立交付回归通过；真实迁移改善仍未证明。
 6. **生成诊断首版已验收**：[生成阶段测试结构诊断](worklog/2026-10-24-generation-diagnostics.md)已支持原 Loop 内的按需测试结构检查与修正，限 Translation/Workouts、每 Run 两次尝试，保留原 unknown。逐次快照、有限反馈、计划/预算接入、脚本化真实修复交付及新旧审计通过；不提供自主效果改善证据。生产期限诊断与完整门禁反馈循环另行设计确认。
-7. **单任务观察已准备，待本版执行授权**：[Translation 诊断观察](worklog/2026-10-24-translation-diagnostic-observation.md#8-确认后的协议准备与核对)已按确认设计固定[协议 v0.1.0](experiments/translation-diagnostics-dev-v0.1.0/README.md)：一个已见任务、两次诊断、40 次生成/80 次工具/250 万 Token。源码/二进制、轨迹校准、绑定和本地只读预检通过；未读取凭证、查询模型或执行新生成，不宣称工具效果。
+7. **单任务观察已完成，下一项待设计**：[Translation 真实诊断观察](experiments/2026-10-24-translation-diagnostics-real-model-01.md)按一次授权运行：Agent 主动诊断一次 preserved，随后新增错误探针，40 次调用耗尽未提交，原 Run Failed、无 verdict；63 次工具、547,545 Token。部分候选双配置生产行为/到期通过，新增测试失败；0/1，A=0 错误放行率无定义。原材料保全、独立参考/实际助手复核及审计回收完成。下一步优先设计收尾范围控制与提交保障，确认后实施；未证明诊断修复收益。
 8. **保留缺口**：严格未见留出、原人员口径和正式总体验收仍未满足。GHCLI 更多形式及 Translation 支持暂缓；不通过降低原验收条件推进阶段状态。
 
 已有交付、真实指标与历史修正统一见[交付说明](DELIVERY.md)，操作见[离线演示](DEMO.md)。本项生成改进不新增里程碑，也不将 M3—M5 改为整体通过。

@@ -8,9 +8,9 @@
 
 下一项已选择[生成阶段的基线对照与提交前自检](worklog/2026-10-24-generation-baseline-review.md)：依据实际工具轨迹比较生成约束、反馈修复与证明扩展，先复用只读文件工具支持原文对照。机制验证和真实效果分开登记，独立门禁继续负责最终质量。
 
-[生成阶段诊断反馈](worklog/2026-10-24-generation-diagnostics.md)首版已在确认范围实现并验收：Translation/Workouts 的按需测试结构检查、逐次候选绑定、有限反馈与审计接入；脚本化修复经真实独立门禁交付通过，自主迁移效果仍待观察。
+[生成阶段诊断反馈](worklog/2026-10-24-generation-diagnostics.md)首版已在确认范围实现并验收：Translation/Workouts 的按需测试结构检查、逐次候选绑定、有限反馈与审计接入；脚本化修复经真实独立门禁交付通过，真实修复收益仍未证明。
 
-[Translation 单任务真实诊断观察](worklog/2026-10-24-translation-diagnostic-observation.md)已按确认设计准备[协议 v0.1.0](experiments/translation-diagnostics-dev-v0.1.0/README.md)：保留自主选择工具，区分反馈产生、后续模型请求与相关编辑；轨迹校准及本地预检通过，尚待本版外发授权，未执行新生成。
+[Translation 单任务真实诊断观察](experiments/2026-10-24-translation-diagnostics-real-model-01.md)已按本版授权完成：主动诊断一次 preserved，随后新增错误探针、40 次调用耗尽未提交，原 Run Failed、无最终判定。轨迹、部分候选参考/实际助手复核及保全收尾完成；[工作记录](worklog/2026-10-24-translation-diagnostic-observation.md#9-授权后的唯一观察与结论)保留准备和失败过程。下一步建议先设计收尾范围控制与提交保障，未直接改变策略或追加生成。
 
 ## 文档组织
 
