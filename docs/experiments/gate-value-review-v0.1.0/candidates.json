@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "status": "design_inputs_checked",
+  "kind": "historical_candidate_review",
+  "generation_allowed": false,
+  "cases": [
+    {
+      "cohort": "fixed-2026-10-22",
+      "target": "ghcli",
+      "run_id": "rpcx-agent-3621433355",
+      "candidate_sha256": "39390941b07031512fd3eac31104acfcb281409e545819d94cf158ecb4c74de9",
+      "report": "runs/deliveries/harness-fixed-evaluation-v0.1.0/source/runs/l2-fixed-eval-v0.1.0/campaign/targets/ghcli/runs/rpcx-agent-3621433355/artifacts/report.json",
+      "report_sha256": "cc552a5a85f87ee544a4596451ac79d8aae442afbb6ff8341f236be4abeb9a0a",
+      "review": "runs/deliveries/harness-fixed-evaluation-v0.1.0/source/runs/l2-fixed-eval-v0.1.0/reviews/ghcli.json",
+      "review_sha256": "4a079f7e58a21af0c14142344216d41f678990723c0414d055b7e31b552ae3c7",
+      "spec_sha256": "6e3a87056ec102536b52e1ffc340dbd8dd541d8d28589c555b9b08bafc1e40e8",
+      "baseline_sha256": "c299869d906bc9bb084e1cad4c35d8b6820879488536117ba9bdacd0f7ab131c",
+      "materials_sha256": "fddd1ddf43ab2e5b2b0ec9835f18f4bc50a5272814aba1400c136d42f026b5b2",
+      "reference": "runs/deliveries/harness-fixed-evaluation-v0.1.0/source/runs/l2-fixed-eval-v0.1.0/references/ghcli/reference.json",
+      "reference_sha256": "c4d8f83598c464b2e7b3c17d5ebfadb0e0fbd2b4b1401d2d1bbe892ca916e2ad"
+    },
+    {
+      "cohort": "fixed-2026-10-22",
+      "target": "goddd",
+      "run_id": "rpcx-agent-4243529763",
+      "candidate_sha256": "4ac262f2ec96dd2a18ca05fca1f49bfb32c39e8d3161fa60031004c45a355fb9",
+      "report": "runs/deliveries/harness-fixed-evaluation-v0.1.0/source/runs/l2-fixed-eval-v0.1.0/campaign/targets/goddd/runs/rpcx-agent-4243529763/artifacts/report.json",
+      "report_sha256": "f94096baa26bf62db37e614a4062348af089b4b103b039bb8640e16928cc00e0",
+      "review": "runs/deliveries/harness-fixed-evaluation-v0.1.0/source/runs/l2-fixed-eval-v0.1.0/reviews/goddd.json",
+      "review_sha256": "3ba2be97e9f81e0b5eeee14e13084ef3c026c9594ff3e69c59bd582c42ce8a8f",
+      "spec_sha256": "917575e0f4fc571f6f72c743ffded00771da838144371435ab0edfb61b578610",
+      "baseline_sha256": "3f2f404c1947f4076dfcc1f54c03fc08a7475a44f30db8398848ef48dda7a610",
+      "materials_sha256": "3553684ccceed6f4c130ba40b26653139c306c0b9c5938610a2937302d841e47",
+      "reference": "runs/deliveries/harness-fixed-evaluation-v0.1.0/source/runs/l2-fixed-eval-v0.1.0/references/goddd/reference.json",
+      "reference_sha256": "7afb19039ec590f1e07c0ab640ec3474250d3d86188518d91b99a875a813bd37"
+    },
+    {
+      "cohort": "fixed-2026-10-22",
+      "target": "translation",
+      "run_id": "rpcx-agent-2724386201",
+      "candidate_sha256": "6ca89b4f2741344b2c60c557962ebf5db9def45fbc284a0d202bede536d321e6",
+      "report": "runs/deliveries/harness-fixed-evaluation-v0.1.0/source/runs/l2-fixed-eval-v0.1.0/campaign/targets/translation/runs/rpcx-agent-2724386201/artifacts/report.json",
+      "report_sha256": "8a8f7e439102a005420a7056305948c6eeca38b10ab0f255c81fc0a4134a2862",
+      "review": "runs/deliveries/harness-fixed-evaluation-v0.1.0/source/runs/l2-fixed-eval-v0.1.0/reviews/translation.json",
+      "review_sha256": "f8de63897737beda7938a18c27044684af52092b382822bd2f958c2eb4d4f8e0",
+      "spec_sha256": "d45937d461cf056a82aba50741a27ba3c991c73967047e0d4e723cc70feb5e5f",
+      "baseline_sha256": "e520d248568e98e6a91556041a27ed23e916198436678e561c590d2756b57784",
+      "materials_sha256": "11421aab61ab424d9e3c402d1665b2a10c31d0f494eaae129ddc569f11f60f8d",
+      "reference": "runs/deliveries/harness-fixed-evaluation-v0.1.0/source/runs/l2-fixed-eval-v0.1.0/references/translation/reference.json",
+      "reference_sha256": "104a97a926e3bbfd0960b5b5f379ce06d819d91a39e6b51651ff2002cee6e776"
+    },
+    {
+      "cohort": "fixed-2026-10-22",
+      "target": "workouts",
+      "run_id": "rpcx-agent-1147620506",
+      "candidate_sha256": "e3aa9ecc7104e9175558b671de549f5edec2e48cc753ed565f4436d0efe82713",
+      "report": "runs/deliveries/harness-fixed-evaluation-v0.1.0/source/runs/l2-fixed-eval-v0.1.0/campaign/targets/workouts/runs/rpcx-agent-1147620506/artifacts/report.json",
+      "report_sha256": "4c9f38edcb139cd502d98122a721b65f7ffb69502e213ba036fe05f9f6a70593",
+      "review": "runs/deliveries/harness-fixed-evaluation-v0.1.0/source/runs/l2-fixed-eval-v0.1.0/reviews/workouts.json",
+      "review_sha256": "5dcb988654345e32af6ae538fe2bc52c0aeb11d38d603fc75eb6db11b5b1e21e",
+      "spec_sha256": "789d30540799249d0f5d96b3ba921b7e00d4cbc1e457491a2a79eba89829a526",
+      "baseline_sha256": "4f269c1ee06787cd3b08cfc68de33eb9a6ac9afb3ac2922738f8b15b3659d670",
+      "materials_sha256": "c29cb7c84415cb96126503d566eae89647ff91e2c3d4850bedf777f3aecd3e0a",
+      "reference": "runs/deliveries/harness-fixed-evaluation-v0.1.0/source/runs/l2-fixed-eval-v0.1.0/references/workouts/reference.json",
+      "reference_sha256": "ab589b376cbe8ac150190dc4e19c6046a0b32db59f693500183701ca48b7d497"
+    },
+    {
+      "cohort": "ghcli-2026-10-23",
+      "target": "ghcli",
+      "run_id": "rpcx-agent-323326691",
+      "candidate_sha256": "b4294cbb291cc5a5a4c6c9b1e12845ba9c31fb79e8724cffa60a72653d324db6",
+      "report": "runs/ghcli-dev-eval-v0.2.0/campaign/targets/ghcli/runs/rpcx-agent-323326691/artifacts/report.json",
+      "report_sha256": "bddd192bd2a688b4b0b99164e4a6104f8c24ff93ecedad41700668b3294e3ce3",
+      "review": "runs/ghcli-dev-eval-v0.2.0-result/reviews/ghcli.json",
+      "review_sha256": "57c0d27da0b191f904def951bf2ab8e6416e06cc2ab1d7b04e46f32f06b60643",
+      "spec_sha256": "6e3a87056ec102536b52e1ffc340dbd8dd541d8d28589c555b9b08bafc1e40e8",
+      "baseline_sha256": "c299869d906bc9bb084e1cad4c35d8b6820879488536117ba9bdacd0f7ab131c",
+      "materials_sha256": "f9e086295e57930d8ac14f81b1a52ff964c89d9af1187dfe169a61f1121323db",
+      "reference": "runs/ghcli-dev-eval-v0.2.0-result/references/ghcli/reference.json",
+      "reference_sha256": "feb5d99f8a119bb791cd692b44b17b2d186a0876b215edd38a1b6b05b53e62ea"
+    }
+  ]
+}
