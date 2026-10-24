@@ -680,3 +680,23 @@ go test -race ./scenarios/rpcx/runner -run '^TestGHCLIResponseDeliveryAudit$' -c
 ```
 
 该输出目录也必须尚不存在，且不能与原批次包含或重叠。原始批次保持只读，篡改只发生在新建副本。实际验收及审计来源依赖的修正见[单元 C 记录](worklog/2026-10-23-ghcli-runtime-response-design.md#10-单元-c预算工具交付与实际-campaign-审计)。
+
+## 历史候选门禁价值回顾
+
+从项目根目录只读消费已登记的五项历史运行材料，输出目录须尚不存在：
+
+```sh
+HARNESS_GATE_VALUE_OUTPUT="$PWD/runs/my-gate-value-study" \
+GOCACHE="$PWD/runs/go-cache" \
+go test -race ./scenarios/rpcx/l2/gatevalue -run '^TestHistoricalStudy$' -count=1
+```
+
+副本负例复验：
+
+```sh
+HARNESS_GATE_VALUE_REPORT="$PWD/runs/my-gate-value-study/report.json" \
+GOCACHE="$PWD/runs/go-cache" \
+go test -race ./scenarios/rpcx/l2/gatevalue -run '^TestHistoricalMutations$' -count=1
+```
+
+需要固定清单所引用的本地 runs 材料；不执行模型、Docker 或候选。旧 GHCLI v2 的参考消费缺口、成本含义及实际观察见[回顾报告](experiments/2026-10-24-gate-value-review.md)。
