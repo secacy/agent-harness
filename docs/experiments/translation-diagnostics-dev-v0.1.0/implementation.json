@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "parent_revision": "2a8c8ee74d52a0ec93dbda9afe4b067d33234aae",
+  "source_file_count": 815,
+  "source_sha256": "6456761d2490ba95f4e245e28d9f6bcca3025f697bd17b96c6a5afcb85f83b1c",
+  "total_bytes": 53985263,
+  "source_scope": [
+    "cmd/",
+    "internal/",
+    "scenarios/",
+    "scripts/",
+    "go.mod",
+    "go.sum (if present)"
+  ],
+  "source_algorithm": "SHA256 of compact UTF-8 JSON object {repository-relative-path: file-SHA256}, sorted by path; no final newline; tracked source only; excludes docs, runs, credentials and metadata directories",
+  "source_files": "source-files.json",
+  "snapshot": "runs/translation-diagnostics-dev-v0.1.0-preparation/snapshot/source",
+  "build": {
+    "go_version": "go version go1.26.5 darwin/arm64",
+    "arguments": [
+      "go",
+      "build",
+      "-trimpath",
+      "-buildvcs=false"
+    ],
+    "network": {
+      "GOPROXY": "off",
+      "GOSUMDB": "off",
+      "GOWORK": "off",
+      "GOTOOLCHAIN": "local",
+      "GOFLAGS": "-mod=readonly"
+    },
+    "built_from": "exported snapshot/source",
+    "goos": "darwin",
+    "goarch": "arm64",
+    "cgo_enabled": "1"
+  },
+  "binaries": {
+    "harness": {
+      "path": "runs/translation-diagnostics-dev-v0.1.0-preparation/snapshot/bin/harness",
+      "sha256": "a27056643e628bbeb55fd88d2f53a6ed81814c195513846104349b7bcbcbd490",
+      "size": 63199330
+    },
+    "summarize": {
+      "path": "runs/translation-diagnostics-dev-v0.1.0-preparation/snapshot/bin/summarize",
+      "sha256": "7c2170a02935e463ab03215221c7fce9f8309d439339bea352c6f42458ef3b14",
+      "size": 54600402
+    }
+  },
+  "archive": null,
+  "scope": "local immutable source snapshot and binaries; no new delivery archive; protocol documents versioned separately"
+}

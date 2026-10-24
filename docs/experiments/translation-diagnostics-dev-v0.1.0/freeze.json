@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "id": "translation-diagnostics-dev-v0_1_0",
+  "files": {
+    "README.md": "df912a79fbf9da515176fae8d395eaa59ee66dadabfeb7e98c97a2a6cc697fb0",
+    "analyze.py": "8ae3a1c6c133e99b85bf898d640efa5117f0429b186a92d4e84f8634324d66b5",
+    "batch.json": "e188f3de0a49546b3383c116e677f6e9778d9a6ae09a16f144b07663992a6391",
+    "capabilities-observed.json": "75ca135dad7601f0371ceb06a9d63e9ac7921c5d3d74f5b3a3583033e935d312",
+    "dataset.json": "dc5f84f431b5b331864b0982e2e062789fbec0e6ccd7fbc94b0bbf42f9862ca0",
+    "enrollment.json": "3d9d25b8fae23caeb7e604141bb84020c2331957cc0f99b59680cbce5edb087a",
+    "environment.json": "aa7278fc49c67987008fce9bb54d2774abd56780e55f468f989a653056cdcc75",
+    "expected-plan.json": "106ab51aefc0b25476c7769bebb874e47e37ab07fc4a1f9688239a5b3d36f636",
+    "implementation.json": "2b1b8fb73684f219d3f086219fd2caacd191148f10246c726b6c7ee714110bf0",
+    "launch.py": "6cc5a7a966e1be4a29e80bfff6d21b17fa84399d761d0364e652d1dcc5818963",
+    "models-observed.json": "b4a502059eb2dafad6380e0a57b2debf31219ae859cba9f0e019d48ae473be2f",
+    "reviewers.json": "37e5d09bd9a878f26e23c3ff325f78bc452fe088940fbf6c7b406031010eb4ab",
+    "source-files.json": "e8de853aa9b22d6ea3a8336e2b7f006d25378a5dbe302f6d10dd7f74b535fdfd",
+    "test_analyze.py": "f3fc3ccba75a62c629231b550468cd14475986a3452109a4b7b38d4763c46ef2",
+    "tools.json": "ab177e4c1076912982f4e4f33a8145de992c449f4e8b58d1bb77442f1d16bb7e"
+  }
+}

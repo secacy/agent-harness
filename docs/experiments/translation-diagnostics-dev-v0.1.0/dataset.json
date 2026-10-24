@@ -1,0 +1,88 @@
+{
+  "schema_version": 1,
+  "id": "translation-diagnostics-dev-v0_1_0",
+  "targets_before_generation": 1,
+  "strata": {
+    "seen-development": 1
+  },
+  "order": [
+    "translation"
+  ],
+  "attempts_per_target": 1,
+  "items": [
+    {
+      "target_id": "translation",
+      "dataset_version": "rpcx-l2-translation-v1",
+      "split": "development",
+      "report_stratum": "seen-development",
+      "origin_group": "go-clean-template",
+      "source": {
+        "repository": "https://github.com/evrone/go-clean-template",
+        "commit": "d1f46523e9a8435713aabb70222c6189564d4501",
+        "license": "MIT"
+      },
+      "pin": {
+        "id": "translation",
+        "profile_id": "rpcx-translation-t3-v1",
+        "build_config": "all-required",
+        "baseline_sha256": "e520d248568e98e6a91556041a27ed23e916198436678e561c590d2756b57784",
+        "spec_sha256": "d45937d461cf056a82aba50741a27ba3c991c73967047e0d4e723cc70feb5e5f",
+        "reference_version": "rpcx-l2-reference-translation-data-v2",
+        "reference_sha256": "1687c993a76ff6682111f0f6eb6b9662e4bc193b7e92d3d4baa2c2fdcf54acbd",
+        "tool_sha256": "6f6aa8aace731f23f76cf3cfba7fdd800881f4b30217e16fca97f5fbaad38f3b"
+      },
+      "input": {
+        "id": "translation",
+        "profile_id": "rpcx-translation-t3-v1",
+        "build_config": "all-required",
+        "repository": {
+          "directory": "/Users/can/src/golang/agent-harness-new/scenarios/rpcx/l2/data/rpcx-l2-translation-v1/fixtures/translation",
+          "sha256": "e520d248568e98e6a91556041a27ed23e916198436678e561c590d2756b57784"
+        },
+        "dependencies": {
+          "rpcx-v1": {
+            "directory": "/Users/can/src/golang/agent-harness-new/scenarios/rpcx/l2/data/rpcx-l2-translation-v1/fixtures/rpcx-v1",
+            "sha256": "3494436826b66504e9d1f28fa22fa22db4f927d0ee43309ab92b2868e5c6d24b"
+          },
+          "rpcx-v2": {
+            "directory": "/Users/can/src/golang/agent-harness-new/scenarios/rpcx/l2/data/rpcx-l2-translation-v1/fixtures/rpcx-v2",
+            "sha256": "c8b687c6964c5659391144f0c74934e36a5c0462c438bc8ed886bcdeafb5357c"
+          }
+        },
+        "specification": {
+          "path": "/Users/can/src/golang/agent-harness-new/scenarios/rpcx/translation/specs/v0.4.0.md",
+          "sha256": "d45937d461cf056a82aba50741a27ba3c991c73967047e0d4e723cc70feb5e5f"
+        }
+      },
+      "protected_paths": [
+        "LICENSE",
+        "go.sum",
+        "internal/usecase/mocks_repo_test.go"
+      ],
+      "build_configurations": [
+        {
+          "id": "default",
+          "tags": []
+        },
+        {
+          "id": "rpcx_alternate",
+          "tags": [
+            "rpcx_alternate"
+          ]
+        }
+      ],
+      "exposure": "Input, previous candidates, weakened assertion and reference reviewed during development; generator receives only its new task input and published tools.",
+      "strict_unseen_holdout": false,
+      "profile_material": {
+        "path": "scenarios/rpcx/runner/profiles.json",
+        "sha256": "ffda1403e396d1e8b3c638f74180af58c675caa9579ad1a845b3cac699e512de",
+        "selection": "profile_id; whole published file identity, not a fabricated runtime profile hash"
+      }
+    }
+  ],
+  "evidence_receipt": "scenarios/rpcx/l2/agent-application-integration-v0.1.0.json",
+  "integration_receipt_sha256": "d5d247a5a11684db9fd14fc0c2094e9cc9d25db2b880f4fc0167284c09ebbb5f",
+  "scope": "one already exposed Translation slice; no strict holdout",
+  "split": "development",
+  "prior_results_are_not_current_candidates": true
+}

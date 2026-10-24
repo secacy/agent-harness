@@ -1,0 +1,148 @@
+[
+  {
+    "Name": "list_files",
+    "Description": "List direct children of a directory. Use an advertised root alias and a relative path.",
+    "Parameters": {
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "root": {
+          "enum": [
+            "baseline",
+            "rpcx-v1",
+            "rpcx-v2",
+            "spec",
+            "workspace"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "root",
+        "path"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "Name": "read_file",
+    "Description": "Read a text file. Optional start_line and end_line use inclusive, one-based line numbers.",
+    "Parameters": {
+      "additionalProperties": false,
+      "properties": {
+        "end_line": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "path": {
+          "type": "string"
+        },
+        "root": {
+          "enum": [
+            "baseline",
+            "rpcx-v1",
+            "rpcx-v2",
+            "spec",
+            "workspace"
+          ],
+          "type": "string"
+        },
+        "start_line": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "root",
+        "path"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "Name": "search",
+    "Description": "Search a directory recursively for literal text. Return relative paths, line numbers and matching lines.",
+    "Parameters": {
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "root": {
+          "enum": [
+            "baseline",
+            "rpcx-v1",
+            "rpcx-v2",
+            "spec",
+            "workspace"
+          ],
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "root",
+        "path",
+        "text"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "Name": "replace_text",
+    "Description": "Replace text in an existing workspace file. The old text must be nonempty and match exactly once.",
+    "Parameters": {
+      "additionalProperties": false,
+      "properties": {
+        "new": {
+          "type": "string"
+        },
+        "old": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "old",
+        "new"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "Name": "go_check",
+    "Description": "Run a fixed offline Go build or test using the configured backend. Success does not imply independent validation has passed.",
+    "Parameters": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "build",
+            "test"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "type": "object"
+    }
+  },
+  {
+    "Name": "migration_check",
+    "Description": "Compare current original test structure with the authenticated baseline and permitted API adaptation. At most 2 attempts per run, including invalid requests. Returns preserved, violated or unknown with locations. Does not check production deadlines, execute tests or determine final quality. Later edits invalidate its applicability to the current workspace.",
+    "Parameters": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false
+    }
+  }
+]

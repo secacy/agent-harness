@@ -10,6 +10,8 @@
 
 [生成阶段诊断反馈](worklog/2026-10-24-generation-diagnostics.md)首版已在确认范围实现并验收：Translation/Workouts 的按需测试结构检查、逐次候选绑定、有限反馈与审计接入；脚本化修复经真实独立门禁交付通过，自主迁移效果仍待观察。
 
+[Translation 单任务真实诊断观察](worklog/2026-10-24-translation-diagnostic-observation.md)已按确认设计准备[协议 v0.1.0](experiments/translation-diagnostics-dev-v0.1.0/README.md)：保留自主选择工具，区分反馈产生、后续模型请求与相关编辑；轨迹校准及本地预检通过，尚待本版外发授权，未执行新生成。
+
 ## 文档组织
 
 | 位置 | 内容 | Git 管理 |
