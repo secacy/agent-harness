@@ -4,7 +4,7 @@
 
 最新状态与下一项工作见[研发对齐复核（2026-10-24）](worklog/2026-10-24-rd-alignment-review.md)：区分工程交付、真实效果证据和原总体验收缺口，跨场景命令取证已在声明范围验收，具体结果见同一记录。[门禁价值与成本回顾](experiments/2026-10-24-gate-value-review.md)已发布五项历史观察、命令记录成本和消费限制；[设计与验收](worklog/2026-10-24-gate-value-study.md)保留方案取舍及失败记录。下文按历史工作保留记录，阶段现状以[里程碑](MILESTONES.md)和[交付说明](DELIVERY.md)为准。
 
-[当前四任务开发观察准备](worklog/2026-10-24-current-development-observation.md)已完成实际配置、固定实现和离线检查；真实能力查询与生成待本版授权。
+[当前四任务开发观察](experiments/2026-10-24-rpcx-current-dev-real-model-01.md)已获本版授权完成唯一执行、固定参考及实际助手复核：原自动成功 0/4，三项 NeedsAttention；[实施记录](worklog/2026-10-24-current-development-observation.md#7-授权后的唯一实际执行)保留条件、来源保全和资源回收。
 
 ## 文档组织
 

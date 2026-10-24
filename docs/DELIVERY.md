@@ -22,7 +22,9 @@ Harness 已将固定输入、基线检查、Agent 修改/修复、独立门禁�
 
 `Completed` 表示执行交付完成；`ReadyForReview` 表示必需质量证据充分；`NeedsAttention` 表示仍需确认；`Rejected` 表示已有违规证据。退出 0、测试通过或记录审计 pass 都不能单独代表迁移正确。当前 CLI 提供单任务、batch 和 audit，恢复由 Go API 提供。
 
-## 最新真实实验与事后修正
+## 真实实验与事后修正
+
+最新[2026-10-24 四任务开发观察](experiments/2026-10-24-rpcx-current-dev-real-model-01.md)已完成：4 Completed、3 NeedsAttention、1 Rejected；自动成功 0/4，A=0 时错误放行率无定义。实际复核支持 Goddd/GHCLI；Translation 原断言削弱、Workouts 直接 RPC 无期限，完整结果分别为 test/migration fail。107 次生成、201 次工具、1,642,276 Token；原记录与冻结实现保留，131 个容器确认回收。本轮全部已见开发输入，不能据此推断泛化或单一修复收益。以下保留旧轮次。
 
 2026-10-22 四任务固定样本采用冻结协议，每任务一次尝试，四个 Run 均 Completed：
 
@@ -74,4 +76,4 @@ M0—M2 已在声明边界验收；M3/M4 已有范围内工程交付，原总体
 
 严格未见样本、原人员口径和可量化的审核收益仍是独立缺口。原指标、报告和交付归档保持，不重复打包同一材料来表示进展。
 
-[当前实现四任务开发观察](experiments/l2-current-dev-v0.1.0/README.md)已完成本地协议/材料准备，真实执行待本版授权。四项全部为已见开发，各一次新候选；能力采用 model-contract-v1，GHCLI 参考 v3。旧轮次与本轮不合并指标，也不作单一修正的因果比较。
+[当前实现四任务观察](experiments/2026-10-24-rpcx-current-dev-real-model-01.md)已按本版授权唯一执行并收尾。下一项先比较生成约束/可反馈违规与证明支持扩展的价值，不自动修补本轮或追加调用；旧轮次与本轮不合并指标。

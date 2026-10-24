@@ -26,7 +26,7 @@ M3 是最低项目交付点，但不代表全部项目目标完成：进程中�
 1. **已交付**：[GHCLI 响应契约 A/B/C](worklog/2026-10-23-ghcli-runtime-response-design.md)已覆盖生产门禁、观察证据、三类完整交付和实际批次审计。原样响应丢失在新门禁下 Rejected，未知形式保持 NeedsAttention；这些是开发校准，原真实指标不回写。
 2. **本单元已验收**：[公共命令取证](worklog/2026-10-24-rd-alignment-review.md#7-命令取证公共实现)已接入 Goddd、Translation、Workouts、GHCLI，保留各场景挂载、业务规则与判定；公共异常路径、七包竞态回归、四场景真实 Docker 交付与新旧审计通过，96 个容器确认回收。
 3. **本轮回顾已验收**：[门禁价值与验证成本回顾](worklog/2026-10-24-gate-value-study.md)固定五个历史原候选，比较同一报告内构建/测试证据与原完整门禁，保留误拒、未知与已知错误，并统计记录内命令成本。五项测试事件已重算，副本负例和来源保全通过；[结果报告](experiments/2026-10-24-gate-value-review.md)披露旧参考消费缺口，不新增生成或更新原 1/4、0/1 指标。
-4. **下一项待执行**：[当前四任务开发观察](experiments/l2-current-dev-v0.1.0/README.md)已固定实际源码、二进制、四项输入/当前参考、预算和助手复核关系，本地检查通过；[准备记录](worklog/2026-10-24-current-development-observation.md)说明差异与局限。本轮真实查询/生成尚待授权，不以准备代替效果。
+4. **当前观察已完成**：[四任务真实开发观察](experiments/2026-10-24-rpcx-current-dev-real-model-01.md)按一次授权执行并完成参考/实际助手复核：4 Completed、3 NeedsAttention、1 Rejected，自动成功 0/4，A=0 时错误放行率无定义。完整复核两 pass/两 fail；107 次生成、201 次工具、1,642,276 Token。[实施记录](worklog/2026-10-24-current-development-observation.md#7-授权后的唯一实际执行)保留原候选/结果及收尾；不与旧轮合并指标。
 5. **保留缺口**：严格未见留出、原人员口径和正式总体验收仍未满足。GHCLI 更多形式及 Translation 支持暂缓；不通过降低原验收条件推进阶段状态。
 
 已有交付、真实指标与历史修正统一见[交付说明](DELIVERY.md)，操作见[离线演示](DEMO.md)。下一项工程维护不新增里程碑，也不将 M3—M5 改为整体通过。
