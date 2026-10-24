@@ -112,7 +112,7 @@ func (r *runState) checkBaseline(ctx context.Context) (err error) {
 		if len(r.profile.BuildConfigurations) > 0 {
 			prefix = config.ID + "-"
 		}
-		if r.profile.Verifier == translation.VerifierVersion {
+		if isTranslationVerifier(r.profile.Verifier) {
 			data, runErr := r.baselineCommand(ctx, prefix+"list", config.Arguments([]string{binary, "list", "-json", "./..."}))
 			if runErr != nil {
 				return runErr

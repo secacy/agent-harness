@@ -181,8 +181,11 @@ func runWithObserver(parent context.Context, config Config, observer func(runChe
 	if r.profile.Verifier == goddd.VerifierVersion {
 		evaluate = goddd.Evaluate
 	}
-	if r.profile.Verifier == translation.VerifierVersion {
+	if isTranslationVerifier(r.profile.Verifier) {
 		evaluate = translation.Evaluate
+		if r.profile.Verifier == translation.ScopeVerifierVersion {
+			evaluate = translation.EvaluateScope
+		}
 	}
 	if r.profile.Verifier == workouts.VerifierVersion {
 		evaluate = workouts.Evaluate
@@ -336,7 +339,7 @@ func (r *runState) prepare(ctx context.Context) error {
 	r.prepared = true
 	if r.profile.HostMaterialsSHA256 != "" {
 		prepare := goddd.PrepareBackend
-		if r.profile.Verifier == translation.VerifierVersion {
+		if isTranslationVerifier(r.profile.Verifier) {
 			prepare = translation.PrepareBackend
 		}
 		if r.profile.Verifier == workouts.VerifierVersion {

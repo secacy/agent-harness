@@ -78,7 +78,7 @@ func validateProtocol(schema int, kind string, targets []TargetPin, p *Protocol)
 	for _, pin := range targets {
 		// 已见 Profile 不能通过换 split 名称认证成留出；新增数据须另行发布和接入。
 		switch pin.ProfileID {
-		case "rpcx-goddd-t3-v1", "rpcx-translation-t3-v1", "rpcx-workouts-t3-v1", "rpcx-ghcli-t3-v1":
+		case "rpcx-goddd-t3-v1", "rpcx-translation-t3-v1", "rpcx-translation-t3-v2", "rpcx-workouts-t3-v1", "rpcx-ghcli-t3-v1":
 		default:
 			return fmt.Errorf("unsupported protocol profile: %s", pin.ProfileID)
 		}

@@ -54,16 +54,17 @@ type packageFacts struct {
 }
 
 type callFact struct {
-	Package   string  `json:"package"`
-	File      string  `json:"file"`
-	Line      int     `json:"line"`
-	Function  string  `json:"function"`
-	SDK       string  `json:"sdk"`
-	Kind      string  `json:"kind"`
-	Status    string  `json:"status"`
-	Reason    string  `json:"reason"`
-	Operation *string `json:"operation,omitempty"`
-	TimeoutNS *int64  `json:"timeout_ns,omitempty"`
+	Boundary  *boundaryEvidence `json:"boundary_evidence,omitempty"`
+	Package   string            `json:"package"`
+	File      string            `json:"file"`
+	Line      int               `json:"line"`
+	Function  string            `json:"function"`
+	SDK       string            `json:"sdk"`
+	Kind      string            `json:"kind"`
+	Status    string            `json:"status"`
+	Reason    string            `json:"reason"`
+	Operation *string           `json:"operation,omitempty"`
+	TimeoutNS *int64            `json:"timeout_ns,omitempty"`
 }
 
 type gap struct {

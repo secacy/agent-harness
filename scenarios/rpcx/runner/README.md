@@ -26,6 +26,8 @@ ProfileT1T2 / ProfileT3 分别对应 rpcx-demo-orders-t1t2-v1 / rpcx-demo-orders
 
 新增 `ProfileTranslation` / `rpcx-translation-t3-v1`，绑定 v0.4.0、26 项基线测试、原生成 mock 和 default/rpcx_alternate 两种必需配置。`TargetFromTranslation(id, fixturesDir, specPath)` 构造一个 Target；不能只选择其中一种配置。生成前核对两配置的活动源文件/原 mock、构建和测试，结果按配置写入 baseline_check.configuration_tests。Agent 的一次 go_check 顺序检查两配置并共用期限，最终门禁独立重跑，见 [Translation 说明](../translation/README.md)。
 
+Translation 的有限范围证明另由 `ProfileTranslationScope` / `rpcx-translation-t3-v2` 显式选择，入口 `TargetFromTranslationScope`；输入约束与 v1 相同，验证器改为 `rpcx-translation-evidence-v2`。新证据、三类交付和旧版本兼容见 [v2 说明](../translation/README.md#有限范围证明v2)。默认入口仍选 v1，旧 Profile 内容不改。轮次汇总可显式纳入新 Profile，仍使用原 Translation 独立参考发布。
+
 新增 `ProfileWorkouts` / `rpcx-workouts-t3-v1`，绑定 v0.5.0、trainings 的 37 项必需测试和只读 common 的 3 项必需测试。`TargetFromWorkouts(id, fixturesDir, specPath)` 构造一个 Target。生成前先独立构建/测试 common，缺事件或失败时模型调用为零；通过后再检查 trainings。最终门禁独立重查 common 和取消回调的语义，见 [Workouts 说明](../workouts/README.md)。
 
 显式 Target 先创建独立 Run，再读取和认证实际输入；文件消失、摘要漂移留下 Failed / Preparing 记录，failure_code=input_invalid。旧场景入口保留非法或变更输入在创建 Run 前拒绝的兼容行为；新的 T1/T2 Profile 也认证完整输入快照，不再让随意修改的基线借用旧探针。Task ID 与预算 Target ID 必须一致。

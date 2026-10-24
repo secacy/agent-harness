@@ -24,7 +24,7 @@ func ValidateDiagnostics(profileID string, limit int) error {
 	if limit == 0 {
 		return nil
 	}
-	if limit != 2 || (profileID != ProfileTranslation && profileID != ProfileWorkouts) {
+	if limit != 2 || (profileID != ProfileTranslation && profileID != ProfileTranslationScope && profileID != ProfileWorkouts) {
 		return errors.New("generation diagnostics require Translation or Workouts and a limit of 2")
 	}
 	return nil

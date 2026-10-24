@@ -397,6 +397,8 @@ env HARNESS_TRANSLATION_ACCEPTANCE=1 HARNESS_TRANSLATION_BACKEND=docker HARNESS_
 env HARNESS_TRANSLATION_ACCEPTANCE=1 HARNESS_TRANSLATION_BACKEND=docker HARNESS_TRANSLATION_OUTPUT="$PWD/runs/translation-runner" GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly GOCACHE="$PWD/runs/go-cache" go test -json -count=1 -timeout=15m ./scenarios/rpcx/runner -run '^TestRunTranslationDelivery$'
 ```
 
+新的有限范围证明使用 `HARNESS_TRANSLATION_SCOPE_ACCEPTANCE=1 HARNESS_TRANSLATION_SCOPE_BACKEND=docker`，运行 `TestTranslationScopeDelivery`；完整环境、产物参数与发布故障入口见 [Translation v2](../scenarios/rpcx/translation/README.md#有限范围证明v2)。该测试依赖本机已保存的最近真实候选，不产生新模型请求，原 v1 入口仍保留。
+
 使用确定性模型重放编辑，验证双配置基线先于模型、go_check 反馈、独立质量判定、补丁重放和审核链接。Translation 需本地/容器 Go 1.26.0 或更新；离线依赖已随固定数据发布，仍需提前准备固定工具链镜像。规范与校准边界见 [Translation 说明](../scenarios/rpcx/translation/README.md)。
 
 ## M3.4 Workouts 多模块离线基线

@@ -27,7 +27,7 @@ func attachReference(reader *reader, out *Result, pin TargetPin, ref Reference, 
 	if report.TargetID != out.TargetID || report.RunID != out.RunID || report.CandidateSHA256 != out.CandidateSHA256 || report.BaselineSHA256 != pin.BaselineSHA256 || report.SpecSHA256 != pin.SpecSHA256 || report.ReferenceVersion != pin.ReferenceVersion || report.ReferenceSHA256 != pin.ReferenceSHA256 || report.ToolSHA256 != pin.ToolSHA256 {
 		return fmt.Errorf("%w: reference identity mismatch", ErrInvalid)
 	}
-	expectedVersion := map[string]string{"rpcx-goddd-t3-v1": evaluation.Version, "rpcx-translation-t3-v1": evaluation.TranslationVersion, "rpcx-workouts-t3-v1": evaluation.WorkoutsVersion, "rpcx-ghcli-t3-v1": evaluation.GHCLIVersion}[pin.ProfileID]
+	expectedVersion := map[string]string{"rpcx-goddd-t3-v1": evaluation.Version, "rpcx-translation-t3-v1": evaluation.TranslationVersion, "rpcx-translation-t3-v2": evaluation.TranslationVersion, "rpcx-workouts-t3-v1": evaluation.WorkoutsVersion, "rpcx-ghcli-t3-v1": evaluation.GHCLIVersion}[pin.ProfileID]
 	if expectedVersion == "" || report.Version != expectedVersion {
 		return fmt.Errorf("%w: reference scenario mismatch", ErrInvalid)
 	}

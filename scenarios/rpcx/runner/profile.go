@@ -18,12 +18,13 @@ import (
 )
 
 const (
-	ProfileT1T2        = "rpcx-demo-orders-t1t2-v1"
-	ProfileT3          = "rpcx-demo-orders-t3-v1"
-	ProfileGoddd       = "rpcx-goddd-t3-v1"
-	ProfileTranslation = "rpcx-translation-t3-v1"
-	ProfileGHCLI       = ghcli.ProfileID
-	ProfileWorkouts    = "rpcx-workouts-t3-v1"
+	ProfileT1T2             = "rpcx-demo-orders-t1t2-v1"
+	ProfileT3               = "rpcx-demo-orders-t3-v1"
+	ProfileGoddd            = "rpcx-goddd-t3-v1"
+	ProfileTranslation      = "rpcx-translation-t3-v1"
+	ProfileTranslationScope = "rpcx-translation-t3-v2"
+	ProfileGHCLI            = ghcli.ProfileID
+	ProfileWorkouts         = "rpcx-workouts-t3-v1"
 )
 
 //go:embed profiles.json
@@ -86,12 +87,12 @@ func (p profile) validate(t task.Target) error {
 			return fmt.Errorf("unsupported dependency snapshot: %s", name)
 		}
 	}
-	if !slices.Contains([]string{"rpcx-t1t2-evidence-v1", "rpcx-t3-evidence-v1", goddd.VerifierVersion, translation.VerifierVersion, workouts.VerifierVersion, ghcli.VerifierVersion}, p.Verifier) {
+	if !slices.Contains([]string{"rpcx-t1t2-evidence-v1", "rpcx-t3-evidence-v1", goddd.VerifierVersion, translation.VerifierVersion, translation.ScopeVerifierVersion, workouts.VerifierVersion, ghcli.VerifierVersion}, p.Verifier) {
 		return errors.New("unsupported rpcx verifier")
 	}
-	if p.Verifier == goddd.VerifierVersion || p.Verifier == translation.VerifierVersion || p.Verifier == workouts.VerifierVersion || p.Verifier == ghcli.VerifierVersion {
+	if p.Verifier == goddd.VerifierVersion || isTranslationVerifier(p.Verifier) || p.Verifier == workouts.VerifierVersion || p.Verifier == ghcli.VerifierVersion {
 		materials := goddd.HostMaterialsSHA256
-		if p.Verifier == translation.VerifierVersion {
+		if isTranslationVerifier(p.Verifier) {
 			materials = translation.HostMaterialsSHA256
 		}
 		if p.Verifier == workouts.VerifierVersion {
@@ -262,4 +263,13 @@ func TargetFromWorkouts(id, fixtures, spec string) (task.Target, error) {
 // TargetFromGHCLI 构造固定发布输入，生成必须使用隔离容器。
 func TargetFromGHCLI(id, fixtures, spec string) (task.Target, error) {
 	return targetFromFixtures(id, fixtures, spec, ProfileGHCLI)
+}
+
+func isTranslationVerifier(version string) bool {
+	return version == translation.VerifierVersion || version == translation.ScopeVerifierVersion
+}
+
+// TargetFromTranslationScope 选择新增的有限范围验证，不改变已有 Target 的验证版本。
+func TargetFromTranslationScope(id, fixtures, spec string) (task.Target, error) {
+	return targetFromFixtures(id, fixtures, spec, ProfileTranslationScope)
 }

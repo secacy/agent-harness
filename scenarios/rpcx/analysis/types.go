@@ -43,16 +43,17 @@ type Package struct {
 }
 
 type Call struct {
-	Package   string  `json:"package"`
-	File      string  `json:"file"`
-	Line      int     `json:"line"`
-	Function  string  `json:"function"`
-	SDK       string  `json:"sdk"`
-	Kind      string  `json:"kind"`
-	Status    string  `json:"status"`
-	Reason    string  `json:"reason"`
-	Operation *string `json:"operation,omitempty"`
-	TimeoutNS *int64  `json:"timeout_ns,omitempty"`
+	Boundary  *BoundaryEvidence `json:"boundary_evidence,omitempty"`
+	Package   string            `json:"package"`
+	File      string            `json:"file"`
+	Line      int               `json:"line"`
+	Function  string            `json:"function"`
+	SDK       string            `json:"sdk"`
+	Kind      string            `json:"kind"`
+	Status    string            `json:"status"`
+	Reason    string            `json:"reason"`
+	Operation *string           `json:"operation,omitempty"`
+	TimeoutNS *int64            `json:"timeout_ns,omitempty"`
 }
 
 // Comparison 只说明调用位置的对应和差异，不是最终质量判定。

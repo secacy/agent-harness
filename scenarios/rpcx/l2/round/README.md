@@ -88,3 +88,5 @@ go test -count=1 -timeout=12m ./scenarios/rpcx/l2/round -run '^TestPublishedCamp
 ```
 
 该测试在可信本地对既有候选重新运行三个独立参考，沿用真实 Target/Run ID，保留待复核；不重新生成候选、不调用 API、不计真实模型效果。产出的 Request 可再由 CLI 写入另一个全新 evidence_dir，检验实际消费而不重跑参考。
+
+Translation 新范围门禁 Profile `rpcx-translation-t3-v2` 可在新纳入材料中显式选择，仍映射到 translation 候选目录和原 Translation 独立参考版本。原 v1 及其冻结轮次保持绑定；新增 Profile 不改变 split、一次尝试或参考复核要求，也不会将开发校准变成真实模型效果。

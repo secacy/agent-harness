@@ -11,6 +11,7 @@ import (
 
 	"github.com/secacy/agent-harness/internal/execution"
 	"github.com/secacy/agent-harness/internal/quality"
+	"github.com/secacy/agent-harness/scenarios/rpcx/analysis"
 	"github.com/secacy/agent-harness/scenarios/rpcx/checks"
 	"github.com/secacy/agent-harness/scenarios/rpcx/gate"
 	"github.com/secacy/agent-harness/scenarios/rpcx/l2"
@@ -18,10 +19,12 @@ import (
 )
 
 type evaluation struct {
-	result  checks.Evaluation
-	req     checks.EvaluationRequest
-	backend *l2.ModuleBackend
-	merged  map[string]bool
+	boundedScope bool
+	analyses     map[string]ScopeAnalysis
+	result       checks.Evaluation
+	req          checks.EvaluationRequest
+	backend      *l2.ModuleBackend
+	merged       map[string]bool
 }
 
 func (e *evaluation) binding() quality.Binding {
@@ -42,8 +45,20 @@ func (e *evaluation) command(ctx context.Context, name, root string, args []stri
 }
 
 // Evaluate 接受单个候选；预期清单与参考补丁不属于输入或门禁材料。
-func Evaluate(ctx context.Context, req checks.EvaluationRequest) (out checks.Evaluation, err error) {
-	e := &evaluation{req: req, merged: map[string]bool{}, result: checks.Evaluation{SchemaVersion: 3, VerifierVersion: VerifierVersion, SpecVersion: SpecVersion, SpecSHA256: SpecSHA256(), Checks: map[string]quality.Check{}, Evidence: []quality.Evidence{}, Gaps: []quality.Gap{}, Commands: []checks.Command{}}}
+func Evaluate(ctx context.Context, req checks.EvaluationRequest) (checks.Evaluation, error) {
+	return evaluate(ctx, req, false)
+}
+
+// EvaluateScope 由新宿主 Profile 选择，增加有限范围证明而保留原规则入口。
+func EvaluateScope(ctx context.Context, req checks.EvaluationRequest) (checks.Evaluation, error) {
+	return evaluate(ctx, req, true)
+}
+
+func evaluate(ctx context.Context, req checks.EvaluationRequest, bounded bool) (out checks.Evaluation, err error) {
+	e := &evaluation{boundedScope: bounded, analyses: map[string]ScopeAnalysis{}, req: req, merged: map[string]bool{}, result: checks.Evaluation{SchemaVersion: 3, VerifierVersion: VerifierVersion, SpecVersion: SpecVersion, SpecSHA256: SpecSHA256(), Checks: map[string]quality.Check{}, Evidence: []quality.Evidence{}, Gaps: []quality.Gap{}, Commands: []checks.Command{}}}
+	if bounded {
+		e.result.VerifierVersion = ScopeVerifierVersion
+	}
 	defer func() {
 		if err != nil {
 			e.result.Verdict = ""
@@ -157,6 +172,15 @@ func Evaluate(ctx context.Context, req checks.EvaluationRequest) (out checks.Eva
 	}
 	configJSON, _ := json.Marshal(Configurations())
 	material["configurations.json"] = configJSON
+	if bounded {
+		proofMaterials, err := analysis.ScopeMaterials()
+		if err != nil {
+			return out, err
+		}
+		for name, data := range proofMaterials {
+			material["analysis-worker/"+name] = data
+		}
+	}
 	e.result.MaterialsSHA256 = gate.TreeHash(material)
 	if err := gate.CopyFiles(filepath.Join(e.req.EvidenceDir, "tool"), material); err != nil {
 		return out, err
@@ -244,9 +268,11 @@ func Evaluate(ctx context.Context, req checks.EvaluationRequest) (out checks.Eva
 	}
 	status := map[string]string{"preserved": quality.StatusPass, "violated": quality.StatusFail, "unknown": quality.StatusUnknown}[integrity.Status]
 	e.result.Checks["test_preservation"] = check("test_preservation", status, "original test structure: "+integrity.Status, "test-integrity", "input-snapshots")
-	e.result.Checks["request_scope"] = scope(base, candidate)
-	if err := e.saveJSON("scope", "production_scope", "scope.json", e.result.Checks["request_scope"]); err != nil {
-		return out, err
+	if !bounded {
+		e.result.Checks["request_scope"] = scope(base, candidate)
+		if err := e.saveJSON("scope", "production_scope", "scope.json", e.result.Checks["request_scope"]); err != nil {
+			return out, err
+		}
 	}
 	required, err := RequiredTests()
 	if err != nil {
@@ -263,6 +289,19 @@ func Evaluate(ctx context.Context, req checks.EvaluationRequest) (out checks.Eva
 		}
 		for id, value := range row {
 			e.merge(id, config.ID, value)
+		}
+	}
+	if bounded {
+		proof, err := ProveScope(base, candidate, fixtures, e.analyses)
+		if err != nil {
+			return out, err
+		}
+		if err = e.saveJSON("scope-proof", "bounded_structure", "scope-proof.json", proof); err != nil {
+			return out, err
+		}
+		e.result.Checks["request_scope"] = scopeCheck(proof)
+		if err = e.saveJSON("scope", "production_scope", "scope.json", e.result.Checks["request_scope"]); err != nil {
+			return out, err
 		}
 	}
 	decision, err := quality.Decide(e.req.EvidenceDir, policy(), e.binding(), e.result.Checks, e.result.Evidence)

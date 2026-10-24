@@ -21,7 +21,7 @@ M3 是最低项目交付点，但不代表全部项目目标完成：进程中�
 
 ## 当前交付优先级（2026-10-24）
 
-当前已有范围内工程开发版、有限真实评测及可复验材料。[研发对齐复核](worklog/2026-10-24-rd-alignment-review.md)后的公共机制维护、历史回顾和新四任务观察均已完成；当前优先处理新观察暴露的生成约束执行问题。
+当前已有范围内工程开发版、有限真实评测及可复验材料。[研发对齐复核](worklog/2026-10-24-rd-alignment-review.md)后的公共机制维护、历史回顾和新四任务观察均已完成；当前优先处理新观察暴露的生成交接与有限验证缺口。
 
 1. **已交付**：[GHCLI 响应契约 A/B/C](worklog/2026-10-23-ghcli-runtime-response-design.md)已覆盖生产门禁、观察证据、三类完整交付和实际批次审计。原样响应丢失在新门禁下 Rejected，未知形式保持 NeedsAttention；这些是开发校准，原真实指标不回写。
 2. **本单元已验收**：[公共命令取证](worklog/2026-10-24-rd-alignment-review.md#7-命令取证公共实现)已接入 Goddd、Translation、Workouts、GHCLI，保留各场景挂载、业务规则与判定；公共异常路径、七包竞态回归、四场景真实 Docker 交付与新旧审计通过，96 个容器确认回收。
@@ -29,8 +29,8 @@ M3 是最低项目交付点，但不代表全部项目目标完成：进程中�
 4. **当前观察已完成**：[四任务真实开发观察](experiments/2026-10-24-rpcx-current-dev-real-model-01.md)按一次授权执行并完成参考/实际助手复核：4 Completed、3 NeedsAttention、1 Rejected，自动成功 0/4，A=0 时错误放行率无定义。完整复核两 pass/两 fail；107 次生成、201 次工具、1,642,276 Token。[实施记录](worklog/2026-10-24-current-development-observation.md#7-授权后的唯一实际执行)保留原候选/结果及收尾；不与旧轮合并指标。
 5. **生成改进**：[基线对照与提交前自检](worklog/2026-10-24-generation-baseline-review.md)选择先让 Agent 经已有文件工具读取本 Run 的只读原始业务基线，并明确对照原测试和逐 RPC 边界。完整门禁反馈循环与更多证明形式暂缓；本项访问边界与生成提示接入已验收，T3 三类独立交付回归通过；真实迁移改善仍未证明。
 6. **生成诊断首版已验收**：[生成阶段测试结构诊断](worklog/2026-10-24-generation-diagnostics.md)已支持原 Loop 内的按需测试结构检查与修正，限 Translation/Workouts、每 Run 两次尝试，保留原 unknown。逐次快照、有限反馈、计划/预算接入、脚本化真实修复交付及新旧审计通过；不提供自主效果改善证据。生产期限诊断与完整门禁反馈循环另行设计确认。
-7. **单任务观察已完成，末轮交接机制已验收**：[Translation 真实诊断观察](experiments/2026-10-24-translation-diagnostics-real-model-01.md)按一次授权运行：Agent 主动诊断一次 preserved，随后新增错误探针，40 次调用耗尽未提交，原 Run Failed、无 verdict；63 次工具、547,545 Token。部分候选双配置生产行为/到期通过，新增测试失败；0/1，A=0 错误放行率无定义。原材料保全、独立参考/实际助手复核及审计回收完成。[预算末轮交接](worklog/2026-10-24-final-response-handoff.md#9-确认后的实现与验证)已显式接入：末轮仅回复、宿主禁止工具执行，保持原预算与独立门禁；受控三类交付、非法末轮隔离及新旧审计通过。[Translation 末轮交接观察](worklog/2026-10-24-final-response-observation.md#7-确认后的材料准备与离线验收)已完成协议冻结与离线准备：一个任务、原预算、启用新策略；分列提前提交、末轮交接、独立判定与有效自动成功。[唯一真实观察](experiments/2026-10-24-translation-handoff-real-model-01.md)已按授权完成：31 次提前提交、Completed/NeedsAttention，业务参考 pass，交付自述计数错误使完整复核 fail，原自动成功 0/1。真实末轮未触发，策略效果仍未知；下一项建议先评审 request_scope 支持边界，更早冻结编辑暂缓。
-8. **保留缺口**：严格未见留出、原人员口径和正式总体验收仍未满足。GHCLI 更多形式及 Translation 支持暂缓；不通过降低原验收条件推进阶段状态。
+7. **单任务观察已完成，末轮交接机制已验收**：[Translation 真实诊断观察](experiments/2026-10-24-translation-diagnostics-real-model-01.md)按一次授权运行：Agent 主动诊断一次 preserved，随后新增错误探针，40 次调用耗尽未提交，原 Run Failed、无 verdict；63 次工具、547,545 Token。部分候选双配置生产行为/到期通过，新增测试失败；0/1，A=0 错误放行率无定义。原材料保全、独立参考/实际助手复核及审计回收完成。[预算末轮交接](worklog/2026-10-24-final-response-handoff.md#9-确认后的实现与验证)已显式接入：末轮仅回复、宿主禁止工具执行，保持原预算与独立门禁；受控三类交付、非法末轮隔离及新旧审计通过。[Translation 末轮交接观察](worklog/2026-10-24-final-response-observation.md#7-确认后的材料准备与离线验收)已完成协议冻结与离线准备：一个任务、原预算、启用新策略；分列提前提交、末轮交接、独立判定与有效自动成功。[唯一真实观察](experiments/2026-10-24-translation-handoff-real-model-01.md)已按授权完成：31 次提前提交、Completed/NeedsAttention，业务参考 pass，交付自述计数错误使完整复核 fail，原自动成功 0/1。真实末轮未触发，策略效果仍未知；[Translation 有限生产范围证明](worklog/2026-10-24-translation-scope-proof.md#8-确认后的实现与验证)已在确认范围实现并完成开发校准：新 v2 Profile 消费精确类型节点，归约已解释改动并比较全部剩余生产结构。文件内常量、合法派生名及普通注释可证明；额外用途、业务变化、helper 与指令保留缺口。三类 Docker 交付、新旧审计及发布故障对照通过；最近原候选副本在新校准中放行，原实验与交付复核 fail 保持。更早冻结编辑暂缓。
+8. **保留缺口**：严格未见留出、原人员口径和正式总体验收仍未满足。GHCLI 更多形式及 Translation 共享常量/helper/派生前准备支持暂缓；不通过降低原验收条件推进阶段状态。
 
 已有交付、真实指标与历史修正统一见[交付说明](DELIVERY.md)，操作见[离线演示](DEMO.md)。本项生成改进不新增里程碑，也不将 M3—M5 改为整体通过。
 

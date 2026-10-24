@@ -57,3 +57,33 @@ HARNESS_TRANSLATION_ACCEPTANCE=1 HARNESS_TRANSLATION_BACKEND=docker \
 ```
 
 实施选择、失败记录及实际验收范围见[工作记录](../../../docs/worklog/2026-10-19-translation-evidence-gate.md)。
+
+## 有限范围证明（v2）
+
+显式入口 `EvaluateScope` / `runner.TargetFromTranslationScope` 使用 Profile `rpcx-translation-t3-v2`、验证器 `rpcx-translation-evidence-v2`。基线、v0.4.0 规范、双配置、测试和独立参考规则均保留。原 `Evaluate` / `TargetFromTranslation` 仍选 v1，不会自动升级旧实验。
+
+v2 在两配置类型分析后消费同一次加载的精确绑定证据，只在比较副本中移除已证明的派生/defer、对应的新文件内私有常量和无其他用途的 time 导入，将该 RPC 的派生实参对应回原父参数，再比较全部剩余生产结构。普通适配器注释可忽略，但记录原文范围/摘要；build-tag 原文与位置须不变，其他编译/工具/生成指令不作为普通文案忽略。其他生产文件和生成 mock 不获得此例外。
+
+`scope-proof.json` 保存输入与 worker 身份、每配置报告/比较摘要、精确节点、忽略的普通注释、期望/剩余结构指纹和缺口。审计核对归档工具与输入，再重算归约记录；不执行候选或重新加载类型。缺少合法证据、额外对象用途、共享常量、helper 或残余业务变化继续 NeedsAttention，明确违规仍 Rejected；保存失败或取消返回空 verdict。
+
+分解校准使用真实类型分析：分别验证普通注释、派生名字、文件内常量及组合；反例覆盖额外引用、共享常量、业务映射、指令及错误时长。完整脚本化 Docker 交付入口：
+
+```sh
+env HARNESS_TRANSLATION_SCOPE_ACCEPTANCE=1 HARNESS_TRANSLATION_SCOPE_BACKEND=docker \
+  HARNESS_HETEROGENEOUS_ARTIFACTS="$PWD/runs/translation-scope-delivery" \
+  GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly \
+  GOCACHE="$PWD/runs/go-cache" \
+  go test -json -count=1 -timeout=20m ./scenarios/rpcx/runner -run '^TestTranslationScopeDelivery$'
+```
+
+该入口包含正确、5 秒错误时长、未证明 helper 以及本机保存的最近真实候选副本；后者要求原观察产物存在且摘要匹配，不自动获取或重新生成。它验证新工具对已见输入的开发校准，不更新原真实实验或计算新的模型成功率。
+
+最后发布前故障另以可信本地真实命令验证：
+
+```sh
+env HARNESS_TRANSLATION_SCOPE_FAILURES=1 GOPROXY=off GOSUMDB=off GOWORK=off \
+  GOTOOLCHAIN=local GOFLAGS=-mod=readonly GOCACHE="$PWD/runs/go-cache" \
+  go test -json -count=1 -timeout=18m ./scenarios/rpcx/translation -run '^TestScopePublicationFailureHasNoVerdict$'
+```
+
+选择依据、首轮失败及验收记录见[工作记录](../../../docs/worklog/2026-10-24-translation-scope-proof.md)。

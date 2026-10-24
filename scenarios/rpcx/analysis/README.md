@@ -54,7 +54,7 @@ Gaps 保留双方原有缺口并标记 baseline/candidate。空 Changes 只表�
 
 证据目录保存：
 
-- `rpcx-analysis-tool/`：本次可信程序源码，材料摘要绑定两份嵌入文件。
+- `rpcx-analysis-tool/`：本次可信程序源码，材料摘要绑定 main.go、rules.go、evidence.go 三份实际执行源码。
 - `inputs.json`：全部输入和工具文件摘要；输入总摘要覆盖业务模块及显式 SDK 根。
 - `execution.json`：后端、镜像 ID、命令、容器 ID、退出码。
 - `stdout.json`、`stderr.log`：实际输出，包括失败的部分材料。
@@ -67,3 +67,11 @@ Gaps 保留双方原有缺口并标记 baseline/candidate。空 Changes 只表�
 Translation 接入支持函数开头经类型认证的 `ctx.Err()` 非空立即返回，随后须紧接 WithTimeout/defer；局部常量/字段/类型转换/内建 new 构造请求或响应只允许出现在派生及 defer 之后、RPC 之前。纯局部构造先于派生仍返回 unknown，首轮真实候选的触发原因见[支持范围评审](../../../docs/worklog/2026-10-20-needs-attention-review.md)。不接受用户函数、副作用语句、通道接收或取消绑定被额外使用。每次分析仍只有一个配置，不会自行合并构建标签；Translation 宿主门禁另以固定双配置交叉核对已知互斥文件，并保留原缺口报告。
 
 [Translation 受限准备语句设计](../../../docs/worklog/2026-10-20-translation-boundary-support.md)保留为后续扩展，按[交付优先级](../../../docs/worklog/2026-10-20-delivery-focus.md)暂缓实施；当前运行时支持范围不变，准备语句先于派生仍为 unknown。
+
+## 有限范围证明的增量证据
+
+当前 schema 2 的 `Call` 可附带 `boundary_evidence`，该字段使用独立的 schema 1。它在同一次 worker 类型加载中生成：把父参数、派生/释放语句、RPC 实参及可选文件内私有常量绑定到实际 Go 对象，保存各节点的物理字节范围与原片段摘要。不会执行候选或增加类型加载次数。
+
+`complete` 只允许指定节点进入后续范围比较；`unsupported` 记录额外用途、共享/导出常量等缺口，不改变原 `covered` 或覆盖 Gaps。旧报告缺少此字段仍可用于旧分析，不能授权新的结构归约。宿主用 `ValidateBoundaryEvidence` 核对版本、角色、原文、活动包及节点关系，不重新加载类型，也不靠同名标识符补猜对象。
+
+[Translation v2](../translation/README.md#有限范围证明v2)消费该证据并完整比较剩余生产结构；它仍需同时通过原测试、保护路径、业务探针和双配置检查。`WorkerMaterials` 返回实际 worker 字节，`ScopeMaterials` 另加入宿主协议消费源码，均进入 v2 的材料摘要与离线审计。

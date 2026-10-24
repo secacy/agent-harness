@@ -144,6 +144,9 @@ func (e *evaluation) analyze(ctx context.Context, config task.BuildConfiguration
 			ids = append(ids, id)
 		}
 	}
+	if e.boundedScope {
+		e.analyses[config.ID] = ScopeAnalysis{Baseline: reports[0], Candidate: reports[1]}
+	}
 	status, detail := quality.StatusUnknown, "typed package loading did not establish coverage"
 	if reports[0].Status == "complete" && reports[1].Status == "complete" {
 		comparison, err := analysis.Compare(reports[0], reports[1])

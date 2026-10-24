@@ -21,7 +21,7 @@ import (
 	"github.com/secacy/agent-harness/internal/execution"
 )
 
-//go:embed worker/main.go worker/rules.go
+//go:embed worker/main.go worker/rules.go worker/evidence.go types.go boundary_evidence.go compare.go inspect.go
 var material embed.FS
 
 var validTag = regexp.MustCompile(`^[A-Za-z0-9_][A-Za-z0-9_.]*$`)
@@ -107,7 +107,7 @@ func Inspect(ctx context.Context, req Request) (result Result, err error) {
 		return result, err
 	}
 	toolFiles := map[string]string{}
-	files := []string{"main.go", "rules.go"}
+	files := []string{"main.go", "rules.go", "evidence.go"}
 	for _, name := range files {
 		data, err := material.ReadFile("worker/" + name)
 		if err != nil {
@@ -188,6 +188,19 @@ func Inspect(ctx context.Context, req Request) (result Result, err error) {
 		return result, errors.New("analysis protocol has trailing content")
 	}
 	if err := validate(report, before, filepath.Base(roots[0]), inputSHA, toolSHA, tags, req.Backend.Info().Kind); err != nil {
+		return result, err
+	}
+	sources := map[string][]byte{}
+	for _, call := range report.Calls {
+		if call.Boundary != nil {
+			data, readErr := os.ReadFile(filepath.Join(roots[0], call.File))
+			if readErr != nil {
+				return result, readErr
+			}
+			sources[call.File] = data
+		}
+	}
+	if err := ValidateBoundaryEvidence(report, sources); err != nil {
 		return result, err
 	}
 	data, err := json.MarshalIndent(report, "", "  ")

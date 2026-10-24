@@ -79,6 +79,9 @@ func inspectCalls(root, pkg string, fset *token.FileSet, file *ast.File, info *t
 		case fn != nil:
 			fact.Status, fact.Reason, fact.TimeoutNS = boundary(fn, call, info)
 		}
+		if fact.Status == "covered" {
+			fact.Boundary = boundaryNodes(root, fset, file, fn, call, info)
+		}
 		r.Calls = append(r.Calls, fact)
 		if fact.Status == "unknown" {
 			r.Gaps = append(r.Gaps, gap{File: path, Line: pos.Line, Reason: fact.Reason})
