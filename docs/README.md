@@ -6,6 +6,8 @@
 
 [当前四任务开发观察](experiments/2026-10-24-rpcx-current-dev-real-model-01.md)已获本版授权完成唯一执行、固定参考及实际助手复核：原自动成功 0/4，三项 NeedsAttention；[实施记录](worklog/2026-10-24-current-development-observation.md#7-授权后的唯一实际执行)保留条件、来源保全和资源回收。
 
+下一项已选择[生成阶段的基线对照与提交前自检](worklog/2026-10-24-generation-baseline-review.md)：依据实际工具轨迹比较生成约束、反馈修复与证明扩展，先复用只读文件工具支持原文对照。机制验证和真实效果分开登记，独立门禁继续负责最终质量。
+
 ## 文档组织
 
 | 位置 | 内容 | Git 管理 |

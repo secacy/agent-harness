@@ -67,7 +67,7 @@ func (m *closureModel) Complete(_ context.Context, messages []agent.Message, too
 				}
 				roots := schema.Properties["root"].Enum
 				sort.Strings(roots)
-				if strings.Join(roots, ",") != "rpcx-v1,rpcx-v2,spec,workspace" {
+				if strings.Join(roots, ",") != "baseline,rpcx-v1,rpcx-v2,spec,workspace" {
 					return r, fmt.Errorf("unexpected visible roots: %v", roots)
 				}
 			}

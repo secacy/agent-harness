@@ -1,6 +1,12 @@
 # 单仓库生成、验证与审核交付
 
-Runner 接收 `agent.Model` 与显式执行后端，准备工作副本，驱动工具循环，固定提交候选，再由宿主 Profile 选择独立验证实现。模型只能看到业务工作副本、只读 SDK 和规范；cases、L1 期望、oracle、门禁材料及最终证据不属于工具根目录。文件工具与执行后端共同限定访问范围，摘要校验不替代执行隔离。
+Runner 接收 `agent.Model` 与显式执行后端，准备工作副本，驱动工具循环，固定提交候选，再由宿主 Profile 选择独立验证实现。模型能看到业务工作副本、该业务模块的只读原始基线、只读 SDK/允许依赖和规范；cases、L1 期望、oracle、门禁材料及最终证据不属于工具根目录。文件工具与执行后端共同限定访问范围，摘要校验不替代执行隔离。
+
+## 生成时对照基线
+
+`baseline` 根指向本 Run 的 `baseline/<repository_name>`，通过已有 list_files/read_file/search 读取。编辑后的文件仍从 workspace 读取；replace_text 仅写 workspace。baseline 不挂入 go_check，工具命令继续检查候选。该根不包含其他 Run、Profile 或验证材料。
+
+生成提示要求提交前对照原测试断言、表数据、helper 和生产行为，并检查规范指定的每个 RPC 边界；有期限要求时，核对该边界的直接调用和资源释放。必要的 API 适配按规范允许，不能以构建/测试通过替代约束核对。模型自检仍是建议与自述，既有独立门禁在提交后判定质量；新增读取占原工具预算，不产生额外修复轮次。取舍及验证见[工作记录](../../../docs/worklog/2026-10-24-generation-baseline-review.md)。
 
 ## 显式 Target 与宿主 Profile
 

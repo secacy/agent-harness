@@ -147,7 +147,7 @@ func testRunDelivery(t *testing.T, backend execution.Executor) {
 				}
 			}
 			roots := schema["properties"].(map[string]any)["root"].(map[string]any)["enum"]
-			if !reflect.DeepEqual(roots, []any{"rpcx-v1", "rpcx-v2", "spec", "workspace"}) {
+			if !reflect.DeepEqual(roots, []any{"baseline", "rpcx-v1", "rpcx-v2", "spec", "workspace"}) {
 				t.Fatalf("unexpected visible roots: %v", roots)
 			}
 			entries, err := os.ReadDir(config.RunsDir)

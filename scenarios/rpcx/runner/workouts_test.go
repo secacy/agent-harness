@@ -147,7 +147,7 @@ func TestRunWorkoutsDelivery(t *testing.T) {
 					if err := json.Unmarshal(tool.Parameters, &schema); err != nil {
 						t.Fatal(err)
 					}
-					if strings.Join(schema.Properties.Root.Enum, ",") != "common,rpcx-v1,rpcx-v2,spec,workspace" {
+					if strings.Join(schema.Properties.Root.Enum, ",") != "baseline,common,rpcx-v1,rpcx-v2,spec,workspace" {
 						t.Fatal("host material exposed to Agent")
 					}
 				}

@@ -86,7 +86,7 @@ func testT3Delivery(t *testing.T, backend execution.Executor) {
 						if err := json.Unmarshal(tool.Parameters, &schema); err != nil {
 							t.Fatal(err)
 						}
-						if !reflect.DeepEqual(schema.Properties.Root.Enum, []string{"rpcx-v1", "rpcx-v2", "spec", "workspace"}) {
+						if !reflect.DeepEqual(schema.Properties.Root.Enum, []string{"baseline", "rpcx-v1", "rpcx-v2", "spec", "workspace"}) {
 							t.Fatalf("unexpected roots: %v", schema.Properties.Root.Enum)
 						}
 					}

@@ -131,7 +131,7 @@ func TestRunGodddDelivery(t *testing.T) {
 					if err := json.Unmarshal(tool.Parameters, &schema); err != nil {
 						t.Fatal(err)
 					}
-					if strings.Join(schema.Properties.Root.Enum, ",") != "rpcx-v1,rpcx-v2,spec,workspace" {
+					if strings.Join(schema.Properties.Root.Enum, ",") != "baseline,rpcx-v1,rpcx-v2,spec,workspace" {
 						t.Fatal("host material exposed to Agent")
 					}
 				}
