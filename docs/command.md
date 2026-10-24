@@ -116,6 +116,7 @@ runs/harness batch --config runs/l2-capability.json --probe-model
 | `execution` | 默认 Docker，资源默认 2 CPU / 2048 MiB / 128 PIDs；仅可信夹具可显式设 `trusted_local: true` |
 | `targets[].input` | 既有 `task.Target`：版本、规范、依赖及仓库摘要；不包含 oracle/expected |
 | `targets[].budget` | 单 Target 生成次数与 Token 限额，同时受全批额度约束 |
+| `targets[].completion_policy`（可选） | 空值保留旧行为；`final-response-v1` 在最后模型轮次或工具额度耗尽后仅允许最终回复，仍受原预算约束；未知值拒绝。仅一次模型额度时 `--check` 提示没有工具轮次 |
 | `targets[].max_model_calls/max_tool_calls/timeout` | Agent 尝试/工具次数和整个 Run 时限（例如 `10m`） |
 | `enrollment.path/sha256`（可选） | 静态评测纳入清单的文件及原文字节摘要；相对路径基于本配置目录，任务与当前参考身份不符时在 API 访问前拒绝 |
 | `model.expected_context_tokens`（可选） | 正数表示实际生成前必须匹配的服务上下文容量；0/省略不比较，负数拒绝。只比较 Discover，不覆盖真实上界 |

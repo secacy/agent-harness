@@ -104,6 +104,16 @@ func renderReview(report Report, baseline, candidate tree, trace *agent.Result) 
 	if trace != nil {
 		fmt.Fprint(&out, "\n完整工具反馈、预算通知及服务返回用量见 [agent.json](agent.json)。\n")
 		fmt.Fprintf(&out, "\n模型调用尝试 %d 次，工具尝试 %d 次；退出原因 %s。未知 Token 用量保留为未知，不计为零。\n", trace.ModelCalls, trace.ToolCalls, textValue(string(trace.Reason)))
+		if report.Input.CompletionPolicy != "" {
+			fmt.Fprintf(&out, "\n交接策略：%s。", textValue(string(report.Input.CompletionPolicy)))
+			if attempt := trace.FinalResponseAttempt; attempt != nil {
+				fmt.Fprintf(&out, "第 %d 次本地模型尝试进入仅回复模式（消息前缀 %d 条）；该标记不表示已获预算准入或已提交。\n", attempt.ModelCall, attempt.MessageCount)
+			} else if trace.Reason == agent.ExitCompleted {
+				fmt.Fprint(&out, "在仅回复边界前已提交。\n")
+			} else {
+				fmt.Fprint(&out, "尚未进入仅回复边界；本次未正常提交。\n")
+			}
+		}
 		for i := len(trace.Messages) - 1; i >= 0; i-- {
 			m := trace.Messages[i]
 			if m.Role == agent.RoleAssistant && len(m.ToolCalls) == 0 && m.Content != "" {

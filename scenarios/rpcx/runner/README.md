@@ -106,3 +106,13 @@ env GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly G
 `TestGHCLIResponseDeliveryCampaign` 使用 Git 中的固定开发材料，经真实工具和有界 Campaign 交付可放行、响应丢失和未知 helper 三类候选。它覆盖每 Run 预算绑定、补丁重放、具体 finding 与审核导航、实际 Campaign 审计，以及改动观察/日志/SDK、跨 Target 引用等负例。`TestGHCLIResponseDeliveryAudit` 可对同一已停写批次只读复验审计，所有改动只在新副本中进行。入口与预期见[命令参考](../../../docs/command.md#ghcli-响应契约的完整-harness-交付验收)，结果见[单元 C 记录](../../../docs/worklog/2026-10-23-ghcli-runtime-response-design.md#10-单元-c预算工具交付与实际-campaign-审计)。
 
 行为证据审计的违规记录包含其实际读取的工具、日志及候选/可信副本/SDK 来源；审计收尾会据这些依赖复核稳定性。完整交付通过不消除 NeedsAttention，也不更新旧实验指标。
+
+## 预算末轮交接
+
+宿主可设置 `Config.CompletionPolicy=agent.FinalResponseV1`；Campaign 对应 `Target.CompletionPolicy`，batch JSON 对应 `targets[].completion_policy: "final-response-v1"`。默认空值保留旧行为，未知策略在执行前拒绝。策略参与计划设置摘要和 Run Input，旧冻结协议不能原地切换。
+
+启用后，最后一次模型尝试或工具额度恰好耗尽后的下一次尝试只接收最终回复：请求不公布工具，宿主也不会执行模型违规提出的工具。合法 stop 才沿原路径固定当前候选、运行独立门禁；截断、非法回复、预算拒绝、取消仍是失败。上限为一次时没有可操作工具的轮次，batch `--check` 会说明这一结果。
+
+`agent.json` 的可选 `FinalResponseAttempt` 保存本地尝试序号与请求消息前缀长度，不证明请求已发送或已提交。审核材料区分提前提交、进入仅回复模式及未到达边界；审计核对策略、历史、计数及末轮账本输入摘要。费用仍按原 `C+O` 预留，没有额外请求，也没有保证最后一次能获得 Token 或墙钟时间。该机制不阻止更早的错误编辑，不保证迁移成功。
+
+离线机制检查：`go test ./internal/agent ./internal/deepseek ./scenarios/rpcx/runner -run 'TestFinalResponse|TestCompletionAudit'`，其中 HTTP 对照只访问本机模拟服务。完整可信本地交付对照需显式设置 `HARNESS_COMPLETION_ACCEPTANCE=1`，运行 `TestFinalResponseTranslationCampaign`；包含三类固定候选和一个非法末轮任务，可通过 `HARNESS_HETEROGENEOUS_ARTIFACTS` 保留产物。该受控对照不是模型效果评测。

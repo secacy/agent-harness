@@ -120,7 +120,7 @@ func runWithObserver(parent context.Context, config Config, observer func(runChe
 			Status: StatusRunning, Phase: PhasePreparing, StartedAt: now, UpdatedAt: now,
 		},
 		input: Input{
-			DiagnosticLimit: config.DiagnosticLimit, Target: config.Target, ProfileSHA256: p.hash(), RepositoryName: p.RepositoryName,
+			CompletionPolicy: config.CompletionPolicy, DiagnosticLimit: config.DiagnosticLimit, Target: config.Target, ProfileSHA256: p.hash(), RepositoryName: p.RepositoryName,
 			ScenarioDir: config.ScenarioDir, ModelName: config.ModelName, ExecutionMode: config.Backend.Info().Kind, Backend: config.Backend.Info(),
 			MaxModelCalls: config.Limits.MaxModelCalls, MaxToolCalls: config.Limits.MaxToolCalls,
 			Timeout: config.Timeout.String(), SpecVersion: p.SpecVersion,
@@ -209,6 +209,9 @@ func runWithObserver(parent context.Context, config Config, observer func(runChe
 }
 
 func validateConfig(config Config) (Config, error) {
+	if err := config.CompletionPolicy.Validate(); err != nil {
+		return config, fmt.Errorf("%w: %v", ErrInvalidConfig, err)
+	}
 	if config.Model == nil || strings.TrimSpace(config.ModelName) == "" ||
 		config.Limits.MaxModelCalls <= 0 || config.Limits.MaxToolCalls <= 0 || config.Timeout <= 0 {
 		return config, errors.New("model, model name, positive limits and timeout are required")
@@ -391,7 +394,7 @@ func (r *runState) generate(ctx context.Context) error {
 		tools = &diagnosticTools{run: r, files: executor}
 		specs = append(specs, diagnosticSpec())
 	}
-	loop := agent.Loop{Model: model, Executor: tools, Tools: specs, Limits: r.config.Limits}
+	loop := agent.Loop{CompletionPolicy: r.config.CompletionPolicy, Model: model, Executor: tools, Tools: specs, Limits: r.config.Limits}
 	result, err := loop.Run(ctx, []agent.Message{
 		{Role: agent.RoleSystem, Content: "Migrate the workspace repository according to the supplied specification. " +
 			"Use repository tools to inspect and edit files, and go_check for build/test feedback. " +

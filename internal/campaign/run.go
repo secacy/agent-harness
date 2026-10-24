@@ -58,6 +58,9 @@ func validate(config Config) (Config, []budget.ProfiledModel, error) {
 		if err = target.Input.Validate(); err != nil {
 			return config, nil, err
 		}
+		if err := target.CompletionPolicy.Validate(); err != nil {
+			return config, nil, err
+		}
 		if target.DiagnosticLimit != 0 && target.DiagnosticLimit != 2 {
 			return config, nil, errors.New("generation diagnostic limit must be 0 or 2")
 		}

@@ -94,10 +94,17 @@ const (
 	ExitFailed           ExitReason = "failed"
 )
 
+// FinalResponseAttempt 标记本地尝试，不表示请求已获预算准入或已提交。
+type FinalResponseAttempt struct {
+	ModelCall    int // 从 1 开始，仅计算本次 Loop 的模型尝试。
+	MessageCount int // 请求时的消息前缀长度，包含该轮预算通知。
+}
+
 type Result struct {
-	Reason     ExitReason
-	Messages   []Message
-	ModelCalls int
-	ToolCalls  int      // 工具尝试数，包括循环直接拒绝的未知工具调用。
-	Usage      []*Usage // 与模型调用顺序对应，空项表示未知用量，不能视为零成本。
+	FinalResponseAttempt *FinalResponseAttempt `json:",omitempty"`
+	Reason               ExitReason
+	Messages             []Message
+	ModelCalls           int
+	ToolCalls            int      // 工具尝试数，包括循环直接拒绝的未知工具调用。
+	Usage                []*Usage // 与模型调用顺序对应，空项表示未知用量，不能视为零成本。
 }

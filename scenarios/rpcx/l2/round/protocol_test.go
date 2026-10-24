@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/secacy/agent-harness/internal/agent"
 	"github.com/secacy/agent-harness/internal/budget"
 	"github.com/secacy/agent-harness/internal/campaign"
 	"github.com/secacy/agent-harness/internal/execution"
@@ -326,5 +327,24 @@ func TestRoundAcceptsKnownCampaignWriterSchemas(t *testing.T) {
 				t.Fatal("unsupported writer schema accepted")
 			}
 		})
+	}
+}
+
+func TestCompletionPolicySettingsIdentity(t *testing.T) {
+	p := campaign.Plan{Targets: []campaign.Target{{}}}
+	before, _ := PlanSettingsSHA256(p)
+	raw, _ := json.Marshal(p)
+	if strings.Contains(string(raw), "completion_policy") {
+		t.Fatal("legacy serialization changed")
+	}
+	p.Targets[0].CompletionPolicy = agent.FinalResponseV1
+	after, _ := PlanSettingsSHA256(p)
+	if before == after {
+		t.Fatal("completion policy missing from protocol identity")
+	}
+	p.Targets[0].CompletionPolicy = ""
+	restored, _ := PlanSettingsSHA256(p)
+	if before != restored {
+		t.Fatal("legacy settings changed")
 	}
 }

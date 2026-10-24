@@ -21,7 +21,8 @@ var (
 
 // Config 由宿主配置。Model 只负责模型调用，不参与目录准备和质量判定。
 type Config struct {
-	DiagnosticLimit int // 0 为关闭；首版只允许两次按需检查。
+	CompletionPolicy agent.CompletionPolicy
+	DiagnosticLimit  int // 0 为关闭；首版只允许两次按需检查。
 	// Target 与旧 ScenarioDir/SpecVersion 入口互斥。
 	Target      *task.Target
 	ScenarioDir string
@@ -79,22 +80,23 @@ type Record struct {
 
 // Input 只保存可审计的任务配置与输入摘要，不序列化模型客户端或密钥。
 type Input struct {
-	DiagnosticLimit int               `json:"generation_diagnostic_limit,omitempty"`
-	Target          *task.Target      `json:"target,omitempty"`
-	ProfileSHA256   string            `json:"profile_sha256,omitempty"`
-	RepositoryName  string            `json:"repository_name,omitempty"`
-	Budget          *budget.Reference `json:"budget,omitempty"`
-	ScenarioDir     string            `json:"scenario_dir"`
-	ModelName       string            `json:"model_name"`
-	Backend         execution.Info    `json:"backend"`
-	ExecutionMode   string            `json:"execution_mode"`
-	MaxModelCalls   int               `json:"max_model_calls"`
-	MaxToolCalls    int               `json:"max_tool_calls"`
-	Timeout         string            `json:"timeout"`
-	SpecVersion     string            `json:"spec_version"`
-	SpecSHA256      string            `json:"spec_sha256"`
-	BaselineSHA256  string            `json:"baseline_sha256"`
-	Files           map[string]string `json:"files"`
+	CompletionPolicy agent.CompletionPolicy `json:"completion_policy,omitempty"`
+	DiagnosticLimit  int                    `json:"generation_diagnostic_limit,omitempty"`
+	Target           *task.Target           `json:"target,omitempty"`
+	ProfileSHA256    string                 `json:"profile_sha256,omitempty"`
+	RepositoryName   string                 `json:"repository_name,omitempty"`
+	Budget           *budget.Reference      `json:"budget,omitempty"`
+	ScenarioDir      string                 `json:"scenario_dir"`
+	ModelName        string                 `json:"model_name"`
+	Backend          execution.Info         `json:"backend"`
+	ExecutionMode    string                 `json:"execution_mode"`
+	MaxModelCalls    int                    `json:"max_model_calls"`
+	MaxToolCalls     int                    `json:"max_tool_calls"`
+	Timeout          string                 `json:"timeout"`
+	SpecVersion      string                 `json:"spec_version"`
+	SpecSHA256       string                 `json:"spec_sha256"`
+	BaselineSHA256   string                 `json:"baseline_sha256"`
+	Files            map[string]string      `json:"files"`
 }
 
 // Report 保存实际证据。发布是否成功以本次运行根目录的 run.json 为准。

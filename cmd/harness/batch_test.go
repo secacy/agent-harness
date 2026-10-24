@@ -15,6 +15,7 @@ import (
 	"sync/atomic"
 	"testing"
 
+	"github.com/secacy/agent-harness/internal/agent"
 	"github.com/secacy/agent-harness/internal/budget"
 	"github.com/secacy/agent-harness/scenarios/rpcx/runner"
 )
@@ -142,6 +143,7 @@ func TestBatchCheckIsOfflineAndRejectsInvalidConfiguration(t *testing.T) {
 	t.Setenv("DEEPSEEK_API_KEY", "")
 	cases := map[string]func(*batchConfig){
 		"valid":                   func(*batchConfig) {},
+		"unknown completion":      func(c *batchConfig) { c.Targets[0].CompletionPolicy = "unknown" },
 		"duplicate target":        func(c *batchConfig) { c.Targets = append(c.Targets, c.Targets[0]) },
 		"unknown profile":         func(c *batchConfig) { c.Targets[0].Input.ProfileID = "unknown" },
 		"modified pin":            func(c *batchConfig) { c.Targets[0].Input.Repository.SHA256 = strings.Repeat("e", 64) },
@@ -266,5 +268,23 @@ func TestBatchCapabilityFailureNeverGenerates(t *testing.T) {
 				t.Fatalf("failed preflight created output: %v", err)
 			}
 		})
+	}
+}
+
+func TestBatchCompletionPolicyConfiguration(t *testing.T) {
+	config := batchTestConfig(t)
+	config.Targets[0].CompletionPolicy = agent.FinalResponseV1
+	_, plan, err := loadBatchConfig(writeBatchTestConfig(t, config))
+	if err != nil || plan.Targets[0].CompletionPolicy != agent.FinalResponseV1 {
+		t.Fatal(plan, err)
+	}
+	config.Targets[0].MaxModelCalls = 1
+	var stdout, stderr bytes.Buffer
+	if code := run(context.Background(), []string{"batch", "--check", "--config", writeBatchTestConfig(t, config)}, &stdout, &stderr); code != 0 || !strings.Contains(stdout.String(), "no repository tools") {
+		t.Fatal(code, stdout.String(), stderr.String())
+	}
+	config.Targets[0].CompletionPolicy = "unknown"
+	if _, _, err := loadBatchConfig(writeBatchTestConfig(t, config)); err == nil {
+		t.Fatal("unknown completion policy accepted")
 	}
 }

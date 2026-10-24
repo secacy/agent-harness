@@ -120,6 +120,7 @@ func InspectRun(ctx context.Context, view *audit.View, ref audit.RunRef) (audit.
 			}
 		}
 		a.checkDiagnostics(report)
+		a.checkCompletion(report)
 		if report.Validation != nil {
 			a.checkValidation(*report.Validation, completed, stale)
 		}

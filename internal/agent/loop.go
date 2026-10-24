@@ -20,10 +20,11 @@ const wrapUpModelCalls = 3
 // Loop 管理一次运行的对话与调用预算。
 // 模型与执行器必须响应上下文取消；循环同步等待调用结束，不遗留后台任务。
 type Loop struct {
-	Model    Model
-	Executor ToolExecutor
-	Tools    []ToolSpec
-	Limits   Limits
+	CompletionPolicy CompletionPolicy
+	Model            Model
+	Executor         ToolExecutor
+	Tools            []ToolSpec
+	Limits           Limits
 }
 
 // Run 在正常完成或预算耗尽时返回空错误，调用方必须检查退出原因。
@@ -39,6 +40,9 @@ func (l Loop) Run(ctx context.Context, initial []Message) (Result, error) {
 	tools := cloneTools(l.Tools)
 	if l.Model == nil || l.Executor == nil || l.Limits.MaxModelCalls <= 0 || l.Limits.MaxToolCalls <= 0 {
 		return stopWithError(ctx, result, fmt.Errorf("%w: model, executor and positive limits are required", ErrInvalidInput))
+	}
+	if err := l.CompletionPolicy.Validate(); err != nil {
+		return stopWithError(ctx, result, err)
 	}
 	allowed, err := validateTools(tools)
 	if err != nil {
@@ -56,12 +60,17 @@ func (l Loop) Run(ctx context.Context, initial []Message) (Result, error) {
 			result.Reason = ExitLimitReached
 			return result, nil
 		}
-		result.Messages = append(result.Messages, budgetMessage(
-			l.Limits.MaxModelCalls-result.ModelCalls,
-			l.Limits.MaxToolCalls-result.ToolCalls,
-		))
+		modelRemaining := l.Limits.MaxModelCalls - result.ModelCalls
+		toolRemaining := l.Limits.MaxToolCalls - result.ToolCalls
+		result.Messages = append(result.Messages, completionBudgetMessage(l.CompletionPolicy, modelRemaining, toolRemaining))
 		result.ModelCalls++
-		reply, err := l.Model.Complete(ctx, result.Messages, tools)
+		requestTools := tools
+		finalOnly := l.CompletionPolicy.finalOnly(modelRemaining, toolRemaining)
+		if finalOnly {
+			requestTools = nil
+			result.FinalResponseAttempt = &FinalResponseAttempt{ModelCall: result.ModelCalls, MessageCount: len(result.Messages)}
+		}
+		reply, err := l.Model.Complete(ctx, result.Messages, requestTools)
 		result.Usage = append(result.Usage, cloneUsage(reply.Usage))
 		if err != nil {
 			return stopWithError(ctx, result, fmt.Errorf("model call %d: %w", result.ModelCalls, err))
@@ -75,6 +84,9 @@ func (l Loop) Run(ctx context.Context, initial []Message) (Result, error) {
 		result.Messages = append(result.Messages, message)
 		if err := ctx.Err(); err != nil {
 			return stopWithError(ctx, result, err)
+		}
+		if finalOnly && len(message.ToolCalls) != 0 {
+			return stopWithError(ctx, result, fmt.Errorf("%w: tools are disabled for the final response", ErrProtocol))
 		}
 		switch reply.Finish {
 		case FinishStop:

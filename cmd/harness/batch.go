@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/secacy/agent-harness/internal/agent"
 	"github.com/secacy/agent-harness/internal/budget"
 	"github.com/secacy/agent-harness/internal/campaign"
 	"github.com/secacy/agent-harness/internal/deepseek"
@@ -42,6 +43,11 @@ func runBatch(ctx context.Context, args []string, stdout, stderr io.Writer) int 
 	}
 	if *check {
 		fmt.Fprintf(stdout, "Configuration valid: %d targets; model capabilities not queried.\n", len(plan.Targets))
+		for _, target := range plan.Targets {
+			if target.CompletionPolicy == agent.FinalResponseV1 && target.Limits.MaxModelCalls == 1 {
+				fmt.Fprintf(stdout, "Target %s: its only model call is final-response-only; no repository tools will be available.\n", target.Input.ID)
+			}
+		}
 		return 0
 	}
 	key := os.Getenv("DEEPSEEK_API_KEY")

@@ -19,7 +19,7 @@ func CampaignExecutor(trustedLocal bool) campaign.Execute {
 func campaignExecutorWithObserver(trustedLocal bool, observer func(runCheckpoint, Record)) campaign.Execute {
 	return func(ctx context.Context, target campaign.Target, services campaign.Services) (campaign.Attempt, error) {
 		record, runErr := runWithObserver(ctx, Config{
-			DiagnosticLimit: target.DiagnosticLimit, Target: &target.Input, RunsDir: services.RunsDir, RunID: services.RunID,
+			CompletionPolicy: target.CompletionPolicy, DiagnosticLimit: target.DiagnosticLimit, Target: &target.Input, RunsDir: services.RunsDir, RunID: services.RunID,
 			Model: services.Model, ModelName: services.Budget.Ledger.Snapshot().Profile.Model,
 			Budget: &services.Budget, Limits: target.Limits, Timeout: target.Timeout,
 			Backend: services.Backend, TrustedLocal: trustedLocal,
