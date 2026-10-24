@@ -120,6 +120,7 @@ func TestProtocolDetectsActualPlanDrift(t *testing.T) {
 		"batch-budget":        func(p *campaign.Plan) { p.Budget.MaxTokens++ },
 		"batch-calls":         func(p *campaign.Plan) { p.Budget.MaxCalls++ },
 		"target-budget":       func(p *campaign.Plan) { p.Targets[0].Budget.MaxTokens++ },
+		"diagnostic-limit":    func(p *campaign.Plan) { p.Targets[0].DiagnosticLimit = 2 },
 		"agent-limit":         func(p *campaign.Plan) { p.Targets[0].Limits.MaxToolCalls++ },
 		"timeout":             func(p *campaign.Plan) { p.Targets[0].Timeout += time.Second },
 		"target-slots":        func(p *campaign.Plan) { p.Concurrency++ },

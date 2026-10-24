@@ -8,6 +8,14 @@ Runner 接收 `agent.Model` 与显式执行后端，准备工作副本，驱动�
 
 生成提示要求提交前对照原测试断言、表数据、helper 和生产行为，并检查规范指定的每个 RPC 边界；有期限要求时，核对该边界的直接调用和资源释放。必要的 API 适配按规范允许，不能以构建/测试通过替代约束核对。模型自检仍是建议与自述，既有独立门禁在提交后判定质量；新增读取占原工具预算，不产生额外修复轮次。取舍及验证见[工作记录](../../../docs/worklog/2026-10-24-generation-baseline-review.md)。
 
+## 按需测试结构诊断
+
+宿主为 Translation / Workouts 设置 `Config.DiagnosticLimit=2` 时公布 `migration_check({})`，默认 0 关闭。Campaign 对应 Target.DiagnosticLimit，batch JSON 对应 Target 的 `generation_diagnostic_limit`；只接受 0 或 2，并在启动前核对 Profile。启用设置进入实际计划与 inputs/task.json，不接受模型指定检查规则或目录。
+
+检查复用最终门禁的测试适配/比较函数，返回 preserved / violated / unknown、条款及声明位置。只比较原测试结构，不执行测试、不检查生产期限；条件重写仍可能 unknown。单 Run 最多尝试两次，参数错误也消耗次数，每次均计入原工具预算；第三次返回可修复工具错误，模型仍可提交未解决候选。
+
+`generation-diagnostics/check-<序号>/` 保存独立候选快照、基线/允许适配测试、工具材料、完整比较和有界反馈；目录不属于 Agent 可见根。report.json 的 generation_diagnostics 仅引用成功发布的诊断，最终 Validation 仍独立执行。归档审计核对计划、tool_call_id、实际反馈、文件清单和候选/材料身份；旧诊断不代表后续编辑的结果。详细边界与验收见[设计与实施记录](../../../docs/worklog/2026-10-24-generation-diagnostics.md)。
+
 ## 显式 Target 与宿主 Profile
 
 新的 Go API 可使用 `Config.Target`，与 ScenarioDir/SpecVersion 互斥。例如先调用 `TargetFromScenario("orders", scenarioDir, "v0.2.0")` 构造已知场景描述，再将其地址放入 Config.Target。该函数只构造描述，不读取或执行仓库；Run 负责认证实际输入。旧命令行入口继续使用 ScenarioDir/SpecVersion，内部转换为相同任务模型。

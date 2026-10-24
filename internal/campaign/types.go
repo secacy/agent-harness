@@ -36,10 +36,11 @@ type RecoveryPolicy struct {
 }
 
 type Target struct {
-	Input   task.Target   `json:"input"`
-	Budget  budget.Limits `json:"budget"`
-	Limits  agent.Limits  `json:"agent_limits"`
-	Timeout time.Duration `json:"timeout_ns"`
+	DiagnosticLimit int           `json:"generation_diagnostic_limit,omitempty"`
+	Input           task.Target   `json:"input"`
+	Budget          budget.Limits `json:"budget"`
+	Limits          agent.Limits  `json:"agent_limits"`
+	Timeout         time.Duration `json:"timeout_ns"`
 }
 
 // Services 只交给可信宿主适配器；适配器必须在绑定 Run 后包装模型。

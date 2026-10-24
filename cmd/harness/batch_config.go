@@ -53,11 +53,12 @@ type batchExecution struct {
 }
 
 type batchTarget struct {
-	Input         task.Target   `json:"input"`
-	Budget        budget.Limits `json:"budget"`
-	MaxModelCalls int           `json:"max_model_calls"`
-	MaxToolCalls  int           `json:"max_tool_calls"`
-	Timeout       string        `json:"timeout"`
+	DiagnosticLimit int           `json:"generation_diagnostic_limit,omitempty"`
+	Input           task.Target   `json:"input"`
+	Budget          budget.Limits `json:"budget"`
+	MaxModelCalls   int           `json:"max_model_calls"`
+	MaxToolCalls    int           `json:"max_tool_calls"`
+	Timeout         string        `json:"timeout"`
 }
 
 var batchID = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$`)
@@ -167,10 +168,13 @@ func loadBatchConfig(path string) (batchConfig, campaign.Plan, error) {
 				return config, plan, err
 			}
 		}
+		if err := runner.ValidateDiagnostics(t.ProfileID, target.DiagnosticLimit); err != nil {
+			return config, plan, err
+		}
 		if err := runner.ValidateTarget(*t, config.Directory); err != nil {
 			return config, plan, err
 		}
-		plan.Targets = append(plan.Targets, campaign.Target{Input: *t, Budget: target.Budget,
+		plan.Targets = append(plan.Targets, campaign.Target{DiagnosticLimit: target.DiagnosticLimit, Input: *t, Budget: target.Budget,
 			Limits: agent.Limits{MaxModelCalls: target.MaxModelCalls, MaxToolCalls: target.MaxToolCalls}, Timeout: timeout})
 	}
 	if config.Enrollment != nil {

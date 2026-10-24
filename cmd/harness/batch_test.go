@@ -141,15 +141,17 @@ func TestBatchCommandUsesDiscoveredProfileBeforeGeneration(t *testing.T) {
 func TestBatchCheckIsOfflineAndRejectsInvalidConfiguration(t *testing.T) {
 	t.Setenv("DEEPSEEK_API_KEY", "")
 	cases := map[string]func(*batchConfig){
-		"valid":            func(*batchConfig) {},
-		"duplicate target": func(c *batchConfig) { c.Targets = append(c.Targets, c.Targets[0]) },
-		"unknown profile":  func(c *batchConfig) { c.Targets[0].Input.ProfileID = "unknown" },
-		"modified pin":     func(c *batchConfig) { c.Targets[0].Input.Repository.SHA256 = strings.Repeat("e", 64) },
-		"zero budget":      func(c *batchConfig) { c.Budget.MaxTokens = 0 },
-		"zero concurrency": func(c *batchConfig) { c.Concurrency = 0 },
-		"bad timeout":      func(c *batchConfig) { c.Targets[0].Timeout = "0s" },
-		"bad endpoint":     func(c *batchConfig) { c.Model.Endpoint = "http://example.com/chat/completions" },
-		"negative context": func(c *batchConfig) { c.Model.ExpectedContextTokens = -1 },
+		"valid":                   func(*batchConfig) {},
+		"duplicate target":        func(c *batchConfig) { c.Targets = append(c.Targets, c.Targets[0]) },
+		"unknown profile":         func(c *batchConfig) { c.Targets[0].Input.ProfileID = "unknown" },
+		"modified pin":            func(c *batchConfig) { c.Targets[0].Input.Repository.SHA256 = strings.Repeat("e", 64) },
+		"zero budget":             func(c *batchConfig) { c.Budget.MaxTokens = 0 },
+		"zero concurrency":        func(c *batchConfig) { c.Concurrency = 0 },
+		"unsupported diagnostics": func(c *batchConfig) { c.Targets[0].DiagnosticLimit = 2 },
+		"bad diagnostic limit":    func(c *batchConfig) { c.Targets[0].DiagnosticLimit = 1 },
+		"bad timeout":             func(c *batchConfig) { c.Targets[0].Timeout = "0s" },
+		"bad endpoint":            func(c *batchConfig) { c.Model.Endpoint = "http://example.com/chat/completions" },
+		"negative context":        func(c *batchConfig) { c.Model.ExpectedContextTokens = -1 },
 		"input overlap": func(c *batchConfig) {
 			c.Directory = filepath.Join(c.Targets[0].Input.Repository.Directory, "batch-output")
 		},

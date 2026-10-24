@@ -58,6 +58,9 @@ func validate(config Config) (Config, []budget.ProfiledModel, error) {
 		if err = target.Input.Validate(); err != nil {
 			return config, nil, err
 		}
+		if target.DiagnosticLimit != 0 && target.DiagnosticLimit != 2 {
+			return config, nil, errors.New("generation diagnostic limit must be 0 or 2")
+		}
 		if ids[target.Input.ID] || target.Budget.MaxCalls < 1 || target.Budget.MaxTokens < 1 || target.Limits.MaxModelCalls < 1 || target.Limits.MaxToolCalls < 1 || target.Timeout <= 0 {
 			return config, nil, errors.New("unique targets and positive target limits are required")
 		}

@@ -232,11 +232,7 @@ func Evaluate(ctx context.Context, req checks.EvaluationRequest) (out checks.Eva
 		}
 	}
 	e.result.Checks["protected_paths"] = check("protected_paths", protected, "protected license/checksums/generated mock: "+protected, "input-snapshots")
-	adaptedTests, err := adapt(gate.TestFiles(base))
-	if err != nil {
-		return out, err
-	}
-	integrity, err := testintegrity.CompareAdapted(gate.TestFiles(base), adaptedTests, gate.TestFiles(candidate), testintegrity.Plan{Version: "rpcx-translation-test-structure-v1", SpecSHA256: SpecSHA256(), MaterialSHA256: e.result.MaterialsSHA256, BaselineFiles: gate.Hashes(gate.TestFiles(base)), AdditionalTestImports: []string{"errors", "time"}})
+	integrity, adaptedTests, err := CompareTests(base, candidate, e.result.MaterialsSHA256)
 	if err != nil {
 		return out, err
 	}

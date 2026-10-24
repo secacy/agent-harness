@@ -700,3 +700,16 @@ go test -race ./scenarios/rpcx/l2/gatevalue -run '^TestHistoricalMutations$' -co
 ```
 
 需要固定清单所引用的本地 runs 材料；不执行模型、Docker 或候选。旧 GHCLI v2 的参考消费缺口、成本含义及实际观察见[回顾报告](experiments/2026-10-24-gate-value-review.md)。
+
+## 生成阶段测试结构诊断的开发验收
+
+Translation / Workouts 的 batch Target 可设置 `"generation_diagnostic_limit": 2` 启用按需诊断；缺省 0 关闭。它不扩大 API/Token/工具预算，启用前应固定新的实际计划，不能复用旧实验的一次许可。
+
+以下为离线受控验收，不访问供应商 API。第一条使用脚本模型恢复一个被删除的原断言，再经实际构建/测试、独立门禁及 Campaign 审计；需要本地已准备的可信夹具和 Go 工具链。第二条只读消费本机已保存的两份固定开发候选，没有对应 runs 材料时不要启用。
+
+```sh
+env HARNESS_DIAGNOSTICS_ACCEPTANCE=1 GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly GOCACHE="$PWD/runs/go-cache" go test -count=1 ./scenarios/rpcx/runner -run '^TestDiagnosticRepairCampaign$'
+env HARNESS_DIAGNOSTICS_OBSERVED=1 GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly GOCACHE="$PWD/runs/go-cache" go test -count=1 ./scenarios/rpcx/runner -run '^TestDiagnosticObservedCandidates$'
+```
+
+脚本化修复通过不提供新的自主迁移成功率。诊断语义、失败边界和实际验证见[工作记录](worklog/2026-10-24-generation-diagnostics.md)。

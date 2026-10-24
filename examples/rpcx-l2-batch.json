@@ -17,7 +17,7 @@
   },
   "enrollment": {
     "path": "rpcx-l2-enrollment.json",
-    "sha256": "8f526286b51fd44b7f56591e49a3746d731484aedbf414d5e8fdfe5b7394639d"
+    "sha256": "450e2a6e613101b08d7f04945bff47eee045623ab7a679a3847ac9ea24e66842"
   },
   "targets": [
     {

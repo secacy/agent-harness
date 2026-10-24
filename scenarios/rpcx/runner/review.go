@@ -60,6 +60,9 @@ func renderReview(report Report, baseline, candidate tree, trace *agent.Result) 
 		fmt.Fprint(&out, " · [候选补丁](candidate.patch)")
 	}
 	fmt.Fprint(&out, "\n\n")
+	for _, ref := range report.Diagnostics {
+		fmt.Fprintf(&out, "生成阶段测试结构诊断：%s，SHA-256 %s。只适用于报告固定的候选，不替代最终独立门禁。\n\n", link("逐次报告", "../"+ref.Path), textValue(ref.SHA256))
+	}
 	fmt.Fprint(&out, "## 相关修改\n\n以下为文件级变化；条款对应的具体发现和行号在后续检查中。补丁以 baseline/"+module+" 为基线重放。输入逐文件摘要见 inputs/task.json。\n\n| 文件 | 变化 | 基线 SHA-256 | 候选 SHA-256 |\n| --- | --- | --- | --- |\n")
 	paths := map[string]bool{}
 	for path := range baseline {

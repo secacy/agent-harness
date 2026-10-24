@@ -24,6 +24,7 @@ import (
 )
 
 type runState struct {
+	diagnostics []DiagnosticReference
 	config      Config
 	profile     profile
 	baseline    *BaselineReport
@@ -119,7 +120,7 @@ func runWithObserver(parent context.Context, config Config, observer func(runChe
 			Status: StatusRunning, Phase: PhasePreparing, StartedAt: now, UpdatedAt: now,
 		},
 		input: Input{
-			Target: config.Target, ProfileSHA256: p.hash(), RepositoryName: p.RepositoryName,
+			DiagnosticLimit: config.DiagnosticLimit, Target: config.Target, ProfileSHA256: p.hash(), RepositoryName: p.RepositoryName,
 			ScenarioDir: config.ScenarioDir, ModelName: config.ModelName, ExecutionMode: config.Backend.Info().Kind, Backend: config.Backend.Info(),
 			MaxModelCalls: config.Limits.MaxModelCalls, MaxToolCalls: config.Limits.MaxToolCalls,
 			Timeout: config.Timeout.String(), SpecVersion: p.SpecVersion,
@@ -265,6 +266,9 @@ func validateConfig(config Config) (Config, error) {
 	if err != nil {
 		return config, err
 	}
+	if err = ValidateDiagnostics(target.ProfileID, config.DiagnosticLimit); err != nil {
+		return config, err
+	}
 	if err = p.validate(target); err != nil {
 		return config, err
 	}
@@ -381,7 +385,13 @@ func (r *runState) generate(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	loop := agent.Loop{Model: model, Executor: executor, Tools: executor.Specs(), Limits: r.config.Limits}
+	var tools agent.ToolExecutor = executor
+	specs := executor.Specs()
+	if r.config.DiagnosticLimit != 0 {
+		tools = &diagnosticTools{run: r, files: executor}
+		specs = append(specs, diagnosticSpec())
+	}
+	loop := agent.Loop{Model: model, Executor: tools, Tools: specs, Limits: r.config.Limits}
 	result, err := loop.Run(ctx, []agent.Message{
 		{Role: agent.RoleSystem, Content: "Migrate the workspace repository according to the supplied specification. " +
 			"Use repository tools to inspect and edit files, and go_check for build/test feedback. " +
@@ -493,7 +503,7 @@ func (r *runState) finish(parent context.Context, runErr error) error {
 	// 先发布可检查的材料，最后发布终态；任一失败都重新生成无判定的诊断材料。
 	publish := func() error {
 		report := Report{
-			Baseline: r.baseline, FailureCode: r.record.FailureCode,
+			Diagnostics: r.diagnostics, Baseline: r.baseline, FailureCode: r.record.FailureCode,
 			RunID: r.record.ID, Status: r.record.Status, Review: "review.md", Input: r.input,
 			CandidateSHA256: r.record.CandidateSHA256, PatchSHA256: r.record.PatchSHA256,
 			Validation: r.validation, Error: r.record.Error,
