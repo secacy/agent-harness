@@ -10,7 +10,7 @@
 
 [生成阶段诊断反馈](worklog/2026-10-24-generation-diagnostics.md)首版已在确认范围实现并验收：Translation/Workouts 的按需测试结构检查、逐次候选绑定、有限反馈与审计接入；脚本化修复经真实独立门禁交付通过，真实修复收益仍未证明。
 
-[Translation 单任务真实诊断观察](experiments/2026-10-24-translation-diagnostics-real-model-01.md)已按本版授权完成：主动诊断一次 preserved，随后新增错误探针、40 次调用耗尽未提交，原 Run Failed、无最终判定。轨迹、部分候选参考/实际助手复核及保全收尾完成；[工作记录](worklog/2026-10-24-translation-diagnostic-observation.md#9-授权后的唯一观察与结论)保留准备和失败过程。[预算末轮交接](worklog/2026-10-24-final-response-handoff.md#9-确认后的实现与验证)已实现并通过受控验收：显式启用后，末轮仅回复、宿主禁止工具执行，独立判定及原费用约束保留。三类候选与非法末轮任务的混合交付通过；下一项先设计有限真实观察，尚未追加真实生成或证明效果提升。
+[Translation 单任务真实诊断观察](experiments/2026-10-24-translation-diagnostics-real-model-01.md)已按本版授权完成：主动诊断一次 preserved，随后新增错误探针、40 次调用耗尽未提交，原 Run Failed、无最终判定。轨迹、部分候选参考/实际助手复核及保全收尾完成；[工作记录](worklog/2026-10-24-translation-diagnostic-observation.md#9-授权后的唯一观察与结论)保留准备和失败过程。[预算末轮交接](worklog/2026-10-24-final-response-handoff.md#9-确认后的实现与验证)已实现并通过受控验收：显式启用后，末轮仅回复、宿主禁止工具执行，独立判定及原费用约束保留。三类候选与非法末轮任务的混合交付通过；[有限真实观察](worklog/2026-10-24-final-response-observation.md#7-确认后的材料准备与离线验收)已按确认设计完成协议、源码/二进制及分析/启动校准；保留 Translation 输入与原预算，启用新策略。待本版一次真实外发授权，尚未启动或证明效果提升。
 
 ## 文档组织
 

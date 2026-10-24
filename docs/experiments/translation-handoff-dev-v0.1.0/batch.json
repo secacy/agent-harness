@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "id": "translation-handoff-dev-v0_1_0",
+  "directory": "../../../runs/translation-handoff-dev-v0.1.0",
+  "concurrency": 1,
+  "execution_concurrency": 1,
+  "budget": {
+    "max_calls": 40,
+    "max_tokens": 2500000
+  },
+  "model": {
+    "name": "deepseek-flash",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "max_tokens": 4096,
+    "expected_context_tokens": 1048576
+  },
+  "execution": {
+    "trusted_local": false,
+    "image": "golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd",
+    "cpus": 2,
+    "memory_mib": 2048,
+    "pids": 128
+  },
+  "targets": [
+    {
+      "input": {
+        "id": "translation",
+        "profile_id": "rpcx-translation-t3-v1",
+        "build_config": "all-required",
+        "repository": {
+          "directory": "../../../scenarios/rpcx/l2/data/rpcx-l2-translation-v1/fixtures/translation",
+          "sha256": "e520d248568e98e6a91556041a27ed23e916198436678e561c590d2756b57784"
+        },
+        "dependencies": {
+          "rpcx-v1": {
+            "directory": "../../../scenarios/rpcx/l2/data/rpcx-l2-translation-v1/fixtures/rpcx-v1",
+            "sha256": "3494436826b66504e9d1f28fa22fa22db4f927d0ee43309ab92b2868e5c6d24b"
+          },
+          "rpcx-v2": {
+            "directory": "../../../scenarios/rpcx/l2/data/rpcx-l2-translation-v1/fixtures/rpcx-v2",
+            "sha256": "c8b687c6964c5659391144f0c74934e36a5c0462c438bc8ed886bcdeafb5357c"
+          }
+        },
+        "specification": {
+          "path": "../../../scenarios/rpcx/translation/specs/v0.4.0.md",
+          "sha256": "d45937d461cf056a82aba50741a27ba3c991c73967047e0d4e723cc70feb5e5f"
+        }
+      },
+      "budget": {
+        "max_calls": 40,
+        "max_tokens": 2500000
+      },
+      "max_model_calls": 40,
+      "max_tool_calls": 80,
+      "timeout": "10m",
+      "generation_diagnostic_limit": 2,
+      "completion_policy": "final-response-v1"
+    }
+  ],
+  "enrollment": {
+    "path": "enrollment.json",
+    "sha256": "445837797bde83045f240a7a795d015b662ea5045f837f72d75d0da2e742663c"
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "parent_revision": "d4e5b2b4653d4ee21f2c10b3acf0dcec491c334b",
+  "source_file_count": 820,
+  "source_sha256": "5be6b317fec89caf6307ab9b1b7c9398dafbc15ec2fd0dc24d7071d76d251a4b",
+  "total_bytes": 54019215,
+  "source_scope": [
+    "cmd/",
+    "internal/",
+    "scenarios/",
+    "scripts/",
+    "go.mod",
+    "go.sum (if present)"
+  ],
+  "source_algorithm": "SHA256 of compact UTF-8 JSON object {repository-relative-path: file-SHA256}, sorted by path; no final newline; tracked source only; excludes docs, runs, credentials and metadata directories",
+  "source_files": "source-files.json",
+  "snapshot": "runs/translation-handoff-dev-v0.1.0-preparation/snapshot/source",
+  "build": {
+    "go_version": "go version go1.26.5 darwin/arm64",
+    "arguments": [
+      "go",
+      "build",
+      "-trimpath",
+      "-buildvcs=false"
+    ],
+    "network": {
+      "GOPROXY": "off",
+      "GOSUMDB": "off",
+      "GOWORK": "off",
+      "GOTOOLCHAIN": "local",
+      "GOFLAGS": "-mod=readonly"
+    },
+    "built_from": "exported snapshot/source",
+    "goos": "darwin",
+    "goarch": "arm64",
+    "cgo_enabled": "1"
+  },
+  "binaries": {
+    "harness": {
+      "path": "runs/translation-handoff-dev-v0.1.0-preparation/snapshot/bin/harness",
+      "sha256": "8462bbfae75e46dd98a55028a03cb656a503a9d4b811b47201291a6c860bc1cb",
+      "size": 63232930
+    },
+    "summarize": {
+      "path": "runs/translation-handoff-dev-v0.1.0-preparation/snapshot/bin/summarize",
+      "sha256": "9a27c631e2fa992831fac7a02c6b957cab462beb24a8c14ccd6111a7c610224e",
+      "size": 54600450
+    }
+  },
+  "archive": null,
+  "scope": "local immutable source snapshot and binaries; no new delivery archive; protocol documents versioned separately"
+}

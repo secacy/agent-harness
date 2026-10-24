@@ -1,0 +1,52 @@
+{
+  "schema_version": 2,
+  "id": "translation-handoff-dev-v0_1_0",
+  "kind": "development_evaluation",
+  "targets": [
+    {
+      "id": "translation",
+      "profile_id": "rpcx-translation-t3-v1",
+      "build_config": "all-required",
+      "baseline_sha256": "e520d248568e98e6a91556041a27ed23e916198436678e561c590d2756b57784",
+      "spec_sha256": "d45937d461cf056a82aba50741a27ba3c991c73967047e0d4e723cc70feb5e5f",
+      "reference_version": "rpcx-l2-reference-translation-data-v2",
+      "reference_sha256": "1687c993a76ff6682111f0f6eb6b9662e4bc193b7e92d3d4baa2c2fdcf54acbd",
+      "tool_sha256": "6f6aa8aace731f23f76cf3cfba7fdd800881f4b30217e16fca97f5fbaad38f3b"
+    }
+  ],
+  "protocol": {
+    "id": "translation-handoff-dev-v0_1_0",
+    "split": "development",
+    "attempts_per_target": 1,
+    "plan_settings_sha256": "7604829b608c16207296d2fa8d55b5169f7abe958876681fc62bc39aaddc0f0e",
+    "capability_binding": "model-contract-v1",
+    "execution": {
+      "kind": "docker",
+      "image": "sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd",
+      "cpus": 2,
+      "memory_bytes": 2147483648,
+      "pids": 128
+    },
+    "reviewers": {
+      "translation": "codex:/root"
+    },
+    "materials": {
+      "protocol": {
+        "path": "/Users/can/src/golang/agent-harness-new/docs/experiments/translation-handoff-dev-v0.1.0/README.md",
+        "sha256": "d64373b9fbffe9852de6eeb288b10012b1091123a47c15f489a882a483b3da4f"
+      },
+      "dataset": {
+        "path": "/Users/can/src/golang/agent-harness-new/docs/experiments/translation-handoff-dev-v0.1.0/dataset.json",
+        "sha256": "2ffd9f51d4680e82981df4754545e828bc7a15954988f8f04a178003a5b0788b"
+      },
+      "implementation": {
+        "path": "/Users/can/src/golang/agent-harness-new/docs/experiments/translation-handoff-dev-v0.1.0/implementation.json",
+        "sha256": "935db770b1f9f3ae2ff0984a9491f72e17ce90b6e561bc24d7744306cf0976a1"
+      },
+      "environment": {
+        "path": "/Users/can/src/golang/agent-harness-new/docs/experiments/translation-handoff-dev-v0.1.0/environment.json",
+        "sha256": "71eeb5c9e5eb31083fea8abc6996b0d67e30ce9f1b0b40300e842d42aba0e00f"
+      }
+    }
+  }
+}

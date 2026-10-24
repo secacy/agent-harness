@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "id": "translation-handoff-dev-v0_1_0",
+  "files": {
+    "README.md": "d64373b9fbffe9852de6eeb288b10012b1091123a47c15f489a882a483b3da4f",
+    "analyze.py": "f971788453f1ffb2b78fdc8eaecde799723d5ca1afb3eab8057ed98f8e37fa4c",
+    "batch.json": "acec3a24edb0e61d997d21c0e7789747a5a839695777d6818fef77f62a80a5e5",
+    "capabilities-observed.json": "75ca135dad7601f0371ceb06a9d63e9ac7921c5d3d74f5b3a3583033e935d312",
+    "dataset.json": "2ffd9f51d4680e82981df4754545e828bc7a15954988f8f04a178003a5b0788b",
+    "enrollment.json": "445837797bde83045f240a7a795d015b662ea5045f837f72d75d0da2e742663c",
+    "environment.json": "71eeb5c9e5eb31083fea8abc6996b0d67e30ce9f1b0b40300e842d42aba0e00f",
+    "expected-plan.json": "48bae76c20ea1d37be99bab05fa34be64476ed96c83a6ac69e9fee54c9c1c716",
+    "implementation.json": "935db770b1f9f3ae2ff0984a9491f72e17ce90b6e561bc24d7744306cf0976a1",
+    "launch.py": "703f87ead800d8f54462d618e6bd3c33072396a88e60d2bf09831e180aa5d861",
+    "models-observed.json": "b4a502059eb2dafad6380e0a57b2debf31219ae859cba9f0e019d48ae473be2f",
+    "reviewers.json": "37e5d09bd9a878f26e23c3ff325f78bc452fe088940fbf6c7b406031010eb4ab",
+    "source-files.json": "a1969f6ef0c72d6cd6b0f3610fdf3c2db40a145b0b281f04bd86aab4393db66e",
+    "test_analyze.py": "2e6d068656113a255297ae5c148caf9c1d5d45a4d3aa9e3f20e15ee900697abc",
+    "test_launch.py": "fb25bff299109c03e9bb5e780ac1717470205113b870cb0b8185e87b059dc0a3",
+    "tools.json": "ab177e4c1076912982f4e4f33a8145de992c449f4e8b58d1bb77442f1d16bb7e"
+  }
+}
