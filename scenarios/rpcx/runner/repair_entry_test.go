@@ -15,7 +15,6 @@ import (
 
 	"github.com/secacy/agent-harness/internal/agent"
 	"github.com/secacy/agent-harness/internal/budget"
-	"github.com/secacy/agent-harness/internal/deepseek"
 	"github.com/secacy/agent-harness/internal/execution"
 )
 
@@ -62,13 +61,16 @@ func repairLaunchIdentity(project string) (repairLaunch, error) {
 	return repairLaunch{digest(protocol), digest(freeze), digest(data)}, nil
 }
 
-// 此入口只认显式模式，不读取 .env；普通 go test 不发现或调用真实模型。
+// 本版只支持离线准备和校准，不读取凭证或提供真实模型入口。
 func TestDiagnosticRepairExperiment(t *testing.T) {
 	mode := os.Getenv("HARNESS_REPAIR_MODE")
 	if mode == "" {
-		t.Skip("set HARNESS_REPAIR_MODE to prepare, offline or real for the explicit experiment entry")
+		t.Skip("set HARNESS_REPAIR_MODE to prepare or offline for the explicit experiment entry")
 	}
-	if mode != "prepare" && mode != "offline" && mode != "real" {
+	if mode == "real" {
+		t.Fatal("real model execution is disabled for this offline protocol")
+	}
+	if mode != "prepare" && mode != "offline" {
 		t.Fatal("invalid repair experiment mode")
 	}
 	if flag.Lookup("test.run").Value.String() != "^TestDiagnosticRepairExperiment$" {
@@ -100,16 +102,6 @@ func TestDiagnosticRepairExperiment(t *testing.T) {
 		t.Log("launch identity saved; no credentials or model requests")
 		return
 	}
-	if mode == "real" {
-		raw, err := os.ReadFile(launch)
-		if err != nil {
-			t.Fatal(err)
-		}
-		var prepared repairLaunch
-		if err = repairDecode(raw, &prepared); err != nil || prepared != identity {
-			t.Fatal("repair launch identity mismatch", err)
-		}
-	}
 	output, err := filepath.Abs(os.Getenv("HARNESS_REPAIR_OUTPUT"))
 	if err != nil || os.Getenv("HARNESS_REPAIR_OUTPUT") == "" {
 		t.Fatal("an explicit repair output directory is required", err)
@@ -117,7 +109,7 @@ func TestDiagnosticRepairExperiment(t *testing.T) {
 	if _, err := os.Lstat(output); !os.IsNotExist(err) {
 		t.Fatal("repair output must not exist")
 	}
-	// 输出位置与 Docker 可用性在任何凭证读取和 API 查询之前确认。
+	// 先确认输出边界，再创建 Docker 后端。
 	if err = repairOutputBoundary(project, output); err != nil {
 		t.Fatal(err)
 	}
@@ -132,51 +124,6 @@ func TestDiagnosticRepairExperiment(t *testing.T) {
 	profile := budget.Profile{Provider: "controlled", Endpoint: "in-process", Model: p.Model, ContextTokens: 90, MaxOutputTokens: 10, SourceSHA256: strings.Repeat("e", 64), VerifiedAt: time.Date(2026, 10, 25, 0, 0, 0, 0, time.UTC)}
 	services := repairServices{Backend: backend, Profile: profile}
 	services.NewModel = func(string) (budget.ProfiledModel, error) { return repairScript(profile), nil }
-	var capability *deepseek.Capabilities
-	if mode == "real" {
-		expected, pathErr := canonicalPath(filepath.Join(project, "runs", p.ID))
-		actual, actualErr := canonicalPath(output)
-		if pathErr != nil || actualErr != nil || expected != actual {
-			t.Fatal("real repair output must match the protocol ID")
-		}
-		// 一次启动即消耗该启动回执；失败后也不隐式重试查询或生成。
-		receipt, openErr := os.OpenFile(launch+".started", os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0600)
-		if openErr != nil {
-			t.Fatal(openErr)
-		}
-		receiptData, _ := json.Marshal(identity)
-		_, writeErr := receipt.Write(append(receiptData, '\n'))
-		if err = errors.Join(writeErr, receipt.Sync(), receipt.Close()); err != nil {
-			t.Fatal(err)
-		}
-		// 运行命令由已授权宿主显式注入密钥；测试本身不搜索或加载凭证文件。
-		client, err := deepseek.New(deepseek.Config{APIKey: os.Getenv("DEEPSEEK_API_KEY"), Model: p.Model, Endpoint: p.Endpoint, MaxTokens: p.OutputTokens})
-		if err != nil {
-			t.Fatal(err)
-		}
-		probe, stop := context.WithTimeout(ctx, 35*time.Second)
-		value, err := client.Discover(probe)
-		stop()
-		if err != nil {
-			t.Fatal(err)
-		}
-		capability = &value
-		// 原始能力材料另存，不因不匹配再次查询或发起生成。
-		if value.Profile.ContextTokens != p.ContextTokens || value.Profile.MaxOutputTokens != int64(p.OutputTokens) {
-			if err = os.Mkdir(output, 0700); err == nil {
-				err = errors.Join(writeAtomic(filepath.Join(output, "models-response.json"), value.Response), writeJSON(filepath.Join(output, "capabilities.json"), value))
-			}
-			t.Fatal("model capabilities changed; generation disabled", err)
-		}
-		services.Profile = value.Profile
-		client, err = deepseek.New(deepseek.Config{APIKey: os.Getenv("DEEPSEEK_API_KEY"), Model: p.Model, Endpoint: p.Endpoint, MaxTokens: p.OutputTokens, BudgetProfile: &value.Profile})
-		if err != nil {
-			t.Fatal(err)
-		}
-		services.NewModel = func(string) (budget.ProfiledModel, error) { return client, nil }
-	}
-	// 能力材料在实验根目录建立后、任何模型生成前持久化。
-	services.Capabilities = capability
 	summary, err := runRepairComparison(ctx, project, output, p, seed, prompt, services)
 	if err != nil {
 		t.Fatal(err)

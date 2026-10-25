@@ -7,6 +7,7 @@ import (
 	"errors"
 	"maps"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -146,12 +147,13 @@ func repairMockEvaluation(t *testing.T, req checks.EvaluationRequest) (checks.Ev
 func TestRepairComparisonMechanism(t *testing.T) {
 	project, p, _, seed, prompt := repairInputs(t)
 	profile := repairControlledProfile(p.Model)
+	var order []string
 	services := repairServices{Backend: repairMockBackend(t), Profile: profile, Evaluate: func(_ context.Context, req checks.EvaluationRequest) (checks.Evaluation, error) {
+		order = append(order, "validate-"+filepath.Base(filepath.Dir(filepath.Dir(req.BaselineDir))))
 		return repairMockEvaluation(t, req)
 	}}
-	var order []string
 	services.NewModel = func(id string) (budget.ProfiledModel, error) {
-		order = append(order, id)
+		order = append(order, "generate-"+id)
 		script := repairScript(profile)
 		return budgetTestModel{profile: profile, modelFunc: func(ctx context.Context, messages []agent.Message, tools []agent.ToolSpec) (agent.Reply, error) {
 			shown := strings.Contains(messages[2].Content, `"total_findings"`)
@@ -174,7 +176,7 @@ func TestRepairComparisonMechanism(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if strings.Join(order, ",") != "A,B" || summary.Status != "Completed" || summary.Attempts[0].Verdict.Submitted != quality.StatusFail || summary.Attempts[0].Verdict.Assertion != quality.StatusFail || summary.Attempts[1].Verdict.Assertion != quality.StatusPass || summary.Attempts[1].Verdict.Tests != quality.StatusPass || summary.Budget.Totals.Calls != 4 || summary.Budget.Totals.KnownTokens != 80 {
+	if strings.Join(order, ",") != "generate-A,generate-B,validate-A,validate-B" || summary.Status != "Completed" || summary.Attempts[0].Verdict.Submitted != quality.StatusFail || summary.Attempts[0].Verdict.Assertion != quality.StatusFail || summary.Attempts[1].Verdict.Assertion != quality.StatusPass || summary.Attempts[1].Verdict.Tests != quality.StatusPass || summary.Budget.Totals.Calls != 4 || summary.Budget.Totals.KnownTokens != 80 {
 		t.Fatalf("unexpected controlled result %+v", summary)
 	}
 	if summary.Attempts[1].Verdict.Delivery != quality.StatusUnknown || summary.Attempts[1].Verdict.success() {
@@ -272,7 +274,7 @@ func TestRepairBudgetDenialAndUnknownCost(t *testing.T) {
 }
 
 func TestRepairCancellationAndPublicationFailure(t *testing.T) {
-	for _, mode := range []string{"cancel", "validation-error", "candidate-drift", "publication-error"} {
+	for _, mode := range []string{"cancel", "publication-error", "generation-publication-error", "budget-integrity"} {
 		t.Run(mode, func(t *testing.T) {
 			project, p, _, seed, prompt := repairInputs(t)
 			profile := repairControlledProfile(p.Model)
@@ -293,20 +295,20 @@ func TestRepairCancellationAndPublicationFailure(t *testing.T) {
 							t.Fatal(err)
 						}
 					}
+					if mode == "generation-publication-error" {
+						if err := os.Mkdir(filepath.Join(output, "A/artifacts/generation.json"), 0700); err != nil {
+							t.Fatal(err)
+						}
+					}
+					if mode == "budget-integrity" {
+						return agent.Reply{Finish: agent.FinishStop, Usage: &agent.Usage{InputTokens: -1, TotalTokens: -1}}, nil
+					}
 					return agent.Reply{Finish: agent.FinishStop, Usage: &agent.Usage{InputTokens: 15, OutputTokens: 5, TotalTokens: 20}}, nil
 				}}, nil
 			}}
 			services.Evaluate = func(_ context.Context, req checks.EvaluationRequest) (checks.Evaluation, error) {
-				if mode == "validation-error" {
-					return checks.Evaluation{}, errors.New("injected validation infrastructure error")
-				}
-				value, err := repairMockEvaluation(t, req)
-				if mode == "candidate-drift" {
-					if err := os.WriteFile(filepath.Join(req.CandidateDir, "go.mod"), []byte("drift"), 0644); err != nil {
-						t.Fatal(err)
-					}
-				}
-				return value, err
+				t.Fatal("generation failure reached validation")
+				return checks.Evaluation{}, nil
 			}
 			summary, err := runRepairComparison(ctx, project, output, p, seed, prompt, services)
 			if err == nil || summary.Status != "Aborted" || summary.Attempts[1].Agent != nil {
@@ -328,7 +330,7 @@ func TestRepairCancellationAndPublicationFailure(t *testing.T) {
 
 func TestRepairProtocolRejectsChangedInputs(t *testing.T) {
 	project, _, _, _, _ := repairInputs(t)
-	for _, mode := range []string{"seed", "prompt", "limits", "unknown-field", "extra-json", "unsafe-path"} {
+	for _, mode := range []string{"seed", "prompt", "limits", "order", "unknown-field", "extra-json", "unsafe-path"} {
 		t.Run(mode, func(t *testing.T) {
 			root := t.TempDir()
 			dir := filepath.Join(root, repairProtocolDir)
@@ -355,6 +357,8 @@ func TestRepairProtocolRejectsChangedInputs(t *testing.T) {
 				raw = []byte("changed")
 			case "limits":
 				raw = bytes.Replace(raw, []byte(`"max_model_calls": 12`), []byte(`"max_model_calls": 13`), 1)
+			case "order":
+				raw = bytes.Replace(raw, []byte(`"generate-then-validate"`), []byte(`"interleaved"`), 1)
 			case "unknown-field":
 				raw = bytes.Replace(raw, []byte(`"schema_version": 1`), []byte(`"schema_version": 1, "extra": true`), 1)
 			case "extra-json":
@@ -382,8 +386,10 @@ func TestRepairProtocolRejectsChangedInputs(t *testing.T) {
 }
 
 func TestRepairTimeRevisionPreservesComparison(t *testing.T) {
-	project, current, _, _, _ := repairInputs(t)
+	project, _, _, _, _ := repairInputs(t)
 	oldDir := filepath.Join(project, "docs/experiments/diagnostic-repair-dev-v0.1.0")
+	currentDir := filepath.Join(project, "docs/experiments/diagnostic-repair-dev-v0.2.0")
+	current := readJSON[repairProtocol](t, filepath.Join(currentDir, "protocol.json"))
 	raw, err := os.ReadFile(filepath.Join(oldDir, "protocol.json"))
 	if err != nil {
 		t.Fatal(err)
@@ -404,12 +410,12 @@ func TestRepairTimeRevisionPreservesComparison(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		after, err := os.ReadFile(filepath.Join(project, repairProtocolDir, name))
+		after, err := os.ReadFile(filepath.Join(currentDir, name))
 		if err != nil || !bytes.Equal(before, after) {
 			t.Fatal("comparison material changed", name, err)
 		}
 	}
-	for _, dir := range []string{oldDir, filepath.Join(project, repairProtocolDir)} {
+	for _, dir := range []string{oldDir, currentDir, filepath.Join(project, repairProtocolDir)} {
 		if repairOutputBoundary(project, filepath.Join(dir, "new-output")) == nil {
 			t.Fatal("versioned input accepts experiment output", dir)
 		}
@@ -434,5 +440,164 @@ func TestRepairInfrastructureFailureStopsBeforeNextModel(t *testing.T) {
 	}
 	if summary.Attempts[0].Agent.ToolCalls != 2 || summary.Attempts[0].Verdict.Submitted != quality.StatusFail {
 		t.Fatal("failed check was counted as a submission")
+	}
+}
+
+func TestRepairOrderRevisionPreservesComparison(t *testing.T) {
+	project, current, _, _, _ := repairInputs(t)
+	oldDir := filepath.Join(project, "docs/experiments/diagnostic-repair-dev-v0.2.0")
+	previous := readJSON[repairProtocol](t, filepath.Join(oldDir, "protocol.json"))
+	previous.ID, previous.ExecutionOrder = current.ID, current.ExecutionOrder
+	if previous != current || current.ExecutionOrder != "generate-then-validate" {
+		t.Fatal("revision changed more than the approved identity and execution order")
+	}
+	for _, name := range []string{"seed.json", "prompt.txt", "review-template.md"} {
+		before, err := os.ReadFile(filepath.Join(oldDir, name))
+		if err != nil {
+			t.Fatal(err)
+		}
+		after, err := os.ReadFile(filepath.Join(project, repairProtocolDir, name))
+		if err != nil || !bytes.Equal(before, after) {
+			t.Fatal("comparison material changed", name, err)
+		}
+	}
+}
+
+func TestRepairValidationFailureKeepsBothGenerations(t *testing.T) {
+	for _, mode := range []string{"infrastructure-error", "timeout", "late-success", "candidate-drift"} {
+		t.Run(mode, func(t *testing.T) {
+			project, p, _, seed, prompt := repairInputs(t)
+			profile := repairControlledProfile(p.Model)
+			if mode == "timeout" || mode == "late-success" {
+				// 零期限确定性触发真正的阶段 context 取消，不依赖慢命令或墙钟竞争。
+				p.ValidationSeconds = 0
+			}
+			output := filepath.Join(t.TempDir(), "comparison")
+			before := map[string][]byte{}
+			candidateHashes := map[string]string{}
+			generated, validated := 0, 0
+			services := repairServices{Backend: repairMockBackend(t), Profile: profile,
+				NewModel: func(string) (budget.ProfiledModel, error) {
+					generated++
+					return repairScript(profile), nil
+				}, Evaluate: func(ctx context.Context, req checks.EvaluationRequest) (checks.Evaluation, error) {
+					validated++
+					if generated != 2 {
+						t.Fatal("validation started before both model attempts")
+					}
+					for _, id := range []string{"A", "B"} {
+						snapshot := filepath.Join(output, id, "artifacts/generation.json")
+						value := readJSON[repairAttempt](t, snapshot)
+						if value.Status != "Generated" || value.Agent == nil || value.Verdict.Submitted != quality.StatusPass || value.Validation != nil || value.Verdict.Checks != quality.StatusUnknown {
+							t.Fatal("generation snapshot is incomplete or claims validation", id, value)
+						}
+						raw, err := os.ReadFile(snapshot)
+						if err != nil {
+							t.Fatal(err)
+						}
+						before[id] = raw
+						candidateHashes[id] = mustReadTree(t, filepath.Join(output, id, "submitted/translation")).hash()
+						if candidateHashes[id] != value.CandidateSHA256 {
+							t.Fatal("saved candidate identity differs from generation")
+						}
+					}
+					value, err := repairMockEvaluation(t, req)
+					switch mode {
+					case "infrastructure-error":
+						return value, errors.New("injected validation infrastructure error")
+					case "timeout":
+						<-ctx.Done()
+						return value, ctx.Err()
+					case "late-success":
+						<-ctx.Done()
+						return value, nil
+					case "candidate-drift":
+						if err := os.WriteFile(filepath.Join(req.CandidateDir, "go.mod"), []byte("drift"), 0644); err != nil {
+							t.Fatal(err)
+						}
+					}
+					return value, err
+				}}
+			summary, err := runRepairComparison(context.Background(), project, output, p, seed, prompt, services)
+			if err == nil || summary.Status != "Aborted" || generated != 2 || validated != 1 {
+				t.Fatal("validation failure did not stop at the expected boundary", summary, err)
+			}
+			if (mode == "timeout" || mode == "late-success") && !errors.Is(err, context.DeadlineExceeded) {
+				t.Fatal("validation timeout was not preserved", err)
+			}
+			if summary.Attempts[0].Status != "Error" || summary.Attempts[0].Verdict.Checks != quality.StatusUnknown || summary.Attempts[1].Status != "Generated" || summary.Attempts[1].Validation != nil || summary.Attempts[1].Verdict.Checks != quality.StatusUnknown {
+				t.Fatal("failed or unstarted validation was reported as successful", summary)
+			}
+			if summary.Budget.Totals.Calls != 6 || summary.Budget.Totals.KnownTokens != 120 || summary.Budget.Totals.UnknownTokens != 0 {
+				t.Fatal("validation changed generation accounting", summary.Budget)
+			}
+			for i, id := range []string{"A", "B"} {
+				snapshot := filepath.Join(output, id, "artifacts/generation.json")
+				after, readErr := os.ReadFile(snapshot)
+				if readErr != nil || !bytes.Equal(before[id], after) {
+					t.Fatal("validation overwrote generation evidence", id, readErr)
+				}
+				disk := readJSON[repairAttempt](t, filepath.Join(output, id, "attempt.json"))
+				if disk.Status != summary.Attempts[i].Status || disk.CandidateSHA256 != candidateHashes[id] || disk.Verdict.Checks != quality.StatusUnknown || disk.Verdict.success() {
+					t.Fatal("disk result differs or manufactures success", id, disk)
+				}
+				if id == "B" && mustReadTree(t, filepath.Join(output, id, "submitted/translation")).hash() != candidateHashes[id] {
+					t.Fatal("failed validation modified the other candidate")
+				}
+			}
+		})
+	}
+}
+
+func TestRepairSavedInputsCheckedBeforeValidation(t *testing.T) {
+	for _, mode := range []string{"candidate", "dependency"} {
+		t.Run(mode, func(t *testing.T) {
+			project, p, _, seed, prompt := repairInputs(t)
+			profile := repairControlledProfile(p.Model)
+			output := filepath.Join(t.TempDir(), "comparison")
+			services := repairServices{Backend: repairMockBackend(t), Profile: profile,
+				NewModel: func(id string) (budget.ProfiledModel, error) {
+					if id == "B" {
+						path := "A/submitted/translation/go.mod"
+						if mode == "dependency" {
+							path = "A/submitted/rpcx-v2/go.mod"
+						}
+						if err := os.WriteFile(filepath.Join(output, path), []byte("drift"), 0644); err != nil {
+							t.Fatal(err)
+						}
+					}
+					return repairScript(profile), nil
+				}, Evaluate: func(context.Context, checks.EvaluationRequest) (checks.Evaluation, error) {
+					t.Fatal("changed saved input reached validation")
+					return checks.Evaluation{}, nil
+				}}
+			summary, err := runRepairComparison(context.Background(), project, output, p, seed, prompt, services)
+			if err == nil || summary.Status != "Aborted" || summary.Attempts[0].Status != "Error" || summary.Attempts[1].Status != "Generated" {
+				t.Fatal("saved input drift was not stopped", summary, err)
+			}
+		})
+	}
+}
+
+func TestRepairRealModeDisabled(t *testing.T) {
+	executable, err := os.Executable()
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, executable, "-test.run=^TestDiagnosticRepairExperiment$", "-test.v")
+	// 从无协议、无凭证的目录启动，确认付费模式在读取输入及连接后端前拒绝。
+	cmd.Dir = t.TempDir()
+	for _, value := range os.Environ() {
+		if !strings.HasPrefix(value, "HARNESS_") && !strings.HasPrefix(value, "DEEPSEEK_") {
+			cmd.Env = append(cmd.Env, value)
+		}
+	}
+	cmd.Env = append(cmd.Env, "HARNESS_REPAIR_MODE=real")
+	output, err := cmd.CombinedOutput()
+	var exit *exec.ExitError
+	if !errors.As(err, &exit) || exit.ExitCode() != 1 || !bytes.Contains(output, []byte("real model execution is disabled for this offline protocol")) {
+		t.Fatal("real mode was not rejected before loading inputs", string(output), err)
 	}
 }

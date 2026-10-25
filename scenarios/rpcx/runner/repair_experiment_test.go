@@ -22,11 +22,12 @@ import (
 	"github.com/secacy/agent-harness/scenarios/rpcx/translation"
 )
 
-const repairProtocolDir = "docs/experiments/diagnostic-repair-dev-v0.2.0"
+const repairProtocolDir = "docs/experiments/diagnostic-repair-dev-v0.3.0"
 
 type repairProtocol struct {
 	SchemaVersion      int    `json:"schema_version"`
 	ID                 string `json:"id"`
+	ExecutionOrder     string `json:"execution_order,omitempty"`
 	ProfileID          string `json:"profile_id"`
 	SourceRun          string `json:"source_run"`
 	SeedSHA256         string `json:"seed_sha256"`
@@ -69,7 +70,7 @@ func loadRepairProtocol(root string) (repairProtocol, tree, string, error) {
 	if err = repairDecode(raw, &p); err != nil {
 		return p, nil, "", err
 	}
-	if p.ID != "diagnostic-repair-dev-v0.2.0" || p.SchemaVersion != 1 || p.ProfileID != ProfileTranslation || p.SourceRun != "rpcx-agent-1712004754" || p.SeedSHA256 != "19c4a36e7cdd83c0106fbdbbc3c221affe4dd471c0dd41df531491f48c4e6884" ||
+	if p.ID != "diagnostic-repair-dev-v0.3.0" || p.ExecutionOrder != "generate-then-validate" || p.SchemaVersion != 1 || p.ProfileID != ProfileTranslation || p.SourceRun != "rpcx-agent-1712004754" || p.SeedSHA256 != "19c4a36e7cdd83c0106fbdbbc3c221affe4dd471c0dd41df531491f48c4e6884" ||
 		p.Model != "deepseek-flash" || p.Endpoint != "https://api.deepseek.com/chat/completions" || p.ContextTokens != 1048576 || p.OutputTokens != 4096 || p.MaxModelCalls != 12 || p.MaxToolCalls != 24 || p.TokensPerAttempt != 1500000 || p.PreparationSeconds != 180 || p.GenerationSeconds != 300 || p.ValidationSeconds != 360 || p.HostSeconds != 1680 || p.CleanupSeconds != 60 || p.Image != execution.DefaultImage {
 		return p, nil, "", errors.New("repair protocol does not match the confirmed experiment")
 	}
@@ -107,7 +108,7 @@ func repairOutputBoundary(project, output string) error {
 	if err != nil {
 		return err
 	}
-	for _, input := range []string{"scenarios", "docs/experiments/diagnostic-repair-dev-v0.1.0", repairProtocolDir, "runs/l2-current-dev-v0.1.0"} {
+	for _, input := range []string{"scenarios", "docs/experiments/diagnostic-repair-dev-v0.1.0", "docs/experiments/diagnostic-repair-dev-v0.2.0", repairProtocolDir, "runs/l2-current-dev-v0.1.0"} {
 		path, err := canonicalPath(filepath.Join(project, input))
 		if err != nil {
 			return err
@@ -352,7 +353,19 @@ func runRepairComparison(parent context.Context, project, output string, p repai
 			return summary, modelErr
 		}
 		a := &summary.Attempts[i]
-		if err = executeRepair(ctx, r, p, seed, prompt, feedback[i], a, ledger, model, services.Evaluate); err != nil {
+		if err = generateRepair(ctx, r, p, seed, prompt, feedback[i], a, ledger, model); err != nil {
+			return summary, err
+		}
+		if recorder.fault != nil {
+			return summary, recorder.fault
+		}
+	}
+	// 两份生成快照均发布后才进入重型验证；验证故障仍按原边界停止。
+	for i, r := range states {
+		if err = errors.Join(ctx.Err(), ledger.Err()); err != nil {
+			return summary, err
+		}
+		if err = validateRepair(ctx, r, p, &summary.Attempts[i], services.Evaluate); err != nil {
 			return summary, err
 		}
 		if recorder.fault != nil {
@@ -362,7 +375,7 @@ func runRepairComparison(parent context.Context, project, output string, p repai
 	return summary, nil
 }
 
-func executeRepair(ctx context.Context, r *runState, p repairProtocol, seed tree, prompt string, feedback agent.ToolResult, a *repairAttempt, ledger *budget.Ledger, model budget.ProfiledModel, evaluate func(context.Context, checks.EvaluationRequest) (checks.Evaluation, error)) (err error) {
+func generateRepair(ctx context.Context, r *runState, p repairProtocol, seed tree, prompt string, feedback agent.ToolResult, a *repairAttempt, ledger *budget.Ledger, model budget.ProfiledModel) (err error) {
 	a.Status = "Running"
 	defer func() {
 		if err != nil {
@@ -408,7 +421,6 @@ func executeRepair(ctx context.Context, r *runState, p repairProtocol, seed tree
 	result, generationErr := (agent.Loop{CompletionPolicy: agent.FinalResponseV1, Model: wrapped, Executor: tools, Tools: tools.Specs(), Limits: agent.Limits{MaxModelCalls: p.MaxModelCalls, MaxToolCalls: p.MaxToolCalls}}).Run(genCtx, initial)
 	stop()
 	a.GenerationTime, a.Agent = time.Since(start).String(), &result
-	a.Status = "Finished"
 	if generationErr != nil {
 		a.Error = generationErr.Error()
 	}
@@ -438,22 +450,64 @@ func executeRepair(ctx context.Context, r *runState, p repairProtocol, seed tree
 	if err = candidate.write(cleanup, r.path("submitted/translation")); err != nil {
 		return err
 	}
+	a.Status = "Generated"
+	// 只写一次的生成记录不随独立验证更新；部分候选也保留实际提交状态。
+	if err = writeJSON(r.path("artifacts/generation.json"), a); err != nil {
+		return err
+	}
 	if recorder, ok := r.config.Backend.(*repairRecorder); ok && recorder.fault != nil {
 		return recorder.fault
 	}
 	if err = errors.Join(ctx.Err(), ledger.Err()); err != nil {
 		return err
 	}
+	return nil
+}
+
+func validateRepair(ctx context.Context, r *runState, p repairProtocol, a *repairAttempt, evaluate func(context.Context, checks.EvaluationRequest) (checks.Evaluation, error)) (err error) {
+	a.Status = "Validating"
+	defer func() {
+		if err != nil {
+			a.Status = "Error"
+			if a.Error == "" {
+				a.Error = err.Error()
+			} else {
+				a.Error = errors.Join(errors.New(a.Error), err).Error()
+			}
+			a.Verdict.Checks = quality.StatusUnknown
+		}
+		if saveErr := writeJSON(r.path("attempt.json"), a); saveErr != nil {
+			a.Status, a.Error = "Error", errors.Join(err, saveErr).Error()
+			a.Verdict.Checks = quality.StatusUnknown
+			err = errors.Join(err, saveErr)
+		}
+	}()
+	if err = writeJSON(r.path("attempt.json"), a); err != nil {
+		return err
+	}
+	if err = r.checkInputs(ctx); err != nil {
+		return err
+	}
+	before, err := readTree(ctx, r.path("submitted/translation"))
+	if err != nil || before.hash() != a.CandidateSHA256 {
+		return errors.Join(err, errors.New("repair candidate changed before validation"))
+	}
+	for name := range r.profile.Dependencies {
+		actual, err := readTree(ctx, r.path("submitted/"+name))
+		if err != nil || actual.hash() != r.fixtures.module(name).hash() {
+			return errors.Join(err, errors.New("repair dependency changed before validation"))
+		}
+	}
 	if evaluate == nil {
 		evaluate = translation.Evaluate
 	}
-	start = time.Now()
+	start := time.Now()
 	validationCtx, validationStop := context.WithTimeout(ctx, time.Duration(p.ValidationSeconds)*time.Second)
 	value, validationErr := evaluate(validationCtx, checks.EvaluationRequest{BaselineDir: r.path("baseline/translation"), CandidateDir: r.path("submitted/translation"), SpecPath: r.path("inputs/spec/spec.md"), EvidenceDir: r.path("evidence"), CacheDir: r.path("cache/validation"), Backend: r.config.Backend})
+	validationErr = errors.Join(validationErr, validationCtx.Err())
 	validationStop()
 	a.ValidationTime, a.Validation = time.Since(start).String(), &value
 	if validationErr != nil {
-		a.Error = errors.Join(generationErr, validationErr).Error()
 		return validationErr
 	}
 	if value.CandidateSHA256 != a.CandidateSHA256 || value.BaselineSHA256 != r.input.BaselineSHA256 || value.SpecSHA256 != r.input.SpecSHA256 || value.VerifierVersion != r.profile.Verifier {
@@ -474,6 +528,7 @@ func executeRepair(ctx context.Context, r *runState, p repairProtocol, seed tree
 	if err = r.checkInputs(postCtx); err != nil {
 		return err
 	}
+	a.Status = "Finished"
 	return nil
 }
 
@@ -492,6 +547,6 @@ func renderRepairSummary(s repairSummary) []byte {
 		}
 		fmt.Fprintf(&b, "| %s | %s | %s | %s | %s | %s | %s | %s | %s |\n", label, a.Status, a.Verdict.Assertion, a.Verdict.Tests, a.Verdict.Scope, a.Verdict.Checks, a.Verdict.Submitted, a.Verdict.Delivery, verdict)
 	}
-	b.WriteString("\n交付说明需按对话、实际命令和修改逐项复核；缺少复核时保持 unknown，不自动认定完整定点修复成功。原始记录见 [experiment.json](experiment.json)。\n")
+	b.WriteString("\nGenerated 表示候选和生成记录已保存、独立验证未开始；Finished 只表示验证流程结束，不等于修复成功。各组 artifacts/generation.json 独立保留生成阶段结果。\n\n交付说明需按对话、实际命令和修改逐项复核；缺少复核时保持 unknown，不自动认定完整定点修复成功。原始记录见 [experiment.json](experiment.json)。\n")
 	return []byte(b.String())
 }

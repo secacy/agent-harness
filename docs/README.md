@@ -2,7 +2,7 @@
 
 项目文档用于说明系统如何运行、为什么这样设计，以及哪些能力已经得到验证。文档随实际开发进度更新，不将计划或设计视为已完成的功能。
 
-最新状态与下一项选择见[改进收益盘点（2026-10-25）](worklog/2026-10-25-improvement-value-review.md)。[定点修复真实实验](experiments/2026-10-25-diagnostic-repair-real-model-01.md)已使用唯一授权结束：A 无诊断恢复断言，但独立验证超时，B 未生成，无法比较诊断收益；A 交付说明复核 fail，36 个容器回收。离线校准通过与本次中止分开保留，[工作记录](worklog/2026-10-25-diagnostic-repair-comparison.md#9-单次真实启动与未完成的比较)不自动追加实验或扩大功能。原[研发对齐复核](worklog/2026-10-24-rd-alignment-review.md)及[门禁价值回顾](experiments/2026-10-24-gate-value-review.md)保留工程边界和历史依据。下文按历史工作保留记录，当前优先级以[里程碑](MILESTONES.md)和[交付说明](DELIVERY.md)为准。
+最新状态与下一项选择见[改进收益盘点（2026-10-25）](worklog/2026-10-25-improvement-value-review.md)。[定点修复真实实验](experiments/2026-10-25-diagnostic-repair-real-model-01.md)已使用唯一授权结束：A 无诊断恢复断言，但独立验证超时，B 未生成，无法比较诊断收益；A 交付说明复核 fail，36 个容器回收。离线校准通过与本次中止分开保留，[工作记录](worklog/2026-10-25-diagnostic-repair-comparison.md#9-单次真实启动与未完成的比较)不自动追加实验或扩大功能。2026-10-26 已按确认范围完成[生成与验证分阶段调整](worklog/2026-10-25-diagnostic-repair-comparison.md#10-生成与验证分阶段的离线调整)，只作离线机制检查，原门禁及旧结果保持，新版入口不开放真实模型。原[研发对齐复核](worklog/2026-10-24-rd-alignment-review.md)及[门禁价值回顾](experiments/2026-10-24-gate-value-review.md)保留工程边界和历史依据。下文按历史工作保留记录，当前优先级以[里程碑](MILESTONES.md)和[交付说明](DELIVERY.md)为准。
 
 [当前四任务开发观察](experiments/2026-10-24-rpcx-current-dev-real-model-01.md)已获本版授权完成唯一执行、固定参考及实际助手复核：原自动成功 0/4，三项 NeedsAttention；[实施记录](worklog/2026-10-24-current-development-observation.md#7-授权后的唯一实际执行)保留条件、来源保全和资源回收。
 
