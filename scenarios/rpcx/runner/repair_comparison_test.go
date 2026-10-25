@@ -381,6 +381,41 @@ func TestRepairProtocolRejectsChangedInputs(t *testing.T) {
 	}
 }
 
+func TestRepairTimeRevisionPreservesComparison(t *testing.T) {
+	project, current, _, _, _ := repairInputs(t)
+	oldDir := filepath.Join(project, "docs/experiments/diagnostic-repair-dev-v0.1.0")
+	raw, err := os.ReadFile(filepath.Join(oldDir, "protocol.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var previous repairProtocol
+	if err = repairDecode(raw, &previous); err != nil {
+		t.Fatal(err)
+	}
+	if previous.ValidationSeconds != 180 || previous.HostSeconds != 1320 {
+		t.Fatal("previous time limits changed")
+	}
+	previous.ID, previous.ValidationSeconds, previous.HostSeconds = current.ID, 360, 1680
+	if previous != current {
+		t.Fatal("revision changed more than the approved identity and time limits")
+	}
+	for _, name := range []string{"seed.json", "prompt.txt", "review-template.md"} {
+		before, err := os.ReadFile(filepath.Join(oldDir, name))
+		if err != nil {
+			t.Fatal(err)
+		}
+		after, err := os.ReadFile(filepath.Join(project, repairProtocolDir, name))
+		if err != nil || !bytes.Equal(before, after) {
+			t.Fatal("comparison material changed", name, err)
+		}
+	}
+	for _, dir := range []string{oldDir, filepath.Join(project, repairProtocolDir)} {
+		if repairOutputBoundary(project, filepath.Join(dir, "new-output")) == nil {
+			t.Fatal("versioned input accepts experiment output", dir)
+		}
+	}
+}
+
 func TestRepairInfrastructureFailureStopsBeforeNextModel(t *testing.T) {
 	project, p, _, seed, prompt := repairInputs(t)
 	profile := repairControlledProfile(p.Model)

@@ -22,7 +22,7 @@ import (
 	"github.com/secacy/agent-harness/scenarios/rpcx/translation"
 )
 
-const repairProtocolDir = "docs/experiments/diagnostic-repair-dev-v0.1.0"
+const repairProtocolDir = "docs/experiments/diagnostic-repair-dev-v0.2.0"
 
 type repairProtocol struct {
 	SchemaVersion      int    `json:"schema_version"`
@@ -69,8 +69,8 @@ func loadRepairProtocol(root string) (repairProtocol, tree, string, error) {
 	if err = repairDecode(raw, &p); err != nil {
 		return p, nil, "", err
 	}
-	if p.ID != "diagnostic-repair-dev-v0.1.0" || p.SchemaVersion != 1 || p.ProfileID != ProfileTranslation || p.SourceRun != "rpcx-agent-1712004754" || p.SeedSHA256 != "19c4a36e7cdd83c0106fbdbbc3c221affe4dd471c0dd41df531491f48c4e6884" ||
-		p.Model != "deepseek-flash" || p.Endpoint != "https://api.deepseek.com/chat/completions" || p.ContextTokens != 1048576 || p.OutputTokens != 4096 || p.MaxModelCalls != 12 || p.MaxToolCalls != 24 || p.TokensPerAttempt != 1500000 || p.PreparationSeconds != 180 || p.GenerationSeconds != 300 || p.ValidationSeconds != 180 || p.HostSeconds != 1320 || p.CleanupSeconds != 60 || p.Image != execution.DefaultImage {
+	if p.ID != "diagnostic-repair-dev-v0.2.0" || p.SchemaVersion != 1 || p.ProfileID != ProfileTranslation || p.SourceRun != "rpcx-agent-1712004754" || p.SeedSHA256 != "19c4a36e7cdd83c0106fbdbbc3c221affe4dd471c0dd41df531491f48c4e6884" ||
+		p.Model != "deepseek-flash" || p.Endpoint != "https://api.deepseek.com/chat/completions" || p.ContextTokens != 1048576 || p.OutputTokens != 4096 || p.MaxModelCalls != 12 || p.MaxToolCalls != 24 || p.TokensPerAttempt != 1500000 || p.PreparationSeconds != 180 || p.GenerationSeconds != 300 || p.ValidationSeconds != 360 || p.HostSeconds != 1680 || p.CleanupSeconds != 60 || p.Image != execution.DefaultImage {
 		return p, nil, "", errors.New("repair protocol does not match the confirmed experiment")
 	}
 	seedRaw, err := os.ReadFile(filepath.Join(dir, "seed.json"))
@@ -107,7 +107,7 @@ func repairOutputBoundary(project, output string) error {
 	if err != nil {
 		return err
 	}
-	for _, input := range []string{"scenarios", repairProtocolDir, "runs/l2-current-dev-v0.1.0"} {
+	for _, input := range []string{"scenarios", "docs/experiments/diagnostic-repair-dev-v0.1.0", repairProtocolDir, "runs/l2-current-dev-v0.1.0"} {
 		path, err := canonicalPath(filepath.Join(project, input))
 		if err != nil {
 			return err

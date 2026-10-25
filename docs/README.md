@@ -2,7 +2,7 @@
 
 项目文档用于说明系统如何运行、为什么这样设计，以及哪些能力已经得到验证。文档随实际开发进度更新，不将计划或设计视为已完成的功能。
 
-最新状态与下一项选择见[改进收益盘点（2026-10-25）](worklog/2026-10-25-improvement-value-review.md)：区分机制修复、有限证明范围和真实效果；暂停默认追加完整四任务观察。[定点修复对照](worklog/2026-10-25-diagnostic-repair-comparison.md#7-确认后的实现与校准)已按确认设计实现，机制检查通过；Docker 校准暴露 3 分钟独立验证时限不足，未完成两组校准或真实执行。仅调整验证/宿主时限的提案待确认，模型额度不变。原[研发对齐复核](worklog/2026-10-24-rd-alignment-review.md)及[门禁价值回顾](experiments/2026-10-24-gate-value-review.md)保留工程边界和历史依据。下文按历史工作保留记录，当前优先级以[里程碑](MILESTONES.md)和[交付说明](DELIVERY.md)为准。
+最新状态与下一项选择见[改进收益盘点（2026-10-25）](worklog/2026-10-25-improvement-value-review.md)：区分机制修复、有限证明范围和真实效果；暂停默认追加完整四任务观察。[定点修复对照](worklog/2026-10-25-diagnostic-repair-comparison.md#8-时间边界修订与第二轮离线校准)的 v0.2.0 离线准备已完成：机制检查、两组 Docker 校准及助手复核通过，64 个容器已回收；旧失败保留，模型额度不变。尚无真实模型修复效果，本版真实执行需另获一次消费授权。原[研发对齐复核](worklog/2026-10-24-rd-alignment-review.md)及[门禁价值回顾](experiments/2026-10-24-gate-value-review.md)保留工程边界和历史依据。下文按历史工作保留记录，当前优先级以[里程碑](MILESTONES.md)和[交付说明](DELIVERY.md)为准。
 
 [当前四任务开发观察](experiments/2026-10-24-rpcx-current-dev-real-model-01.md)已获本版授权完成唯一执行、固定参考及实际助手复核：原自动成功 0/4，三项 NeedsAttention；[实施记录](worklog/2026-10-24-current-development-observation.md#7-授权后的唯一实际执行)保留条件、来源保全和资源回收。
 

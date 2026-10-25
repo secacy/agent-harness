@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "id": "diagnostic-repair-dev-v0.2.0",
+  "profile_id": "rpcx-translation-t3-v1",
+  "source_run": "rpcx-agent-1712004754",
+  "seed_sha256": "19c4a36e7cdd83c0106fbdbbc3c221affe4dd471c0dd41df531491f48c4e6884",
+  "seed_file_sha256": "c76fe07f19405fc09cbf8590fec855be6d0c92659e4faf11e063be966b140580",
+  "prompt_sha256": "ab678b077da82b51d06c68e147fc8b16c13226825dcdf2c0ccff82f28b4328de",
+  "model": "deepseek-flash",
+  "endpoint": "https://api.deepseek.com/chat/completions",
+  "context_tokens": 1048576,
+  "output_tokens": 4096,
+  "max_model_calls": 12,
+  "max_tool_calls": 24,
+  "tokens_per_attempt": 1500000,
+  "preparation_seconds": 180,
+  "generation_seconds": 300,
+  "validation_seconds": 360,
+  "host_seconds": 1680,
+  "cleanup_seconds": 60,
+  "image": "golang:1.26.5-bookworm@sha256:53eeac89074db483fdf0ab3be1df32bf6e47562263d2d0d6baa7f26acb4957dd"
+}
