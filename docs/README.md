@@ -2,11 +2,11 @@
 
 项目文档用于说明系统如何运行、为什么这样设计，以及哪些能力已经得到验证。文档随实际开发进度更新，不将计划或设计视为已完成的功能。
 
-最新状态与下一项工作见[研发对齐复核（2026-10-24）](worklog/2026-10-24-rd-alignment-review.md)：区分工程交付、真实效果证据和原总体验收缺口，跨场景命令取证已在声明范围验收，具体结果见同一记录。[门禁价值与成本回顾](experiments/2026-10-24-gate-value-review.md)已发布五项历史观察、命令记录成本和消费限制；[设计与验收](worklog/2026-10-24-gate-value-study.md)保留方案取舍及失败记录。下文按历史工作保留记录，阶段现状以[里程碑](MILESTONES.md)和[交付说明](DELIVERY.md)为准。
+最新状态与下一项选择见[改进收益盘点（2026-10-25）](worklog/2026-10-25-improvement-value-review.md)：区分机制修复、有限证明范围和真实效果；暂停默认追加完整四任务观察，下一项只设计现有测试结构诊断的针对性修复对照，尚未确认或执行。原[研发对齐复核](worklog/2026-10-24-rd-alignment-review.md)及[门禁价值回顾](experiments/2026-10-24-gate-value-review.md)保留工程边界和历史依据。下文按历史工作保留记录，当前优先级以[里程碑](MILESTONES.md)和[交付说明](DELIVERY.md)为准。
 
 [当前四任务开发观察](experiments/2026-10-24-rpcx-current-dev-real-model-01.md)已获本版授权完成唯一执行、固定参考及实际助手复核：原自动成功 0/4，三项 NeedsAttention；[实施记录](worklog/2026-10-24-current-development-observation.md#7-授权后的唯一实际执行)保留条件、来源保全和资源回收。
 
-下一项已选择[生成阶段的基线对照与提交前自检](worklog/2026-10-24-generation-baseline-review.md)：依据实际工具轨迹比较生成约束、反馈修复与证明扩展，先复用只读文件工具支持原文对照。机制验证和真实效果分开登记，独立门禁继续负责最终质量。
+此前已完成[生成阶段的基线对照与提交前自检](worklog/2026-10-24-generation-baseline-review.md)：依据实际工具轨迹比较生成约束、反馈修复与证明扩展，先复用只读文件工具支持原文对照。机制验证和真实效果分开登记，独立门禁继续负责最终质量。
 
 [生成阶段诊断反馈](worklog/2026-10-24-generation-diagnostics.md)首版已在确认范围实现并验收：Translation/Workouts 的按需测试结构检查、逐次候选绑定、有限反馈与审计接入；脚本化修复经真实独立门禁交付通过，真实修复收益仍未证明。
 
