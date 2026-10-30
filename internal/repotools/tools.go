@@ -74,7 +74,13 @@ func New(config Config) (*Executor, error) {
 
 // Specs 返回当前可用的工具及参数约束，每次返回独立副本。
 func (e *Executor) Specs() []agent.ToolSpec {
-	root := map[string]any{"type": "string", "enum": sortedRoots(e.roots)}
+	return Specifications(sortedRoots(e.roots), e.goCheck != nil)
+}
+
+// Specifications returns the wire tool definitions without opening a workspace or executing tools.
+// Replay authenticates these definitions against each historical request digest.
+func Specifications(roots []string, goCheck bool) []agent.ToolSpec {
+	root := map[string]any{"type": "string", "enum": roots}
 	text := map[string]any{"type": "string"}
 	positive := map[string]any{"type": "integer", "minimum": 1}
 	specs := []agent.ToolSpec{
@@ -87,7 +93,7 @@ func (e *Executor) Specs() []agent.ToolSpec {
 		toolSpec(toolReplaceText, "Replace text in an existing workspace file. The old text must be nonempty and match exactly once.",
 			[]string{"path", "old", "new"}, map[string]any{"path": text, "old": text, "new": text}),
 	}
-	if e.goCheck != nil {
+	if goCheck {
 		specs = append(specs, toolSpec(toolGoCheck, "Run a fixed offline Go build or test using the configured backend. Success does not imply independent validation has passed.",
 			[]string{"kind"}, map[string]any{"kind": map[string]any{"type": "string", "enum": []string{checkBuild, checkTest}}}))
 	}

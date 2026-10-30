@@ -62,6 +62,7 @@ inputs/task.json 与 artifacts/report.json 的可选 budget 字段保存 Campaig
 - `artifacts/candidate.patch`：相对 `baseline/<repository_name>` 的候选补丁，可用 Git 重放核对候选摘要。
 - `artifacts/report.json`：规范、后端、输入、补丁及 Evaluation 的结构化事实。
 - `artifacts/review.md`：确定性生成的审核入口，包含文件变化、检查对应条款、发现和源码位置、证据链接及摘要、缺口、直接命令和内层执行材料入口。
+- `trace.jsonl`：逐条同步的 span、模型/工具完整交互及预算关联；未完成或损坏记录不算完整回放。回放边界见 [P0 设计](../../../docs/worklog/2026-10-31-p0-trace-replay.md)，命令见[离线回放与归因](../../../docs/command.md#离线回放与失败归因)。
 - `artifacts/agent.json`：完整对话、工具反馈、预算通知和已知/未知用量。review 中 Agent 总结标为未经独立确认的自述，不用于质量判定。
 - `evidence/`：独立检查的实际副本、材料、配置、命令和日志；Evidence 路径均相对此目录。
 

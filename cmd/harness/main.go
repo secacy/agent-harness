@@ -26,6 +26,12 @@ func main() {
 
 // run 将参数、密钥和具体模型的组装留在入口，Runner 只接收统一接口。
 func run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
+	if len(args) > 0 && args[0] == "replay" {
+		return runReplay(ctx, args[1:], stdout, stderr)
+	}
+	if len(args) > 0 && args[0] == "failures" {
+		return runFailures(ctx, args[1:], stdout, stderr)
+	}
 	if len(args) > 0 && args[0] == "audit" {
 		return runAudit(ctx, args[1:], stdout, stderr)
 	}
@@ -35,7 +41,7 @@ func run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 	flags := flag.NewFlagSet("harness", flag.ContinueOnError)
 	flags.SetOutput(stderr)
 	flags.Usage = func() {
-		fmt.Fprintln(stderr, "Usage: harness [single-run flags]\n       harness batch --config <file.json> [--check | --probe-model]\n       harness audit --campaign <root> --output <new-dir>")
+		fmt.Fprintln(stderr, "Usage: harness [single-run flags]\n       harness batch --config <file.json> [--check | --probe-model]\n       harness audit --campaign <root> --output <new-dir>\n       harness replay --run <root> [--ledger <budget.json>]\n       harness failures --run <root> [--run <root> ...] [--json]")
 		flags.PrintDefaults()
 	}
 	scenario := flags.String("scenario", "scenarios/rpcx", "scenario resource directory")

@@ -15,6 +15,7 @@ import (
 	"github.com/secacy/agent-harness/internal/execution"
 	"github.com/secacy/agent-harness/internal/repotools"
 	"github.com/secacy/agent-harness/internal/task"
+	"github.com/secacy/agent-harness/internal/trace"
 	"github.com/secacy/agent-harness/scenarios/rpcx/checks"
 	"github.com/secacy/agent-harness/scenarios/rpcx/ghcli"
 	"github.com/secacy/agent-harness/scenarios/rpcx/goddd"
@@ -126,9 +127,24 @@ func runWithObserver(parent context.Context, config Config, observer func(runChe
 			Timeout: config.Timeout.String(), SpecVersion: p.SpecVersion,
 		},
 	}
+	recorder, traceErr := trace.New(r.path("trace.jsonl"), r.record.ID)
+	if traceErr != nil {
+		return record, traceErr
+	}
+	ctx = trace.Context(ctx, recorder)
+	ctx, runSpan, traceErr := trace.Start(ctx, "run", r.input)
+	if traceErr != nil {
+		_ = recorder.Close()
+		return record, traceErr
+	}
 	// 收尾独立于父取消，仍然写出已有证据与终态；收尾失败必须返回错误。
 	defer func() {
 		err = r.finish(ctx, err)
+		category, _ := classifyRun(r.record, Report{Baseline: r.baseline, Validation: r.validation})
+		traceErr := errors.Join(runSpan.End(r.record, trace.Categorize(err, category)), recorder.Close())
+		if traceErr != nil {
+			err = r.finish(ctx, errors.Join(err, traceErr))
+		}
 		record = r.record
 	}()
 	if err := writeJSON(r.path("run.json"), r.record); err != nil {
@@ -151,10 +167,22 @@ func runWithObserver(parent context.Context, config Config, observer func(runChe
 	if err := r.prepare(ctx); err != nil {
 		return record, err
 	}
+	_, preparedSpan, traceErr := trace.Start(ctx, "prepared", r.input)
+	if traceErr != nil {
+		return record, traceErr
+	}
+	if traceErr = preparedSpan.End(nil, nil); traceErr != nil {
+		return record, traceErr
+	}
 	if err := r.transition(ctx, PhaseCheckingBaseline); err != nil {
 		return record, err
 	}
-	if err := r.checkBaseline(ctx); err != nil {
+	baselineCtx, baselineSpan, traceErr := trace.Start(ctx, "baseline_check", nil)
+	if traceErr != nil {
+		return record, traceErr
+	}
+	baselineErr := r.checkBaseline(baselineCtx)
+	if err := errors.Join(baselineErr, baselineSpan.End(r.baseline, baselineErr)); err != nil {
 		return record, err
 	}
 	r.observe(baselinePassed)
@@ -193,12 +221,17 @@ func runWithObserver(parent context.Context, config Config, observer func(runChe
 	if r.profile.Verifier == ghcli.VerifierVersion {
 		evaluate = ghcli.Evaluate
 	}
-	validation, err := evaluate(ctx, checks.EvaluationRequest{
+	gateCtx, gateSpan, traceErr := trace.Start(ctx, "gate_check", map[string]string{"verifier": r.profile.Verifier, "candidate_sha256": r.record.CandidateSHA256})
+	if traceErr != nil {
+		return record, traceErr
+	}
+	validation, err := evaluate(gateCtx, checks.EvaluationRequest{
 		BaselineDir: r.path("baseline/" + r.profile.RepositoryName), CandidateDir: r.path("workspace/" + r.profile.RepositoryName),
 		SpecPath: r.path("inputs/spec/spec.md"), EvidenceDir: r.path("evidence"),
 		CacheDir: r.path("cache/validation"), Backend: config.Backend,
 	})
 	r.validation = &validation
+	err = errors.Join(err, gateSpan.End(validation, err))
 	if err != nil {
 		return record, fmt.Errorf("validate candidate: %w", err)
 	}
@@ -301,8 +334,13 @@ func (r *runState) transition(ctx context.Context, phase Phase) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
+	_, span, err := trace.Start(ctx, "phase", map[string]Phase{"phase": phase})
+	if err != nil {
+		return err
+	}
 	r.record.Phase, r.record.UpdatedAt = phase, time.Now().UTC()
-	return writeJSON(r.path("run.json"), r.record)
+	err = writeJSON(r.path("run.json"), r.record)
+	return errors.Join(err, span.End(nil, err))
 }
 
 func (r *runState) prepare(ctx context.Context) error {
@@ -383,7 +421,7 @@ func (r *runState) generate(ctx context.Context) error {
 		tools = &diagnosticTools{run: r, files: executor}
 		specs = append(specs, diagnosticSpec())
 	}
-	loop := agent.Loop{CompletionPolicy: r.config.CompletionPolicy, Model: model, Executor: tools, Tools: specs, Limits: r.config.Limits}
+	loop := agent.Loop{ModelName: r.config.ModelName, CompletionPolicy: r.config.CompletionPolicy, Model: model, Executor: tools, Tools: specs, Limits: r.config.Limits}
 	result, err := loop.Run(ctx, []agent.Message{
 		{Role: agent.RoleSystem, Content: "Migrate the workspace repository according to the supplied specification. " +
 			"Use repository tools to inspect and edit files, and go_check for build/test feedback. " +

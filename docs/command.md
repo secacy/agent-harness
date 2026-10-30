@@ -24,7 +24,7 @@ env GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly g
 go run ./cmd/harness --help
 ```
 
-当前支持单任务、`batch`、`audit`。单任务生成读取终端中的 `DEEPSEEK_API_KEY`、`DEEPSEEK_MODEL`，不会自动加载 `.env`；默认使用 Docker。可用参数以 `--help` 为准。
+当前支持单任务、`batch`、`audit`、`replay`、`failures`。单任务生成读取终端中的 `DEEPSEEK_API_KEY`、`DEEPSEEK_MODEL`，不会自动加载 `.env`；默认使用 Docker。可用参数以 `--help` 为准。
 
 ## 受预算约束的批次入口
 
@@ -74,4 +74,32 @@ runs/harness audit --campaign /absolute/path/to/campaign --output /absolute/path
 - 旧交付包复验：[历史演示](archive/DEMO.md)，归档和 `runs/` 不随 Git 提供。
 - 场景校准、故障测试及完整参数：[阶段命令参考](archive/command.md)，使用前核对对应代码和材料。
 
-新需求中的 trace replay、统一失败归因统计和 step resume 尚无可用命令。
+step resume 尚无可用命令；原恢复 API 是整代重跑。
+
+
+## 离线回放与失败归因
+
+新 Runner Run 自动写入 `trace.jsonl`。回放只读现存材料，使用记录的模型/工具结果驱动生产循环，验证输入与预算并重新聚合质量判定；不调用模型、不执行仓库命令，不需要 Docker 或密钥。
+
+```sh
+go run ./cmd/harness replay --run <run-directory>
+```
+
+预算 Run 默认向祖先目录查找 `budget/budget.json`；只复制了 Run 时，用 `--ledger <archived-budget.json>` 显式提供原账本。不会跟随记录中旧机器的绝对账本路径。JSON 输出区分本地模型尝试、实际准入、拒绝、已知 token、预留和未知占用；无价格依据时 `cost=null`。未绑定预算的 Run 不能声称已核账本。
+
+完整历史 Completed 对话可进入 `legacy-completed` 模式，逐请求摘要与原账本认证工具定义；缺失的 finish reason 明确标为成功控制流推导，工具时间保持未知。旧失败/截断记录、损坏或不完整 trace 会拒绝完整回放，不把原 verdict 直接当作结果。材料与支持边界见 [P0 设计](worklog/2026-10-31-p0-trace-replay.md)。
+
+```sh
+go run ./cmd/harness failures --run <run-a> --run <run-b>
+go run ./cmd/harness failures --run <run-a> --run <run-b> --json
+```
+
+表格显示主因、计数、占全部 Run 和终态未成功数的比例；未完成单列，零分母 N/A。JSON 另列每 Run 和次要失败检查。重复目录或缺失终态报告会报错，不删减分母。归因描述原记录中的运行/质量结果，不代表独立真值评测。
+
+源码离线回归：
+
+```sh
+go test -race -timeout 20m ./internal/trace ./internal/agent ./internal/budget ./internal/repotools ./scenarios/rpcx/runner ./cmd/harness
+```
+
+包括自有辅助进程强杀后的记录读取，默认不访问模型或开启 Docker 集成。五个历史 Run 的路径、复验结果与数据限制见 [P0 离线验收](experiments/2026-10-31-p0-offline-replay.md)；原 `runs/` 材料不随 Git 提供。

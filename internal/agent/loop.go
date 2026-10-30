@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+
+	"github.com/secacy/agent-harness/internal/trace"
 )
 
 var (
@@ -20,6 +22,9 @@ const wrapUpModelCalls = 3
 // Loop 管理一次运行的对话与调用预算。
 // 模型与执行器必须响应上下文取消；循环同步等待调用结束，不遗留后台任务。
 type Loop struct {
+	replayBoundary   func(string) error
+	replayUnknown    func(ToolCall, ToolResult) error
+	ModelName        string
 	CompletionPolicy CompletionPolicy
 	Model            Model
 	Executor         ToolExecutor
@@ -32,9 +37,22 @@ type Loop struct {
 // 初始历史中的工具调用必须已有对应结果，当前不支持续跑中断的批次。
 // 调用计数仅覆盖本次运行，不包含初始历史。
 // 每次请求前追加宿主预算通知，剩余模型调用次数包含即将发起的本次调用。
-func (l Loop) Run(ctx context.Context, initial []Message) (Result, error) {
-	result := Result{Messages: cloneMessages(initial)}
-	if err := ctx.Err(); err != nil {
+func (l Loop) Run(ctx context.Context, initial []Message) (result Result, err error) {
+	result = Result{Messages: cloneMessages(initial)}
+	ctx, loopSpan, traceErr := trace.Start(ctx, "agent", LoopInput{Initial: initial, Tools: l.Tools, Limits: l.Limits, CompletionPolicy: l.CompletionPolicy, ModelName: l.ModelName})
+	if traceErr != nil {
+		return stopWithError(ctx, result, traceErr)
+	}
+	var stepSpan *trace.Span
+	defer func() {
+		if closeErr := stepSpan.End(LoopOutput{Result: result, Failure: failure(err), ContextError: contextFailure(ctx)}, modelTraceError(err)); closeErr != nil {
+			result, err = stopWithError(ctx, result, errors.Join(err, closeErr))
+		}
+		if closeErr := loopSpan.End(LoopOutput{Result: result, Failure: failure(err), ContextError: contextFailure(ctx)}, modelTraceError(err)); closeErr != nil {
+			result, err = stopWithError(ctx, result, errors.Join(err, closeErr))
+		}
+	}()
+	if err := l.checkContext(ctx, "initial"); err != nil {
 		return stopWithError(ctx, result, err)
 	}
 	tools := cloneTools(l.Tools)
@@ -52,13 +70,26 @@ func (l Loop) Run(ctx context.Context, initial []Message) (Result, error) {
 	if err != nil {
 		return stopWithError(ctx, result, err)
 	}
+	loopContext := ctx
 	for {
-		if err := ctx.Err(); err != nil {
+		if stepSpan != nil {
+			if e := stepSpan.End(map[string]any{"model_calls": result.ModelCalls, "tool_calls": result.ToolCalls}, nil); e != nil {
+				return stopWithError(ctx, result, e)
+			}
+			stepSpan = nil
+		}
+		ctx = loopContext
+		if err := l.checkContext(ctx, "before_step"); err != nil {
 			return stopWithError(ctx, result, err)
 		}
 		if result.ModelCalls >= l.Limits.MaxModelCalls {
 			result.Reason = ExitLimitReached
 			return result, nil
+		}
+		var e error
+		ctx, stepSpan, e = trace.Start(ctx, "step", map[string]int{"index": result.ModelCalls + 1})
+		if e != nil {
+			return stopWithError(ctx, result, e)
 		}
 		modelRemaining := l.Limits.MaxModelCalls - result.ModelCalls
 		toolRemaining := l.Limits.MaxToolCalls - result.ToolCalls
@@ -70,7 +101,12 @@ func (l Loop) Run(ctx context.Context, initial []Message) (Result, error) {
 			requestTools = nil
 			result.FinalResponseAttempt = &FinalResponseAttempt{ModelCall: result.ModelCalls, MessageCount: len(result.Messages)}
 		}
-		reply, err := l.Model.Complete(ctx, result.Messages, requestTools)
+		modelCtx, modelSpan, e := trace.Start(ctx, "llm_call", ModelInput{Messages: result.Messages, Tools: requestTools, ModelName: l.ModelName})
+		if e != nil {
+			return stopWithError(ctx, result, e)
+		}
+		reply, err := l.Model.Complete(modelCtx, result.Messages, requestTools)
+		err = errors.Join(err, modelSpan.End(ModelOutput{Reply: reply, Failure: failure(err), ContextError: contextFailure(ctx)}, modelTraceError(err)))
 		result.Usage = append(result.Usage, cloneUsage(reply.Usage))
 		if err != nil {
 			return stopWithError(ctx, result, fmt.Errorf("model call %d: %w", result.ModelCalls, err))
@@ -82,7 +118,7 @@ func (l Loop) Run(ctx context.Context, initial []Message) (Result, error) {
 			ToolCalls: append([]ToolCall(nil), reply.ToolCalls...),
 		}
 		result.Messages = append(result.Messages, message)
-		if err := ctx.Err(); err != nil {
+		if err := l.checkContext(ctx, "after_model"); err != nil {
 			return stopWithError(ctx, result, err)
 		}
 		if finalOnly && len(message.ToolCalls) != 0 {
@@ -113,17 +149,25 @@ func (l Loop) Run(ctx context.Context, initial []Message) (Result, error) {
 			return result, nil
 		}
 		for _, call := range message.ToolCalls {
-			if err := ctx.Err(); err != nil {
+			if err := l.checkContext(ctx, "before_tool"); err != nil {
 				return stopWithError(ctx, result, err)
 			}
 			result.ToolCalls++
+			toolCtx, toolSpan, e := trace.Start(ctx, "tool_call", ToolInput{Call: call, Executed: allowed[call.Name]})
+			if e != nil {
+				return stopWithError(ctx, result, e)
+			}
 			var output ToolResult
 			var execErr error
 			if !allowed[call.Name] {
 				output = ToolResult{Content: fmt.Sprintf("unknown tool %q; use an advertised tool", call.Name), IsError: true}
+				if l.replayUnknown != nil {
+					execErr = l.replayUnknown(call, output)
+				}
 			} else {
-				output, execErr = l.Executor.Execute(ctx, call)
+				output, execErr = l.Executor.Execute(toolCtx, call)
 			}
+			execErr = errors.Join(execErr, toolSpan.End(ToolOutput{Result: output, Failure: failure(execErr), ContextError: contextFailure(ctx)}, trace.Categorize(execErr, "tool")))
 			if execErr != nil {
 				output.IsError = true
 				if output.Content != "" {
@@ -138,9 +182,9 @@ func (l Loop) Run(ctx context.Context, initial []Message) (Result, error) {
 				IsError:    output.IsError,
 			})
 			if execErr != nil {
-				return stopWithError(ctx, result, fmt.Errorf("tool %s (%s): %w", call.Name, call.ID, execErr))
+				return stopWithError(ctx, result, fmt.Errorf("tool %s (%s): %w", call.Name, call.ID, toolTraceError(execErr)))
 			}
-			if err := ctx.Err(); err != nil {
+			if err := l.checkContext(ctx, "after_tool"); err != nil {
 				return stopWithError(ctx, result, err)
 			}
 		}
@@ -162,9 +206,16 @@ func budgetMessage(modelCalls, toolCalls int) Message {
 }
 
 func stopWithError(ctx context.Context, result Result, err error) (Result, error) {
+	if hook, ok := ctx.Value(replayStopKey{}).(func(string) error); ok {
+		err = errors.Join(err, hook("error_stop"))
+	}
+	_, span, traceErr := trace.Start(ctx, "agent_boundary", RecordedBoundary{Name: "error_stop"})
+	observed := ctx.Err()
+	traceErr = errors.Join(traceErr, span.End(RecordedBoundary{Name: "error_stop", ContextError: contextErrorKind(observed)}, observed))
+	err = errors.Join(err, traceErr)
 	cause := err
-	if ctx.Err() != nil {
-		cause = ctx.Err()
+	if observed != nil {
+		cause = observed
 		err = errors.Join(cause, err)
 	}
 	result.Reason = ExitFailed

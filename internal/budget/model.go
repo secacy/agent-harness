@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/secacy/agent-harness/internal/agent"
+	"github.com/secacy/agent-harness/internal/trace"
 )
 
 // ProfiledModel 必须由宿主组装，返回与真实请求配置相同的上界材料。
@@ -69,9 +70,17 @@ func (m *Model) Complete(ctx context.Context, messages []agent.Message, tools []
 	if err != nil {
 		return reply, err
 	}
+	_, reserveSpan, traceErr := trace.Start(ctx, "budget_reserve", map[string]string{"input_sha256": input, "model": m.ledger.Snapshot().Profile.Model})
+	if traceErr != nil {
+		return reply, traceErr
+	}
 	call, err := m.ledger.reserve(ctx, m.target, m.run, input)
-	if err != nil {
-		return reply, err
+	traceErr = reserveSpan.End(struct {
+		Call     Call
+		Revision int64
+	}{call, m.ledger.Snapshot().Revision}, trace.Categorize(err, "budget"))
+	if err != nil || traceErr != nil {
+		return reply, errors.Join(err, traceErr)
 	}
 	// 共享账本故障取消在途调用；结算仍在调用返回后独立执行。
 	callCtx, cancel := context.WithCancel(ctx)
@@ -84,7 +93,22 @@ func (m *Model) Complete(ctx context.Context, messages []agent.Message, tools []
 	if err != nil {
 		outcome = "model_error"
 	}
+	_, settleSpan, traceErr := trace.Start(ctx, "budget_settle", map[string]string{"call_id": call.ID})
+	// Actual usage must be settled even when trace persistence has failed.
 	settleErr := m.ledger.settle(call.ID, reply.Usage, outcome)
+	var settled Call
+	snapshot := m.ledger.Snapshot()
+	for _, c := range snapshot.Calls {
+		if c.ID == call.ID {
+			settled = c
+			break
+		}
+	}
+	traceErr = errors.Join(traceErr, settleSpan.End(struct {
+		Call     Call
+		Revision int64
+	}{settled, snapshot.Revision}, settleErr))
+	settleErr = errors.Join(settleErr, traceErr)
 	if fault := m.ledger.Err(); fault != nil {
 		settleErr = errors.Join(settleErr, ErrHalted, fault)
 	}

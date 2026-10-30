@@ -195,6 +195,13 @@ func testRunDelivery(t *testing.T, backend execution.Executor) {
 	if first.Status != StatusCompleted || first.Verdict != "ReadyForReview" || first.Phase != PhasePublishing || first.FinishedAt == nil {
 		t.Fatalf("unexpected run: %+v", first)
 	}
+	replayed, replayErr := Replay(context.Background(), first.Directory, "")
+	if replayErr != nil {
+		t.Fatalf("recorded production run cannot replay: %v", replayErr)
+	}
+	if replayed.Mode != "trace-v1" || replayed.Status != first.Status || replayed.Verdict != first.Verdict || replayed.ModelCalls != calls || calls != 3 {
+		t.Fatalf("production replay mismatch or provider invoked: %+v, calls=%d", replayed, calls)
+	}
 	report := readJSON[Report](t, filepath.Join(first.Directory, "artifacts/report.json"))
 	if report.Validation == nil || report.Validation.Verdict != first.Verdict || report.CandidateSHA256 != migrated.hash() || report.Validation.CandidateSHA256 != first.CandidateSHA256 {
 		t.Fatalf("report does not bind the candidate: %+v", report)
