@@ -1,8 +1,10 @@
 # Multi-Repo Coding Agent Harness
 
-基于 Go 的多仓库 Coding Agent 运行与验证框架。以公共 RPC SDK `rpcx` v1 → v2 的不兼容升级为场景，让 Agent 按迁移规范修改代码，由 Harness 管理批量执行、预算、验证和审核交付。
+基于 Go 的 Coding Agent 运行时基础设施，以代码迁移为验证负载。项目主线是**运行时可靠性**与**评测与验证**：用 trace、离线回放、故障恢复和独立对照实验，量化运行与判定的收益及边界。现有 `rpcx` v1 → v2 迁移场景提供可复用的任务、工具与验证材料。
 
-**当前可交付有明确支持范围的工程开发版。**已完成四个固定样本的真实模型批次及离线复验；严格未见留出、独立人员验证和任意仓库适用性尚未验收。
+**当前可交付有明确支持范围的工程开发版。**已有批量执行、两级预算、Docker 隔离、独立门禁和中断审计；现有恢复是受控整代重跑。新要求的统一 trace、Run 回放、step 级恢复与三组重复对照尚未验收。
+
+当前路线以 [需求与 TODO](docs/REQUIREMENTS.md) 为准：[P0 trace/回放 → P1 基线消融 → P2 检查点恢复 → P3 未见样本](docs/MILESTONES.md)，另做 P4 有限越权切片及 P5 发布。**下一步是 P0**，不继续为 rpcx 扩充门禁规则；阶段达标即停止扩展。历史结果保留，不作新主线的效果证明。
 
 ## 为什么需要 Harness
 
@@ -49,7 +51,9 @@ flowchart LR
 
 每个 Run 交付 `artifacts/candidate.patch`、`artifacts/report.json`、`artifacts/review.md` 及关联日志；批次提供 `summary.md` 和预算账本。项目以候选补丁和审核材料为边界，不自动合并或部署。
 
-## 已观测的真实结果
+## 历史真实结果与新评测缺口
+
+目前还没有三组 × 四任务 × 至少三次的对照、step 恢复收益或严格未见仓库结果。以下是历史单系统观测，不用于填写新需求的成功率或节省数字。
 
 [2026-10-22 四任务评测](docs/experiments/2026-10-22-rpcx-fixed-real-model-01.md)采用固定协议，每任务一次尝试，四个 Run 均完成交付：
 
@@ -86,8 +90,9 @@ flowchart LR
 | [internal/audit](internal/audit) / [internal/recovery](internal/recovery) | 只读审计与受控恢复 |
 | [scenarios/rpcx](scenarios/rpcx) | SDK 迁移场景、业务门禁、构造任务及独立评测 |
 
-新增仓库需要可信 Profile 和适用的验证材料，不能仅换一个目录就获得支持。当前主要覆盖 Go 的 rpcx T1/T2 和默认超时这一代表性 T3；单机执行，付费恢复、连续多代恢复和更广 SDK 语义仍待扩展。
+新增仓库需要可信 Profile 和适用的验证材料，不能仅换一个目录就获得支持。当前主要覆盖 Go 的 rpcx T1/T2 和默认超时这一代表性 T3；单机执行，付费恢复、连续多代恢复和更广 SDK 语义尚未验收。后续范围以新需求为准，不把这些限制自动转成扩展任务。
 
+- [当前需求与验收标准](docs/REQUIREMENTS.md)
 - [当前交付、版本与剩余工作](docs/DELIVERY.md)
 - [演示步骤与预期输出](docs/DEMO.md)
 - [项目目标](docs/PROJECT.md)、[里程碑](docs/MILESTONES.md)、[命令参考](docs/command.md)

@@ -2,7 +2,19 @@
 
 项目文档用于说明系统如何运行、为什么这样设计，以及哪些能力已经得到验证。文档随实际开发进度更新，不将计划或设计视为已完成的功能。
 
-最新状态与下一项选择见[改进收益盘点（2026-10-25）](worklog/2026-10-25-improvement-value-review.md)。[定点修复真实实验](experiments/2026-10-25-diagnostic-repair-real-model-01.md)已使用唯一授权结束：A 无诊断恢复断言，但独立验证超时，B 未生成，无法比较诊断收益；A 交付说明复核 fail，36 个容器回收。离线校准通过与本次中止分开保留，[工作记录](worklog/2026-10-25-diagnostic-repair-comparison.md#9-单次真实启动与未完成的比较)不自动追加实验或扩大功能。2026-10-26 已按确认范围完成[生成与验证分阶段调整](worklog/2026-10-25-diagnostic-repair-comparison.md#10-生成与验证分阶段的离线调整)，只作离线机制检查，原门禁及旧结果保持，新版入口不开放真实模型。原[研发对齐复核](worklog/2026-10-24-rd-alignment-review.md)及[门禁价值回顾](experiments/2026-10-24-gate-value-review.md)保留工程边界和历史依据。下文按历史工作保留记录，当前优先级以[里程碑](MILESTONES.md)和[交付说明](DELIVERY.md)为准。
+## 当前方向与阅读入口
+
+2026-10-31 起以[需求与 TODO](REQUIREMENTS.md)为当前需求基线：主线是运行时可靠性与评测验证，代码迁移作为验证负载。先做 P0 trace/回放，再推进基线消融、step 恢复与未见样本；不继续堆叠 rpcx 门禁规则。阶段状态见[里程碑](MILESTONES.md)，已实现能力见[交付说明](DELIVERY.md)。
+
+[四任务消融旧草案](worklog/2026-10-31-baseline-ablation.md)保留待重审的实现参考；其中每任务一次、A/B 普通构建测试放行及 B/C 共享候选，与本版主实验要求不一致，不能直接执行。当前 P0 尚未验收，不提前启动 P1。
+
+首次阅读：[项目首页](../README.md) → [项目定位](PROJECT.md) → [需求与验收](REQUIREMENTS.md) → [当前里程碑](MILESTONES.md)。[命令参考](command.md)只列已有入口，[离线演示](DEMO.md)仍是旧归档审计/重算，不是新 P0/P2 的回放/恢复 demo。
+
+## 历史进展（保留原结论）
+
+以下条目的“当前”“下一步”属于记录当时，后续优先级统一按新需求与当前里程碑执行。
+
+此前的状态与下一项选择见[改进收益盘点（2026-10-25）](worklog/2026-10-25-improvement-value-review.md)。[定点修复真实实验](experiments/2026-10-25-diagnostic-repair-real-model-01.md)已使用唯一授权结束：A 无诊断恢复断言，但独立验证超时，B 未生成，无法比较诊断收益；A 交付说明复核 fail，36 个容器回收。离线校准通过与本次中止分开保留，[工作记录](worklog/2026-10-25-diagnostic-repair-comparison.md#9-单次真实启动与未完成的比较)不自动追加实验或扩大功能。2026-10-26 已按确认范围完成[生成与验证分阶段调整](worklog/2026-10-25-diagnostic-repair-comparison.md#10-生成与验证分阶段的离线调整)，只作离线机制检查，原门禁及旧结果保持，新版入口不开放真实模型。原[研发对齐复核](worklog/2026-10-24-rd-alignment-review.md)及[门禁价值回顾](experiments/2026-10-24-gate-value-review.md)保留工程边界和历史依据。下文按历史工作保留记录，当前优先级以[里程碑](MILESTONES.md)和[交付说明](DELIVERY.md)为准。
 
 [当前四任务开发观察](experiments/2026-10-24-rpcx-current-dev-real-model-01.md)已获本版授权完成唯一执行、固定参考及实际助手复核：原自动成功 0/4，三项 NeedsAttention；[实施记录](worklog/2026-10-24-current-development-observation.md#7-授权后的唯一实际执行)保留条件、来源保全和资源回收。
 
@@ -17,11 +29,12 @@
 | 位置 | 内容 | Git 管理 |
 | --- | --- | --- |
 | `README.md` | 项目定位、核心能力、架构概览与文档入口 | 是 |
-| `MILESTONES.md` | 阶段目标、当前进度、验收结果与证据缺口 | 是 |
+| `PROJECT.md` / `REQUIREMENTS.md` | 当前定位、需求基线、非目标、P0–P5 TODO 与验收口径 | 是 |
+| `MILESTONES.md` | P0–P5 当前进度及保留的 M0–M5 历史验收 | 是 |
 | `DELIVERY.md` / `DEMO.md` | 当前交付版本与限制、离线演示步骤及预期结果 | 是 |
 | `command.md` | 已实现且验证可用的开发、测试和运行命令 | 是 |
 | `adr/` | 一个重要技术选择、选择依据及其长期影响 | 是 |
-| `worklog/` | 一项工作的推进、实现与验证过程，必要时包含方案权衡 | 是 |
+| `worklog/` | 一项工作的需求、设计、实施与验证过程，可包含待办及方案权衡 | 是 |
 | `experiments/` | 实验条件、指标、原始结果与分析结论 | 是 |
 | `development.md` | 与 AI 助手的开发协作约定 | 否，本地保留 |
 | `personal/` | 个人技术复盘、简历及面试准备 | 否，本地保留 |
@@ -30,7 +43,7 @@
 
 首次阅读从[项目首页](../README.md)开始，按[离线演示](DEMO.md)复验固定四任务原批次，再由[交付说明](DELIVERY.md)区分当前源码、原评测归档和待优化项。入口与命令核对见[收敛记录](worklog/2026-10-22-delivery-entry.md)。下文各工作记录保留实施当时的结论，当前状态以交付说明和里程碑为准。
 
-整体开发路线、阶段交付与验收边界以[里程碑](MILESTONES.md)为准；阶段顺序及预算、判定、评测边界的取舍见[路线规划记录](worklog/2026-10-18-milestone-roadmap.md)。[M3 实施与交付](worklog/2026-10-19-m3-batch-runtime.md)已有声明范围证据，总体验收仍待；与其并行推进的 M4 已交付范围内的只读审计、单代受控重跑和 Docker 精确清理。[M4 收尾核对](worklog/2026-10-21-m4-closeout-review.md)逐项保留剩余故障窗口和评测冻结缺口，不据模块通过宣布整体完成。预算的长期约束见 [ADR-006](adr/006-campaign-budget-reservations.md)，任务输入与宿主验证配置的边界见 [ADR-007](adr/007-host-owned-task-profiles.md)。
+当前目标与验收以[需求](REQUIREMENTS.md)为准，阶段进度见[里程碑](MILESTONES.md)；旧路线的阶段顺序及预算、判定、评测边界取舍见[路线规划记录](worklog/2026-10-18-milestone-roadmap.md)。[M3 实施与交付](worklog/2026-10-19-m3-batch-runtime.md)已有声明范围证据，总体验收仍待；与其并行推进的 M4 已交付范围内的只读审计、单代受控重跑和 Docker 精确清理。[M4 收尾核对](worklog/2026-10-21-m4-closeout-review.md)逐项保留剩余故障窗口和评测冻结缺口，不据模块通过宣布整体完成。预算的长期约束见 [ADR-006](adr/006-campaign-budget-reservations.md)，任务输入与宿主验证配置的边界见 [ADR-007](adr/007-host-owned-task-profiles.md)。
 
 M3.4 已完成[样本设计与选择](worklog/2026-10-19-m3-4-sample-selection.md)及 [Goddd 离线基线与共用 L2 SDK](worklog/2026-10-19-goddd-baseline.md)。三个开发来源、当前准备状态与待独立准备的留出名额见 [L2 说明](../scenarios/rpcx/l2/README.md)；[Goddd 新规范、Profile、三类判定和 Runner 接入](worklog/2026-10-19-goddd-evidence-gate.md)已完成开发校准；[Translation 双配置离线基线](worklog/2026-10-19-translation-baseline.md)及[双配置迁移门禁/Runner](worklog/2026-10-19-translation-evidence-gate.md)已接入，[Workouts 多模块离线基线](worklog/2026-10-19-workouts-baseline.md)也已准备，[Workouts 迁移规范、门禁和确定性 Docker Runner](worklog/2026-10-19-workouts-evidence-gate.md)已接入。[三个异构 Target 的确定性 Campaign](worklog/2026-10-19-m3-4-heterogeneous-campaign.md)已通过；后续真实批次及独立自动参考已完成，结果与剩余人类复核缺口见下文。
 
