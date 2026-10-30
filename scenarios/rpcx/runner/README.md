@@ -79,14 +79,14 @@ env GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly G
 
 ## Campaign 接入
 
-`CampaignExecutor(trustedLocal)` 将显式 Target 接到 [internal/campaign](../../../internal/campaign/README.md)。共享账本、模型和有界 Executor 由 Campaign 注入；Runner 继续拥有输入认证、基线检查、实际 Run ID、生成前预算绑定、独立门禁和完整交付。Campaign 只索引原报告，不重新判定质量。
+`CampaignExecutor(trustedLocal)` 将显式 Target 接到 [internal/campaign](../../../internal/campaign/types.go)。共享账本、模型和有界 Executor 由 Campaign 注入；Runner 继续拥有输入认证、基线检查、实际 Run ID、生成前预算绑定、独立门禁和完整交付。Campaign 只索引原报告，不重新判定质量。
 
 批次取消会传到排队命令和在途命令；单任务失败不取消其他任务。真实 Docker 强杀对照仅杀所属执行容器，不代表 worker/Harness 中断恢复。当前通过 Go API 联调，没有新增付费 batch CLI，Goddd、Translation 与 Workouts 可使用各自新 Profile；其余仓库仍须单独接入。
 
 
 ## 只读归档审计
 
-`InspectRun` 为 [audit 核心](../../../internal/audit/README.md)提供五种已发布 Profile 的只读检查，核对归档输入、候选、基线命令、报告/验证/证据及预算绑定。历史验证器材料按归档摘要核对，不要求等于当前源码；不运行候选、不重判质量。适用边界、失败发布与真实归档验收见[工作记录](../../../docs/worklog/2026-10-20-m4-readonly-audit.md#11-m41brpcx-归档证据与审计命令)。
+`InspectRun` 为 [audit 核心](../../../internal/audit/types.go)提供五种已发布 Profile 的只读检查，核对归档输入、候选、基线命令、报告/验证/证据及预算绑定。历史验证器材料按归档摘要核对，不要求等于当前源码；不运行候选、不重判质量。适用边界、失败发布与真实归档验收见[工作记录](../../../docs/worklog/2026-10-20-m4-readonly-audit.md#11-m41brpcx-归档证据与审计命令)。
 
 已提供 `harness audit --campaign <root> --output <new-dir>`，在模型与执行后端初始化之前分派；原目录必须已停写，新目录接收报告。该命令不执行恢复或清理。源码树/日志/报告一致性 pass 也不消除原 NeedsAttention 或审核材料缺陷。
 

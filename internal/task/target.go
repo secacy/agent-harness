@@ -1,4 +1,5 @@
 // Package task 描述一次仓库迁移任务的固定输入，不依赖具体迁移场景。
+// 路径只定位材料，摘要标识内容；实际内容与 Profile 适用性由宿主 Runner 认证。
 package task
 
 import (

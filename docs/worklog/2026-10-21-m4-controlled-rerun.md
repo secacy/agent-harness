@@ -40,7 +40,7 @@
 
 分配后无结果时返回 ErrInterrupted；目录初始化残片同样保守阻塞，不打开已有账本。相同选择且已有完整结果时，在新一轮完整审计后只读返回，不调用模型工厂、VerifyModel 或 Execute；不同选择冲突。该限制牺牲恢复自身再次失败后的可用性，换取本单元无重复执行，不能称为多代恢复已完成。发布/后审计可能失败，调用方必须同时看 error、Result 与来源材料，不凭 result 文件存在宣布成功。
 
-[审计 v4](../../internal/audit/README.md#恢复执行代次)重新推导收据和权限，检查旧调用前缀、预算累计、Run 绑定、新请求时间窗口、发布顺序、新 Run 身份/终态及原场景 Inspector 证据。依赖账本损坏时先阻断后续检查，避免无效切片导致审计 panic。原 execution_state 保持历史，另输出 recovery_execution_state；一致性不足时后者为 unknown。CLI 和 audit.md 展示两项，既有归档不回写。
+[审计 v4](../../internal/audit/recovery_execution.go)重新推导收据和权限，检查旧调用前缀、预算累计、Run 绑定、新请求时间窗口、发布顺序、新 Run 身份/终态及原场景 Inspector 证据。依赖账本损坏时先阻断后续检查，避免无效切片导致审计 panic。原 execution_state 保持历史，另输出 recovery_execution_state；一致性不足时后者为 unknown。CLI 和 audit.md 展示两项，既有归档不回写。
 
 ## 验收结果与修正
 

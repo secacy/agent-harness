@@ -146,7 +146,7 @@ M2.3 的[选型实验](../experiments/2026-10-18-m2-analysis-study-01.md)已通�
 
 状态：收尾中（2026-10-20），[收尾验收评审](../worklog/2026-10-20-m3-closeout-review.md)已完成，总体验收未通过：完整独立参考缺实际人工复核，留出仍是待准备名额。M3.1—M3.3 的已验收范围保持。[M3.1 预算核心与单 Run 接入](../worklog/2026-10-19-m3-batch-runtime.md#10-m31预算核心与已有单-run-接入)已在受控模型范围验收两级额度、持久化前置预留、保守结算与模型配置绑定；[M3.2](../worklog/2026-10-19-m3-batch-runtime.md#11-m32显式-target宿主场景配置与生成前基线检查)已验收通用 Target、两个宿主 Profile、生成前实际构建/十个基线测试及失败诊断。
 
-[M3.3](../worklog/2026-10-19-m3-batch-runtime.md#12-m33调度与汇总的实施选择)已实现 [Campaign Go API](../../internal/campaign/README.md)：有界 Target 调度、共享命令槽位、两级预算接入、独立目录和混合结果汇总。受控模型的核心竞态、串并行真实 Runner 对照及自有 Docker 执行容器强杀/回收对照通过；不把构造任务的结果计为模型效果。批次 Completed 表示汇总交付完成，允许其中有执行失败或质量拒绝，须分别读取计数。
+[M3.3](../worklog/2026-10-19-m3-batch-runtime.md#12-m33调度与汇总的实施选择)已实现 [Campaign Go API](../../internal/campaign/types.go)：有界 Target 调度、共享命令槽位、两级预算接入、独立目录和混合结果汇总。受控模型的核心竞态、串并行真实 Runner 对照及自有 Docker 执行容器强杀/回收对照通过；不把构造任务的结果计为模型效果。批次 Completed 表示汇总交付完成，允许其中有执行失败或质量拒绝，须分别读取计数。
 
 当前支持两个已认证的 demo-orders 场景及 Goddd、Translation、Workouts 三个半真实开发切片；[确定性异构批次](../worklog/2026-10-19-m3-4-heterogeneous-campaign.md)已通过；[首轮真实开发批次](../experiments/2026-10-20-rpcx-l2-real-model-01.md)已完成三项生成、自动参考与离线汇总，完整人类复核未完成。[预算批次 CLI](../worklog/2026-10-20-budgeted-batch-cli.md)及生成前能力材料获取已在本机模拟服务验收；2026-10-20 经单次授权已取得 deepseek-flash 的实际服务能力声明，原文及预算准入复核见[准备记录](../worklog/2026-10-20-l2-experiment-preparation.md#授权后实查模型能力与预算准入)。本轮三项原判定均 NeedsAttention，独立留出保管仍待完成；L2 来源及划分必须先于迁移调试。[完整设计](../worklog/2026-10-19-m3-batch-runtime.md)保留任务、隔离、预算与数据取舍，不因调度机制通过就宣布 M3 整体完成。
 

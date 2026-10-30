@@ -207,7 +207,7 @@ SIGKILL 单列真实进程实验，先覆盖基线后、模型请求在途、rep
 
 ### 实际实现与边界
 
-新增 [internal/audit](../../internal/audit/README.md)。`Inspect(ctx, Request, RunInspector)` 只从当前 Campaign 根读取，将报告写入互不重叠的新目录；归档内原 Directory 仅用于核对逻辑关系，不访问旧机器路径。RunRef 传递固定 Target、Campaign ID、原根与 Run 信封，宿主函数经过同一个 View 读取并声明检查完成情况。新包不导入 scenarios，也不创建模型或执行后端。
+新增 [internal/audit](../../internal/audit/types.go)。`Inspect(ctx, Request, RunInspector)` 只从当前 Campaign 根读取，将报告写入互不重叠的新目录；归档内原 Directory 仅用于核对逻辑关系，不访问旧机器路径。RunRef 传递固定 Target、Campaign ID、原根与 Run 信封，宿主函数经过同一个 View 读取并声明检查完成情况。新包不导入 scenarios，也不创建模型或执行后端。
 
 职责分为受限来源读取、严格 JSON、Campaign 初始化/Target/Run/summary 检查、预算重算及报告发布。复用已有 Campaign、预算和 Target 数据结构；Run v2 信封保留在 core，业务材料留给场景。JSON 先检查版本与重复键，再按静态类型检查必填字段和精确字段名，避免普通 Unmarshal 静默吞掉缺字段、大小写差异及重复键。嵌入预算也单独识别版本；未知格式不会套用旧结构继续判断。没有引入规则 DSL、事件库或通用工作流引擎。
 
@@ -243,7 +243,7 @@ SIGKILL 单列真实进程实验，先覆盖基线后、模型请求在途、rep
 
 ### 完成判断与下一步
 
-M4.1a 在上述构造与归档范围完成；[模块说明](../../internal/audit/README.md)列出 API、结果语义和测试入口。尚未以实际 SIGKILL 证明各写入窗口，也未读取候选/日志完整证据，因此不能宣布 M4.1 已完成或“归档已完整审计”。下一单元 M4.1b 接五种 rpcx Profile 的冻结材料、已发布报告/证据身份和 CLI；随后 M4.1c 按真实持久化屏障验收。M3 剩余验收、原实验、受托复核角色及留出依赖保持，不新增付费运行，不暂存或提交 Git。
+M4.1a 在上述构造与归档范围完成；[模块说明](../../internal/audit/types.go)列出 API、结果语义和测试入口。尚未以实际 SIGKILL 证明各写入窗口，也未读取候选/日志完整证据，因此不能宣布 M4.1 已完成或“归档已完整审计”。下一单元 M4.1b 接五种 rpcx Profile 的冻结材料、已发布报告/证据身份和 CLI；随后 M4.1c 按真实持久化屏障验收。M3 剩余验收、原实验、受托复核角色及留出依赖保持，不新增付费运行，不暂存或提交 Git。
 
 最终范围检查：既有 554 份代码/数据与阶段索引中的 7344 份来源摘要未变；九份文档的 177 个本地链接、27 个锚点、格式和 git diff --check 通过。HEAD 仍为 d9b15b9，暂存区为空。新模块源码/说明摘要、各轮测试统计及明确未实现项见 runs/m4-audit-core-01/verification.json；旧设计 verification.json 未覆盖。
 

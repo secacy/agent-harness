@@ -1,4 +1,7 @@
 // Package campaign 调度独立仓库任务，管理共享预算、执行槽位与交付索引。
+// 宿主 Execute 负责输入认证、Run 发布和回收，并使用 Services 提供的预算与执行器。
+// 本包不判定业务质量。Completed 表示汇总交付完成，局部任务错误仍须从 Summary 检查。
+// Run 只创建新批次；已有批次的受控重跑由 recovery 包组装。
 package campaign
 
 import (

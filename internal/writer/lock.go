@@ -1,4 +1,6 @@
 // Package writer 管理单机 Campaign 写者的排他生命周期。
+// 调用方从发布计划前到收尾完成持有 Lease，不删除或替换锁文件。
+// 锁仅协调 macOS/Linux 可信本地文件系统上的协作写者；取得锁不证明执行资源已停止。
 package writer
 
 import (

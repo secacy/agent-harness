@@ -1,4 +1,4 @@
-// Package recovery 检查停止后的 Campaign 是否满足恢复的前置条件。
+// Package recovery 组装停止后 Campaign 的检查、恢复准备、受控整代重跑与 Docker 资源清理。
 package recovery
 
 import (

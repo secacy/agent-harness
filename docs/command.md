@@ -65,7 +65,7 @@ runs/harness batch --config runs/my-run.json
 runs/harness audit --campaign /absolute/path/to/campaign --output /absolute/path/to/new-audit
 ```
 
-使用前按上文编译二进制。审计不需要模型或 Docker，只核对已记录材料；通过不代表候选正确，也不授予恢复权限。接口与结果见[audit](../internal/audit/README.md)。
+使用前按上文编译二进制。审计不需要模型或 Docker，只核对已记录材料；通过不代表候选正确，也不授予恢复权限。接口与结果见[audit](../internal/audit/types.go)。
 
 ## 按需查阅
 

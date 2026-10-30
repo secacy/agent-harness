@@ -1,60 +1,18 @@
-# 模型调用预算
+# 预算不变量
 
-本包为单进程中的多个 Target 提供共享额度。`Create` 独占创建一个新的账本目录，`NewModel` 将一个已注册 Target、唯一 Run 和模型配置绑定。模型包装器在真实 Complete 前保存预留，调用返回后保存结算，再将回复或错误交回 Agent。
+模型调用通过 `NewModel` 绑定 Target/Run 与宿主核实的 Profile，真实调用前预留、返回后结算。账本位于 Agent 可见目录之外，同一模型不能重复包装。
 
-恢复准备另提供纯函数 `ValidateSnapshot` 和 `RecoverSnapshot`：逐调用重算 v1/v2 两级账目，再将 reserved 原额转 unknown、保留原 call/Run 身份并记录恢复 ID。v2 的 RunIDs 表示历史绑定，RunID 表示当前准入绑定；检查点转换时关闭后者。RecoveryRevision 限制同一恢复 ID 的幂等重入，不能在新活动之后借旧 ID 跳过转换。返回值和输入均为独立副本。
+## 调用与持久化
 
-这些函数不打开账本、不写磁盘、不授权模型。当前 `Create` 和运行账本仍发布 v1、每 Target 单 Run；[recovery.Prepare](../recovery/README.md#恢复准备检查点)仅在不可变检查点中保存 v2 状态。后续激活必须完整继承该状态及限额，不能用空账本替代。
+- 批次和 Target 同时受调用数及 token 限额约束。每次预留 `ContextTokens + MaxOutputTokens`，保持“已知消耗 + 在途预留 + 未知占用”不超过额度。
+- 合法 usage 按实际结算；缺失 usage 保留整额未知占用。非法用量、冲突结算或持久化失败关闭新增准入，未知不能当零成本。
+- 先持久化账本快照，再发布内存状态。结算独立于已取消的 Run context，在途调用仍需收尾。
+- Loop 的调用尝试数与账本的准入数不同；实际消费与保守占用从账本读取。token 上界依赖宿主与供应商遵守 Profile，不是金额账单封顶。
 
-预算按请求次数和输入加输出 Token 计量。每次保守预留 `ContextTokens + MaxOutputTokens`；缓存命中输入仍属于输入，不重复叠加缓存统计。批次与 Target 都需满足：
+## 恢复边界
 
-```text
-已知消耗 + 在途预留 + 未知占用 <= Token 上限
-准入调用数 <= 调用次数上限
-```
+`RecoverSnapshot` 只转换已校验的数据：保留历史身份和累计占用，将在途预留转为未知；它不写账或授权模型调用。
 
-合法 usage 释放预留与实际值的差额。缺失 usage、HTTP 错误、断连或取消保留整额未知占用；回复协议错误但携带合法 usage 仍按实际结算。非法/超界 usage 保存原值并停止新增准入，取消其他在途模型调用；不能通过截断原值假装仍符合上界。重复结算不重复释放，冲突结算封闭准入。
+`Activate` 在原 Campaign 锁内独占创建新代账本，继承原限额和全部占用。不能重开旧目录、清零预算或重复绑定旧 Run；新绑定前须已持久化恢复收据。`CanAdmit` 只是余额检查，实际调用仍须原子预留。
 
-暂时缺额度时按可满足请求的 FIFO 顺序等待结算，等待可取消；已知永久不足返回 `Denied`，其中 Scope/Resource 分别标记 campaign/target 与 calls/tokens。Agent 将该错误归为 limit_reached。Loop 的 ModelCalls 仍是 Complete 尝试数，可能包含被拒绝的尝试；真实准入数以账本 Totals.Calls 为准，也包含准入后无法确认是否发送的保守占用。
-
-## 宿主接入
-
-模型必须实现 `ProfiledModel`，返回由宿主核实、与实际请求一致的 Profile。Profile 的格式检查及摘要匹配不能证明供应商声明真实；SourceSHA256 指向宿主保留的能力材料，VerifiedAt 记录核实时间。本包不自动请求供应商，不根据模型别名猜测上界，也不接受候选提供的预算依据。
-
-DeepSeek 的 `Config.BudgetProfile` 是显式宿主入口：校验 provider/endpoint/model/max_tokens 一致，固定 thinking disabled 和非流式，不自动重试，不跟随重定向；预算模式只接受标准 HTTP Transport。配置为空时不能被预算包装器接纳。[harness batch](../../docs/command.md#受预算约束的批次入口)在每批生成前通过同源 Models API 获取能力材料，保存原始响应并按其摘要构造 Profile；用户配置不能覆盖上界。本机模拟服务已验证机制；[单次真实能力查询与预算准入复核](../../docs/worklog/2026-10-20-l2-experiment-preparation.md#授权后实查模型能力与预算准入)已取得服务声明及原文摘要，未完成真实付费批次验收。
-
-宿主在独立输出目录中创建账本，父目录须已存在：
-
-```go
-ledger, err := budget.Create(budget.Config{
-    Directory:  filepath.Join(campaignDir, "budget"),
-    CampaignID: campaignID,
-    Profile:    verifiedProfile,
-    Limits:     budget.Limits{MaxCalls: 80, MaxTokens: campaignTokenLimit},
-    Targets: map[string]budget.Limits{
-        "orders": {MaxCalls: 40, MaxTokens: targetTokenLimit},
-    },
-})
-```
-
-检查错误后，已有 rpcx Runner 可设置 `Config.Budget = &budget.Target{Ledger: ledger, ID: "orders"}`。Runner 在创建实际 Run 后包装模型，inputs/task.json、artifacts/report.json 和 review.md 保存账本引用及模型配置摘要。共享账本位于 Agent 工具可见目录外；不将其余额副本当作不会变化的 Run 事实。
-
-也可在已经具有 Run ID 的宿主中直接调用 `NewModel(ledger, targetID, runID, model)`，将返回值作为 agent.Model。两种接法选择一种，不能重复包装。首次账本每 Target 只绑定一个 Run；已有目录不能重新打开或重置。恢复在新代次继承账目，见下文。
-
-## 持久化与故障
-
-budget.json 使用 schema_version=1，包含 Profile、两级限制和汇总、逐请求身份/输入摘要/预留/原始用量、拒绝记录和单调 revision。输入摘要是消息与工具的 JSON 身份，不是 HTTP 请求字节摘要。账本不保存 API Key、完整提示或供应商错误正文。
-
-每次写入先创建同目录临时文件，再同步文件、rename、同步目录，成功后才发布内存状态。创建账本目录后也同步父目录。单次持久化结果不确定即关闭新增准入；在途调用仍尝试结算，失败时原持久化预留继续保守占用。结算不依赖已取消的 Run context；同步文件 I/O 本身不能由 context 强制中止，不用后台遗留写操作伪装超时保证。
-
-Snapshot 返回独立副本；Done/Err 供未来 Campaign 观察共同故障。原账本没有打开已有目录或跨进程共享的接口；M4 单代激活与独立审计见下文。Token 保证以供应商遵守上界、宿主客户端不绕过包装器为前提，不等于金额账单封顶。
-
-验证命令见[预算测试](../../docs/archive/command.md#m31-模型预算与单-run-接入)。设计和取舍见 [M3 工作记录](../../docs/worklog/2026-10-19-m3-batch-runtime.md)。
-
-## 恢复代次账本
-
-`Activate(directory, seed, deadline)` 在持有原 Campaign 写锁的宿主中，独占创建 budget v2 账本。seed 必须是已校验、无 halt/在途预留/当前绑定的恢复状态，所有已知费用、未知占用、历史调用及两级上限完整继承。它不重开目录或重置额度。持久化收据后才 BindRun；历史 Run 不能再次绑定，新绑定追加 RunIDs。
-
-`CanAdmit` 只检查下一请求余额，不预留或保证未来额度；实际调用继续由 Model 原子预留与结算。绝对 deadline 同时限制准入和在途模型 context；请求截止后用量未知仍保留 Q。当前没有重新打开已激活账本的 API，再次中断需停止，不能反复 Activate。同批次恢复组装见 [recovery](../recovery/README.md#激活与受控重跑)。
-
-macOS/Linux 的包测试还会启动自有子进程，在真实 reserve 快照同步后或结算快照写入前通过管道暂停，再核对 PID 并 SIGKILL。余额充足和耗尽各作对照，验证 RecoverSnapshot/Activate 继承未知占用、旧 Run 不再绑定、重复结算与冲突封闭；不调用供应商，不代表完整 Campaign 验收。可用 `HARNESS_BUDGET_CRASH_ARTIFACTS` 保存四份原快照与证据；[设计与结果](../../docs/worklog/2026-10-21-m4-persistence-windows.md)。
+API 约束见 [Model](model.go)、[Ledger](ledger.go)、[恢复转换](recovery.go)和[激活](activate.go)；跨包恢复顺序见 [recovery](../recovery/README.md)。设计依据见 [ADR-006](../../docs/adr/006-campaign-budget-reservations.md)。
