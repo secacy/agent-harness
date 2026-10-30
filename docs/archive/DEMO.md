@@ -1,10 +1,12 @@
 # 离线演示：从批次结果走到判定依据
 
-这是历史归档复验指南。[新需求](REQUIREMENTS.md)中的 trace 回放、step 恢复及 P5 两分钟演示尚未交付；本指南的审计和指标重算不替代这些验收。
+> 历史参考，归档于 2026-10-31。正文保留当时的状态、方案和命令；当前阶段见[开发入口](../README.md)，需求见[需求文档](../REQUIREMENTS.md)。
+
+这是历史归档复验指南。[新需求](../REQUIREMENTS.md)中的 trace 回放、step 恢复及 P5 两分钟演示尚未交付；本指南的审计和指标重算不替代这些验收。
 
 本指南复验一次已有的真实模型批次，展示任务状态、预算、候选、质量依据和独立评测如何关联。归档复验不调用模型，不执行候选或重跑参考探针，也不需要 Docker。末尾另列源码固定候选检查的执行范围。
 
-归档固定在 GHCLI 分类修正之前，原判定为 Rejected。当前源码的[修正回归](worklog/2026-10-22-ghcli-proof-classification.md)及后续[有限资源/完整边界支持](worklog/2026-10-22-ghcli-bounded-proof.md#10-资源证据与完整边界的生产接入2026-10-23)是另外的开发证据，不在本归档中；演示结束仍应重算得到原有效自动成功 1/4。
+归档固定在 GHCLI 分类修正之前，原判定为 Rejected。当前源码的[修正回归](../worklog/2026-10-22-ghcli-proof-classification.md)及后续[有限资源/完整边界支持](../worklog/2026-10-22-ghcli-bounded-proof.md#10-资源证据与完整边界的生产接入2026-10-23)是另外的开发证据，不在本归档中；演示结束仍应重算得到原有效自动成功 1/4。
 
 ## 准备材料
 
@@ -13,7 +15,7 @@
 - `harness-fixed-evaluation-v0.1.0.tar.gz`，约 721 MB。
 - `harness-fixed-evaluation-v0.1.0.tar.gz.sha256`。
 
-版本与 SHA-256 见[已提交交付收据](delivery/fixed-evaluation-v0.1.0.json)。完整审计/重算使用包内 darwin/arm64 二进制，适用于 macOS Apple Silicon；需要 Python 3.11+ 和约 1.1 GB 解包空间，另预留复验输出空间。其他平台可用下文的完整性检查，不能据此声称执行复验通过。
+版本与 SHA-256 见[已提交交付收据](../delivery/fixed-evaluation-v0.1.0.json)。完整审计/重算使用包内 darwin/arm64 二进制，适用于 macOS Apple Silicon；需要 Python 3.11+ 和约 1.1 GB 解包空间，另预留复验输出空间。其他平台可用下文的完整性检查，不能据此声称执行复验通过。
 
 ## 1. 核对并解包
 
@@ -80,7 +82,7 @@ PYTHONDONTWRITEBYTECODE=1 python3 source/scripts/package_delivery.py verify \
 
 继续看该 Run 的 `evidence/typed-analysis.json`、`reviews/ghcli.json` 和 `reviews/ghcli-static-proof-review.json`。类型分析器没有识别局部父上下文变量，却把证明不足写成明确丢失父上下文；独立自动参考通过，助手因此将原交付依据记 fail。审计 pass 说明记录自洽，不能证明这一语义判定正确。
 
-回到当前源码的[修正记录](worklog/2026-10-22-ghcli-proof-classification.md)：保存候选在新门禁下为 NeedsAttention，直接 Background 负例仍 Rejected。原实验和归档保留旧结果，展示“发现缺陷 → 新实现回归 → 保留原评测”的完整链路。
+回到当前源码的[修正记录](../worklog/2026-10-22-ghcli-proof-classification.md)：保存候选在新门禁下为 NeedsAttention，直接 Background 负例仍 Rejected。原实验和归档保留旧结果，展示“发现缺陷 → 新实现回归 → 保留原评测”的完整链路。
 
 ## 只有源码时
 

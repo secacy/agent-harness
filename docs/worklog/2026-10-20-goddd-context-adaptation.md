@@ -3,7 +3,7 @@
 - 日期：2026-10-20
 - 状态：有限适配与证据发布已实现并验收；原真实候选副本仍 NeedsAttention
 - 代码基线：4308f45
-- 对应里程碑：[M3.4](../MILESTONES.md#m3多仓库批量闭环)
+- 对应里程碑：[M3.4](../archive/MILESTONES.md#m3多仓库批量闭环)
 - 前置：[未知项根因评审](2026-10-20-needs-attention-review.md)、[Workouts 导入顺序验收](2026-10-20-workouts-import-order.md)
 - 当前结论：采用 Goddd 宿主从认证基线生成的有限适配变体，保留旧写法；不扩大共享测试比较器的默认规则
 

@@ -2,7 +2,7 @@
 
 - 日期：2026-10-19。
 - 状态：已完成本工作单元的本地与 Docker 批次验收；不等于 M3 整体验收。
-- 对应：[M3 多仓库批量闭环](../MILESTONES.md#m3多仓库批量闭环)、[批次设计](2026-10-19-m3-batch-runtime.md)、[L2 样本选择](2026-10-19-m3-4-sample-selection.md)。
+- 对应：[M3 多仓库批量闭环](../archive/MILESTONES.md#m3多仓库批量闭环)、[批次设计](2026-10-19-m3-batch-runtime.md)、[L2 样本选择](2026-10-19-m3-4-sample-selection.md)。
 - 代码基线：f12b6d9。
 
 ## 问题与取舍

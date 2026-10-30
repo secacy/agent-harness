@@ -3,7 +3,7 @@
 - 日期：2026-10-21。
 - 状态：两项实现单元均在声明范围验收；第二单元已完成五组实际校准、项目回归与独立核验。M5 未冻结、未启动。
 - 实现基线：08ccb305c374e9bb05738bd8568c053f0de6341b；启动时工作区干净。
-- 对应里程碑：[M5 准备](../MILESTONES.md#m5独立评测与整体验收)。
+- 对应里程碑：[M5 准备](../archive/MILESTONES.md#m5独立评测与整体验收)。
 - 前置：[应用准入](../../scenarios/rpcx/l2/agent-application-admission-v0.1.0.json)与[行为参考校准](2026-10-21-isolated-application-reference.md)完成。当前完整样本/答案仅由隔离侧保管，主调优流程只收元数据。
 
 ## 1. 本项交付与范围
@@ -185,7 +185,7 @@ func EvaluateGHCLI(ctx context.Context, req Request) (Report, error)
 
 项目常规回归首轮覆盖 35 包，其中 deepseek 与 cmd/harness 因沙箱拒绝 localhost 监听失败；其他包完成，Runner 通过。只在权限允许后补跑这两包，随后发现 cmd/harness 的 `TestEnrollmentExampleMatchesCurrentPublications` 确实失败：新工具实现使共享 ToolSHA256 变化，当前使用模板仍声明旧值。
 
-选择更新 [examples 当前纳入模板](../../examples/rpcx-l2-enrollment.json)的三个 tool_sha256，由既有 PublishedIdentity 实算，并同步[批次模板](../../examples/rpcx-l2-batch.json)引用的 enrollment.sha256；不改变其他字段或测试断言。它们是随当前代码使用、无版本号的模板，[命令约定](../command.md)已要求工具变化后发布匹配模板；它们不同于[冻结实验协议](../experiments/l2-dev-eval-v0.1.0/enrollment.json)。保留历史协议的旧身份与拒绝重新纳入行为，也保留本次真实失败；不通过排除新源码、回退工具摘要或放宽身份检查消除失败。模板同步属于本单元共享代码兼容修复，不构成追加实验授权。
+选择更新 [examples 当前纳入模板](../../examples/rpcx-l2-enrollment.json)的三个 tool_sha256，由既有 PublishedIdentity 实算，并同步[批次模板](../../examples/rpcx-l2-batch.json)引用的 enrollment.sha256；不改变其他字段或测试断言。它们是随当前代码使用、无版本号的模板，[命令约定](../archive/command.md)已要求工具变化后发布匹配模板；它们不同于[冻结实验协议](../experiments/l2-dev-eval-v0.1.0/enrollment.json)。保留历史协议的旧身份与拒绝重新纳入行为，也保留本次真实失败；不通过排除新源码、回退工具摘要或放宽身份检查消除失败。模板同步属于本单元共享代码兼容修复，不构成追加实验授权。
 
 最终按唯一包核对常规回归范围：35 包中 28 个测试包通过、7 包无测试文件、0 包未解决失败。三轮退出码依次为 1/1/0；首轮全项目，第二轮仅补 localhost 受影响的两包，第三轮仅补修复后的 cmd/harness，不累加重复包数。默认非 verbose 输出未逐项列出测试 skip，case 跳过数标为未知，不称作零跳过。race 与 vet 的范围为 baseline、L2 和 verify-baseline CLI 三包；这不等于重跑特殊 Docker 矩阵或完整正式评测。各轮日志摘要、模板变更及最终覆盖已附入同一[发布回执](../../scenarios/rpcx/l2/agent-application-release-v0.1.0.json)，原失败日志留在 runs/。
 

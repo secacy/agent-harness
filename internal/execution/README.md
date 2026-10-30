@@ -24,4 +24,4 @@ dispatch 存在但没有 created 且查不到时保持未知，不能当作零�
 
 当前新 batch 的 Docker 后端自动发布资源协议；单 Run 和旧无协议输入仍保留原运行方式，不因此获得恢复能力。资源清理与恢复组装见 [recovery](../recovery/README.md#docker-资源核对与清理)；协议取舍见 [ADR-010](../../docs/adr/010-docker-resource-ownership.md)。Local 后端没有对应的通用中断资源证明。
 
-受控 CLI 替身使用本机 Python 3，不需要下载模块。故障测试：`go test -race ./internal/execution -run 'TestOwned|TestResourceOwner|TestResourceGuard'`。真实 Docker 强杀/清理/新 Run 验收见[命令说明](../../docs/command.md#docker-资源清理验收)。模型均为受控替身，不需要密钥。
+受控 CLI 替身使用本机 Python 3，不需要下载模块。故障测试：`go test -race ./internal/execution -run 'TestOwned|TestResourceOwner|TestResourceGuard'`。真实 Docker 强杀/清理/新 Run 验收见[命令说明](../../docs/archive/command.md#docker-资源清理验收)。模型均为受控替身，不需要密钥。

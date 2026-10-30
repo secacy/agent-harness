@@ -48,7 +48,7 @@ v0.2.0 真实候选在 CheckRedirect 拒绝重定向时将原有非空响应清�
 
 EvaluateGHCLI 将新文件装入剥离候选测试的 production 副本，快检从 14 个必需事件扩展到 18 个；实际调用参数包含新增测试。接口/报告仍沿用现有类型和六个自动检查分区，未新增插件、判定服务或规则 DSL。PublishedIdentity、Assess 及轮次准入使用当前版本；测试确认旧数据/报告版本不能重标为当前发布。历史重现仍须使用原冻结工具，不增加跨版本重评入口。
 
-新增 TestGHCLIResponseReferenceDocker，测试侧从 Git 保存的基线和原边界重建完整模型候选摘要，再在独立副本生成最小保留响应对照及吞错负例。标签只存在校准测试中，EvaluateGHCLI 和探针不读取这些标签。普通测试默认跳过真实 Docker 校准；命令和输出目录条件已写入[包说明](../../scenarios/rpcx/l2/evaluation/README.md)与[命令文档](../command.md#ghcli-独立参考-v3-的已见开发校准)。
+新增 TestGHCLIResponseReferenceDocker，测试侧从 Git 保存的基线和原边界重建完整模型候选摘要，再在独立副本生成最小保留响应对照及吞错负例。标签只存在校准测试中，EvaluateGHCLI 和探针不读取这些标签。普通测试默认跳过真实 Docker 校准；命令和输出目录条件已写入[包说明](../../scenarios/rpcx/l2/evaluation/README.md)与[命令文档](../archive/command.md#ghcli-独立参考-v3-的已见开发校准)。
 
 ## 实际验收
 

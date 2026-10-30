@@ -3,7 +3,7 @@
 - 日期：2026-10-20
 - 状态：根因评审与下一单元设计已完成；生产规则尚未修改
 - 基线：6bb1945
-- 对应里程碑：[M3.4](../MILESTONES.md#m3多仓库批量闭环)
+- 对应里程碑：[M3.4](../archive/MILESTONES.md#m3多仓库批量闭环)
 - 输入：[唯一真实批次](../experiments/2026-10-20-rpcx-l2-real-model-01.md)，三个原始 NeedsAttention 不回写
 
 ## 本次目标与范围

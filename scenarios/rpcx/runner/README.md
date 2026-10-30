@@ -101,11 +101,11 @@ env GOPROXY=off GOSUMDB=off GOWORK=off GOTOOLCHAIN=local GOFLAGS=-mod=readonly G
 
 ## GHCLI 新证明的受控交付
 
-`TestGHCLIProofDeliveryCampaign` 从公开基线经真实 Agent 工具重放已保存候选和未知 helper 变体，覆盖共享预算、两个不同质量结论的完整 Run、原始补丁重放、审核导航和新信封的归档审计。它使用脚本化模型，不提供新的自主迁移成功率。通过环境变量显式开启，输入摘要固定，产物保存在新的输出目录；命令与预期见[命令参考](../../../docs/command.md#ghcli-新证明的完整-harness-交付验收)，实际结果见[交付验收记录](../../../docs/worklog/2026-10-23-ghcli-harness-delivery.md)。
+`TestGHCLIProofDeliveryCampaign` 从公开基线经真实 Agent 工具重放已保存候选和未知 helper 变体，覆盖共享预算、两个不同质量结论的完整 Run、原始补丁重放、审核导航和新信封的归档审计。它使用脚本化模型，不提供新的自主迁移成功率。通过环境变量显式开启，输入摘要固定，产物保存在新的输出目录；命令与预期见[命令参考](../../../docs/archive/command.md#ghcli-新证明的完整-harness-交付验收)，实际结果见[交付验收记录](../../../docs/worklog/2026-10-23-ghcli-harness-delivery.md)。
 
 ## GHCLI 响应契约的三类交付
 
-`TestGHCLIResponseDeliveryCampaign` 使用 Git 中的固定开发材料，经真实工具和有界 Campaign 交付可放行、响应丢失和未知 helper 三类候选。它覆盖每 Run 预算绑定、补丁重放、具体 finding 与审核导航、实际 Campaign 审计，以及改动观察/日志/SDK、跨 Target 引用等负例。`TestGHCLIResponseDeliveryAudit` 可对同一已停写批次只读复验审计，所有改动只在新副本中进行。入口与预期见[命令参考](../../../docs/command.md#ghcli-响应契约的完整-harness-交付验收)，结果见[单元 C 记录](../../../docs/worklog/2026-10-23-ghcli-runtime-response-design.md#10-单元-c预算工具交付与实际-campaign-审计)。
+`TestGHCLIResponseDeliveryCampaign` 使用 Git 中的固定开发材料，经真实工具和有界 Campaign 交付可放行、响应丢失和未知 helper 三类候选。它覆盖每 Run 预算绑定、补丁重放、具体 finding 与审核导航、实际 Campaign 审计，以及改动观察/日志/SDK、跨 Target 引用等负例。`TestGHCLIResponseDeliveryAudit` 可对同一已停写批次只读复验审计，所有改动只在新副本中进行。入口与预期见[命令参考](../../../docs/archive/command.md#ghcli-响应契约的完整-harness-交付验收)，结果见[单元 C 记录](../../../docs/worklog/2026-10-23-ghcli-runtime-response-design.md#10-单元-c预算工具交付与实际-campaign-审计)。
 
 行为证据审计的违规记录包含其实际读取的工具、日志及候选/可信副本/SDK 来源；审计收尾会据这些依赖复核稳定性。完整交付通过不消除 NeedsAttention，也不更新旧实验指标。
 

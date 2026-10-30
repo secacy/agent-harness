@@ -49,7 +49,7 @@ budget.json 使用 schema_version=1，包含 Profile、两级限制和汇总、�
 
 Snapshot 返回独立副本；Done/Err 供未来 Campaign 观察共同故障。原账本没有打开已有目录或跨进程共享的接口；M4 单代激活与独立审计见下文。Token 保证以供应商遵守上界、宿主客户端不绕过包装器为前提，不等于金额账单封顶。
 
-验证命令见[预算测试](../../docs/command.md#m31-模型预算与单-run-接入)。设计和取舍见 [M3 工作记录](../../docs/worklog/2026-10-19-m3-batch-runtime.md)。
+验证命令见[预算测试](../../docs/archive/command.md#m31-模型预算与单-run-接入)。设计和取舍见 [M3 工作记录](../../docs/worklog/2026-10-19-m3-batch-runtime.md)。
 
 ## 恢复代次账本
 

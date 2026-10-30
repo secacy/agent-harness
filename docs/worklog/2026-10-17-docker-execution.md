@@ -2,7 +2,7 @@
 
 - 日期：2026-10-17
 - 状态：共享执行层、本地回归和真实容器集成验收通过
-- 对应里程碑：[M1](../MILESTONES.md)
+- 对应里程碑：[M1](../archive/MILESTONES.md)
 - 决策：[ADR-001](../adr/001-docker-execution.md)
 
 ## 调用与所有权
@@ -49,7 +49,7 @@ cmd/harness 创建 Docker 后端并注入 Runner
 
 首轮真实容器检查已生效，但测试断言预期的 Docker “对象不存在”错误首字母大小写与本机 CLI 不同；已统一按不区分大小写判断，再次验证对象确实删除。全套测试并行进行冷编译时，已有的本地进程组测试曾超过两秒就绪等待；单独重跑通过，已改用 shell 内建路径处理、明确的提前退出诊断和五秒就绪预算，保留原取消与后代不存活断言。
 
-最终 `go test ./...` 与 Docker 集成都通过，五种公开补丁回归仍全部符合预期，原始夹具未变。常规测试与真实 Docker 集成命令见 [command.md](../command.md)。本次真实集成的 JSON 事件保存在 Git 忽略的 `runs/docker-execution-tests.jsonl`，它是测试证据，不是业务迁移报告。
+最终 `go test ./...` 与 Docker 集成都通过，五种公开补丁回归仍全部符合预期，原始夹具未变。常规测试与真实 Docker 集成命令见 [command.md](../archive/command.md)。本次真实集成的 JSON 事件保存在 Git 忽略的 `runs/docker-execution-tests.jsonl`，它是测试证据，不是业务迁移报告。
 
 ## 当前限制与下一步
 

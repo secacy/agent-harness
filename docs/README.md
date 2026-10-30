@@ -1,105 +1,36 @@
-# 文档约定
+# 开发入口
 
-项目文档用于说明系统如何运行、为什么这样设计，以及哪些能力已经得到验证。文档随实际开发进度更新，不将计划或设计视为已完成的功能。
+当前阶段与下一步只在本页维护；目标和验收标准见[需求](REQUIREMENTS.md)，运行方法见[命令](command.md)。更新：2026-10-31。
 
-## 当前方向与阅读入口
+## 当前阶段
 
-2026-10-31 起以[需求与 TODO](REQUIREMENTS.md)为当前需求基线：主线是运行时可靠性与评测验证，代码迁移作为验证负载。先做 P0 trace/回放，再推进基线消融、step 恢复与未见样本；不继续堆叠 rpcx 门禁规则。阶段状态见[里程碑](MILESTONES.md)，已实现能力见[交付说明](DELIVERY.md)。
+**P0：Trace 与离线回放，处于设计准备，尚未按新标准验收。**
 
-[四任务消融旧草案](worklog/2026-10-31-baseline-ablation.md)保留待重审的实现参考；其中每任务一次、A/B 普通构建测试放行及 B/C 共享候选，与本版主实验要求不一致，不能直接执行。当前 P0 尚未验收，不提前启动 P1。
+已有预算账本、运行结束时的 `agent.json`、命令证据和只读审计，可作为基础。归档审计和指标重算没有验证完整 Run 回放；现有恢复是受控整代重跑。
 
-首次阅读：[项目首页](../README.md) → [项目定位](PROJECT.md) → [需求与验收](REQUIREMENTS.md) → [当前里程碑](MILESTONES.md)。[命令参考](command.md)只列已有入口，[离线演示](DEMO.md)仍是旧归档审计/重算，不是新 P0/P2 的回放/恢复 demo。
+下一步先回答三个问题，再实现最小链路：
 
-## 历史进展（保留原结论）
+1. 哪些历史 Run 材料足以回放，哪些信息已经缺失？
+2. 为记录、回放与用量核对，最少需要保存哪些事件和载荷？
+3. 怎样在中断后辨认已持久化记录，并验证判定与账本一致？
 
-以下条目的“当前”“下一步”属于记录当时，后续优先级统一按新需求与当前里程碑执行。
+P1–P5 尚未按新需求验收。进入对应阶段时再确定实现与实验协议；当前不展开后续阶段的接口、文件格式和执行命令。
 
-此前的状态与下一项选择见[改进收益盘点（2026-10-25）](worklog/2026-10-25-improvement-value-review.md)。[定点修复真实实验](experiments/2026-10-25-diagnostic-repair-real-model-01.md)已使用唯一授权结束：A 无诊断恢复断言，但独立验证超时，B 未生成，无法比较诊断收益；A 交付说明复核 fail，36 个容器回收。离线校准通过与本次中止分开保留，[工作记录](worklog/2026-10-25-diagnostic-repair-comparison.md#9-单次真实启动与未完成的比较)不自动追加实验或扩大功能。2026-10-26 已按确认范围完成[生成与验证分阶段调整](worklog/2026-10-25-diagnostic-repair-comparison.md#10-生成与验证分阶段的离线调整)，只作离线机制检查，原门禁及旧结果保持，新版入口不开放真实模型。原[研发对齐复核](worklog/2026-10-24-rd-alignment-review.md)及[门禁价值回顾](experiments/2026-10-24-gate-value-review.md)保留工程边界和历史依据。下文按历史工作保留记录，当前优先级以[里程碑](MILESTONES.md)和[交付说明](DELIVERY.md)为准。
+## 参考材料
 
-[当前四任务开发观察](experiments/2026-10-24-rpcx-current-dev-real-model-01.md)已获本版授权完成唯一执行、固定参考及实际助手复核：原自动成功 0/4，三项 NeedsAttention；[实施记录](worklog/2026-10-24-current-development-observation.md#7-授权后的唯一实际执行)保留条件、来源保全和资源回收。
+| 需要了解什么 | 从哪里查 |
+| --- | --- |
+| 已有模块行为 | [运行时模块](../internal)、[rpcx 场景](../scenarios/rpcx/README.md)及各模块 README |
+| 历史结果 | [2026-10-22 固定四任务](experiments/2026-10-22-rpcx-fixed-real-model-01.md)、[2026-10-24 开发观察](experiments/2026-10-24-rpcx-current-dev-real-model-01.md)；完整条件与局限见原报告 |
+| 决策依据 | [ADR](adr)、[工作记录](worklog)；按具体问题检索 |
+| 旧路线与工程交付 | [历史里程碑](archive/MILESTONES.md)、[交付快照](archive/DELIVERY.md)、[旧归档复验](archive/DEMO.md) |
 
-此前已完成[生成阶段的基线对照与提交前自检](worklog/2026-10-24-generation-baseline-review.md)：依据实际工具轨迹比较生成约束、反馈修复与证明扩展，先复用只读文件工具支持原文对照。机制验证和真实效果分开登记，独立门禁继续负责最终质量。
-
-[生成阶段诊断反馈](worklog/2026-10-24-generation-diagnostics.md)首版已在确认范围实现并验收：Translation/Workouts 的按需测试结构检查、逐次候选绑定、有限反馈与审计接入；脚本化修复经真实独立门禁交付通过，真实修复收益仍未证明。
-
-[Translation 单任务真实诊断观察](experiments/2026-10-24-translation-diagnostics-real-model-01.md)已按本版授权完成：主动诊断一次 preserved，随后新增错误探针、40 次调用耗尽未提交，原 Run Failed、无最终判定。轨迹、部分候选参考/实际助手复核及保全收尾完成；[工作记录](worklog/2026-10-24-translation-diagnostic-observation.md#9-授权后的唯一观察与结论)保留准备和失败过程。[预算末轮交接](worklog/2026-10-24-final-response-handoff.md#9-确认后的实现与验证)已实现并通过受控验收：显式启用后，末轮仅回复、宿主禁止工具执行，独立判定及原费用约束保留。三类候选与非法末轮任务的混合交付通过；[有限真实观察](worklog/2026-10-24-final-response-observation.md#7-确认后的材料准备与离线验收)已按确认设计完成协议、源码/二进制及分析/启动校准；保留 Translation 输入与原预算，启用新策略。[实际观察](experiments/2026-10-24-translation-handoff-real-model-01.md)已按一次授权完成：31 次提前提交、Completed/NeedsAttention，业务参考通过，完整复核保留交付计数错误；原自动成功 0/1。真实末轮未触发，未证明效果提升；[有限生产范围证明](worklog/2026-10-24-translation-scope-proof.md#8-确认后的实现与验证)已在确认范围实现并完成开发校准：新 v2 Profile 消费同次类型分析的精确节点，归约直接边界及文件内常量，比较完整剩余结构。三类 Docker 交付、故障对照、新旧审计通过，287 个本轮记录容器确认回收；最近原候选仅在新副本校准放行，原真实指标与交付自述问题不变。
-
-## 文档组织
-
-| 位置 | 内容 | Git 管理 |
-| --- | --- | --- |
-| `README.md` | 项目定位、核心能力、架构概览与文档入口 | 是 |
-| `PROJECT.md` / `REQUIREMENTS.md` | 当前定位、需求基线、非目标、P0–P5 TODO 与验收口径 | 是 |
-| `MILESTONES.md` | P0–P5 当前进度及保留的 M0–M5 历史验收 | 是 |
-| `DELIVERY.md` / `DEMO.md` | 当前交付版本与限制、离线演示步骤及预期结果 | 是 |
-| `command.md` | 已实现且验证可用的开发、测试和运行命令 | 是 |
-| `adr/` | 一个重要技术选择、选择依据及其长期影响 | 是 |
-| `worklog/` | 一项工作的需求、设计、实施与验证过程，可包含待办及方案权衡 | 是 |
-| `experiments/` | 实验条件、指标、原始结果与分析结论 | 是 |
-| `development.md` | 与 AI 助手的开发协作约定 | 否，本地保留 |
-| `personal/` | 个人技术复盘、简历及面试准备 | 否，本地保留 |
-
-本地文档由根目录 `.gitignore` 排除。
-
-首次阅读从[项目首页](../README.md)开始，按[离线演示](DEMO.md)复验固定四任务原批次，再由[交付说明](DELIVERY.md)区分当前源码、原评测归档和待优化项。入口与命令核对见[收敛记录](worklog/2026-10-22-delivery-entry.md)。下文各工作记录保留实施当时的结论，当前状态以交付说明和里程碑为准。
-
-当前目标与验收以[需求](REQUIREMENTS.md)为准，阶段进度见[里程碑](MILESTONES.md)；旧路线的阶段顺序及预算、判定、评测边界取舍见[路线规划记录](worklog/2026-10-18-milestone-roadmap.md)。[M3 实施与交付](worklog/2026-10-19-m3-batch-runtime.md)已有声明范围证据，总体验收仍待；与其并行推进的 M4 已交付范围内的只读审计、单代受控重跑和 Docker 精确清理。[M4 收尾核对](worklog/2026-10-21-m4-closeout-review.md)逐项保留剩余故障窗口和评测冻结缺口，不据模块通过宣布整体完成。预算的长期约束见 [ADR-006](adr/006-campaign-budget-reservations.md)，任务输入与宿主验证配置的边界见 [ADR-007](adr/007-host-owned-task-profiles.md)。
-
-M3.4 已完成[样本设计与选择](worklog/2026-10-19-m3-4-sample-selection.md)及 [Goddd 离线基线与共用 L2 SDK](worklog/2026-10-19-goddd-baseline.md)。三个开发来源、当前准备状态与待独立准备的留出名额见 [L2 说明](../scenarios/rpcx/l2/README.md)；[Goddd 新规范、Profile、三类判定和 Runner 接入](worklog/2026-10-19-goddd-evidence-gate.md)已完成开发校准；[Translation 双配置离线基线](worklog/2026-10-19-translation-baseline.md)及[双配置迁移门禁/Runner](worklog/2026-10-19-translation-evidence-gate.md)已接入，[Workouts 多模块离线基线](worklog/2026-10-19-workouts-baseline.md)也已准备，[Workouts 迁移规范、门禁和确定性 Docker Runner](worklog/2026-10-19-workouts-evidence-gate.md)已接入。[三个异构 Target 的确定性 Campaign](worklog/2026-10-19-m3-4-heterogeneous-campaign.md)已通过；后续真实批次及独立自动参考已完成，结果与剩余人类复核缺口见下文。
-
-当前的[开发评测工作](worklog/2026-10-19-l2-development-evaluation.md)记录参考独立性的取舍、三仓判据、一次尝试口径及未知结果处理；Goddd、Translation 双配置与 Workouts 回调的单候选自动参考及待复核记录已实现；[轮次离线汇总](../scenarios/rpcx/l2/round/README.md)已完成机制与既有受控三仓 Campaign 的关联验收；[预算批次入口](worklog/2026-10-20-budgeted-batch-cli.md)已通过本机模拟 API 验收；[真实能力查询及预算准入复核](worklog/2026-10-20-l2-experiment-preparation.md#授权后实查模型能力与预算准入)已完成；[首轮真实开发实验](experiments/2026-10-20-rpcx-l2-real-model-01.md)已按冻结协议完成生成、自动参考与汇总；后续两份实际人员记录和一份受托助手评审已分列，原人员口径缺口见 M3 收尾评审。
-
-[生成前的计划与纳入绑定](worklog/2026-10-20-pre-generation-enrollment.md)记录静态 Enrollment 与动态 Manifest 的边界、Campaign 准备屏障和零任务接纳的失败语义。纳入清单固定参考身份，完整实验协议、预算与真实生成仍按 M3.4 推进。
-
-[v2 评测协议契约](worklog/2026-10-21-evaluation-contract.md)在原链路上绑定计划设置、实际后端、四份材料快照及预定复核人，汇总重查生成前副本；旧开发格式保持兼容。当前仅用已见开发夹具和本机模拟服务验证，一次尝试、development 分区；不认证留出独立性或实际签署，不表示正式 M5 已启动。
-
-[首轮开发实验协议 v0.1.0](experiments/l2-dev-eval-v0.1.0/README.md)已固定实际三仓配置、750 万 Token 总额度、源码/二进制/能力依据及参考与复核规则，随后获授权执行唯一真实批次；[发布工作记录](worklog/2026-10-20-l2-protocol-release.md)说明预算取舍、容量漂移拒绝和离线验收。原三项 NeedsAttention 保留，独立自动参考均 pass；本轮没有自动放行，错误放行率无定义，另暴露 6 个审核定位链接缺陷。后续[按实际模块的源码定位修复](worklog/2026-10-20-review-source-links.md)已通过呈现回归及原三仓报告只读消费，旧报告保持原样。[六项未知检查的根因与支持范围评审](worklog/2026-10-20-needs-attention-review.md)已完成；随后[Workouts 导入顺序归一](worklog/2026-10-20-workouts-import-order.md)通过正反例、冻结矩阵及三组 Docker 开发校准，原判定和正式指标保持不变。[Goddd mock/context 有限适配](worklog/2026-10-20-goddd-context-adaptation.md)已接入固定变体与可追溯的适配选择，旧校准及新正反例通过；该单元真实候选副本的测试保留通过，但 proxying.go 的范围缺口当时仍为 NeedsAttention。原实验记录与指标保持不变。后续[命名期限常量及构造器读取证明](worklog/2026-10-20-goddd-routing-scope.md)已接入局部节点证据与完整剩余结构比较；原样候选副本在新 Docker 校准中八项检查通过，得到 ReadyForReview。旧 NeedsAttention、原实验指标及人类复核状态保持，新增结果仅属于已见开发校准。
-
-[Translation 剩余支持范围设计](worklog/2026-10-20-translation-boundary-support.md)已完成评审和最小原型，按最新交付优先级暂缓实施。当前以[交付说明](DELIVERY.md)关联已有能力、原实验与剩余项；[交付收敛记录](worklog/2026-10-20-delivery-focus.md)保留固定支持范围的取舍。最新 [M3 收尾验收评审](worklog/2026-10-20-m3-closeout-review.md)确认五项条件已有证据、两项部分满足；三仓受托复核已完成，原人员口径与独立留出缺口继续披露。M4.1 按已明确的并行边界实现，不冒充 M3 验收或移交；[核心模块](../internal/audit/README.md)说明当前 API、报告与覆盖边界。
-
-[M4.2a 写者排他与只读检查](worklog/2026-10-20-m4-recovery.md#10-m42a写者排他与只读恢复检查)及 [M4.2b 恢复检查点](worklog/2026-10-20-m4-recovery.md#11-m42b恢复控制检查点)已在声明范围验收；[recovery.Prepare](../internal/recovery/README.md#恢复准备检查点)保存原文、累计预算与尝试历史，单一 head 提交后仍不激活新 Run。写者规则见 [ADR-008](adr/008-campaign-writer-ownership.md)，不可变检查点取舍见 [ADR-009](adr/009-immutable-recovery-checkpoints.md)。[M4.2c 受控完整重跑](worklog/2026-10-21-m4-controlled-rerun.md)已打通单代激活、累计预算与新 Run 交付；新尝试须有首次计划中的次数/期限授权，再次中断只审计并阻塞。旧格式写恢复、付费恢复和连续多代仍未开放。
-
-[M4.3 资源归属与清理](worklog/2026-10-21-m4-resource-ownership.md)记录创建前意图、engine/Run 绑定、精确 ID 清理、未知创建阻塞及真实 Docker 强杀后单代重跑；长期取舍见 [ADR-010](adr/010-docker-resource-ownership.md)。审计只核对记录，实时检查与清理在原 Campaign 锁内完成。[正式评测草案](experiments/m5-evaluation-draft.md)记录一次尝试、独立参考/复核、分母和未知处理；实际留出及其他冻结材料未齐备，当前不是冻结协议或执行命令。
-
-[M4 持久化窗口补充](worklog/2026-10-21-m4-persistence-windows.md)区分 Runner 完整恢复和预算组件强杀：基线后/候选验证前的新 Run 交付保留旧成果，预留后未调用/响应后未结算的账目保留整笔未知占用。[真实 Docker 连接中断](worklog/2026-10-21-m4-docker-connection.md)又覆盖清理前、清理后、检查点后三次断连，验证阻塞及恢复同一引擎后新 Run 交付；不停止共享 daemon，不等同 daemon 重启。正式冻结仍待，M4 总体验收保持未通过。
-
-[M5 首轮范围与冻结条件](worklog/2026-10-21-m5-freeze-readiness.md)复用已验收接入，选定四个固定样本及助手候选复核，分开报告三个已见开发样本与一个隔离准备后校准样本。新应用 schema 2 协议准入已实现，下一步发布实际材料与预算；原严格留出条件保留，当前未冻结、未启动生成。
-
-[四任务实际配置与材料固定](worklog/2026-10-22-fixed-evaluation-preparation.md)已形成[协议 v0.1.0](experiments/l2-fixed-eval-v0.1.0/README.md)：本地输入/参考身份、源码归档/二进制、环境、预算和实际助手复核者均登记，离线检查通过。能力采用明确日期的历史材料作期望，实际启动查询后不匹配就零生成停止；本次外发/消费待授权，原严格留出协议仍未冻结。
-
-随后获授权的[四任务唯一真实评测](experiments/2026-10-22-rpcx-fixed-real-model-01.md)已完成：自动成功 1/4，错误放行 0/1，保留两项 NeedsAttention 与一次 GHCLI 判定依据误拒。四项自动参考和实际助手复核分列，原门禁不回写；完整材料、成本、分层与局限均另存，不把有限已见评测当严格留出验收。
-
-[GHCLI 证据分类修正](worklog/2026-10-22-ghcli-proof-classification.md)随后区分明确丢失请求父上下文与局部证明不足；原样候选的新门禁回归为 NeedsAttention，直接 Background 变体仍 Rejected。保留旧实验结果，未扩大自动放行形式或调用模型。
-
-[GHCLI 有限来源与资源证明](worklog/2026-10-22-ghcli-bounded-proof.md)已按三个单元推进：函数内来源/证据链、资源原型、[生产资源与完整边界闭环](worklog/2026-10-22-ghcli-bounded-proof.md#10-资源证据与完整边界的生产接入2026-10-23)。有限 Body 模式和完整剩余结构证据已接入 worker/宿主；保存候选的新门禁为 ReadyForReview。此为已见样本的开发支持扩展，历史实验、原归档及 1/4 指标保持不变。 随后[完整 Harness 交付验收](worklog/2026-10-23-ghcli-harness-delivery.md)用两个脚本化任务检验预算、补丁/审核材料和新证明的审计正反例，未新增模型实验。
-
-
-[工程交付包](worklog/2026-10-21-engineering-delivery.md)说明显式材料选择、工作区源码/二进制身份、原文保留、请求路径映射和离线迁移验收；[材料清单](delivery/engineering-v0.1.1.json)不包含构建缓存或凭证。归档中的工具可重做运行审计和三个原轮次的指标汇总，不重新生成候选或执行 Docker。
-
-[GHCLI 一次新生成协议](experiments/ghcli-dev-eval-v0.1.0/README.md)和[准备记录](worklog/2026-10-23-ghcli-generation-preparation.md)已固定当前实现与一个已见 Target。[获授权的一次启动](experiments/2026-10-23-ghcli-dev-real-model-01.md)因 Models 附加元数据改变原文摘要而在生成前停止，0 Run / 0 生成，未重试。[能力契约分离](worklog/2026-10-23-capability-contract.md)随后已实现并在模拟服务及旧轮次离线复验中通过；新策略必须显式用于另版协议，原结果保持。长期选择见 [ADR-011](adr/011-capability-contract-binding.md)。
-
-[新版 GHCLI 协议 v0.2.0](experiments/ghcli-dev-eval-v0.2.0/README.md)和[准备记录](worklog/2026-10-23-ghcli-v02-preparation.md)固定新策略及实际材料；随后获授权的[唯一真实执行](experiments/2026-10-23-ghcli-dev-real-model-02.md)已完成：NeedsAttention、自动参考 pass、实际助手复核 fail，额外清空错误响应的分支改变返回值。没有自动放行或重试，旧指标保持。随后[响应返回值的离线回归](worklog/2026-10-23-ghcli-response-regression.md)已在 Git 中保存原样反例、基线及正负对照，默认离线运行。随后[独立参考 v3](worklog/2026-10-23-ghcli-reference-v3.md)以新数据版本纳入四种返回值观察，并保留旧参考/报告；原运行时判定及效果指标不改。
-
-[GHCLI 运行时响应契约](worklog/2026-10-23-ghcli-runtime-response-design.md)已完成 A/B/C：生产门禁、绑定观察与离线重算已接入，完整三任务 Campaign 交付三种判定，补丁重放、审核导航和实际批次审计通过；日志/SDK 等消费来源已纳入审计依赖。原样响应丢失直接 Rejected，未知 helper/分支重排仍 NeedsAttention；原效果指标保持。
+`archive/`、旧实验和工作记录描述当时状态，不作为当前待办。旧消融草案未执行，需在 P1 重新审查。
 
 ## 记录原则
 
-**里程碑与工程记录**：`MILESTONES.md` 只跟踪已确定的开发目标及其验收状态。`worklog/` 按需记录重要的设计与开发过程，也可暂存尚未确定的技术问题；不要求每天或每次修改都写日志。
-
-**设计权衡**：重要设计先权衡再实现。当一项工作有多个可行方案，且它们在关心的目标上各有得失时，在对应 worklog 中说明目标、备选方案、取舍和验证方式。重点关注：
-
-1. 两个目标不能同时做到最好。
-2. 同一个问题有多种解决方式，而且行为不同。
-3. 选择会形成长期约束，之后修改成本较高。
-4. 为解决当前问题，需要引入明显复杂度。
-5. 已有证据表明原方案开始不适用了。
-
-不必每次都写完整的方案比较。当约束已经明确、选择影响很小，或者属于既定方案中的直接实现时，简短说明即可。
-
-**技术决策与实验**：ADR 聚焦一个重要技术选择、选择依据及其长期影响，说明接受的代价、约束和重新评估条件。长期保留的是决策依据，不代表方案永远不变；并非每次方案权衡都需要 ADR。worklog 记录一项工作如何推进、实现和验证，必要时包含方案权衡，ADR 可引用相关记录。实验记录保存具体条件、数据与结论，其他文档引用证据，不重复实验报告。
-
-**结果与证据**：区分设计完成、模块测试通过和端到端能力验收。记录已验证的事实、尚未验证的假设及已知限制，不将模拟结果或局部测试结论扩大为整体能力证明。
-
-**维护要求**：优先更新现有文档，避免同一事项在多处重复维护。保留重要失败记录和决策变更历史；普通代码修改由 Git 历史记录即可。
-
-**提交节奏**：已有授权范围内，按可验收工作单元提交相关代码、测试和文档，不按文件或微小函数拆分，也不等待整个里程碑验收。历史 worklog 中“未暂存、未提交”等描述只记录当时状态，不是后续禁止提交的要求；代码提交与里程碑验收分别判断。
+- **需求**写问题、范围和验收；**设计**写当前选择、取舍和待验证假设；**事实**写实际行为、结果和限制。
+- 只展开当前工作需要的设计。重要取舍按需写 worklog；形成长期约束时再考虑 ADR，已有决策可在新证据下修订。
+- 当前阶段只更新本页；指标与结果引用实验报告；模块行为在对应模块维护，避免多处复制。
+- 普通修改由 Git 记录，不为每次推进新增日志。阶段完成依据验收证据，失败、未知和原始实验结果如实保留。
+- 需求与设计变更说明理由；调整冻结实验另起版本，不覆盖原结果。发布文档、正式 demo 和架构专文等到实际需要时再写。

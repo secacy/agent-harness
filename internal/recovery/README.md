@@ -32,7 +32,7 @@ After.Budget 是经过逐调用校验的 budget v2 数据：保留 RunIDs、累�
 
 After.Targets 单列 Recorded、Adopted、Interrupted、Unstarted；无首记录的 Run 残片为 Abandoned。已完整发布但未索引的 Run 可以采纳，仅有 Completed 报告的 Running Run 不采纳。来源是单 Run Campaign，当前不创建第二次尝试；多 Run 预算格式及历史结构仍需 M4.2c 激活才能形成端到端重跑能力。
 
-运行 `HARNESS_RECOVERY_ARTIFACTS="$PWD/runs/recovery-checkpoints" go test -race ./internal/recovery` 可保留三次恢复准备 SIGKILL 与重入材料；测试只杀自己启动并确认 PID 的辅助进程。完整 rpcx 中断验收和原生命令用法见 [M4.2b 工作记录](../../docs/worklog/2026-10-20-m4-recovery.md#11-m42b恢复控制检查点)与[命令说明](../../docs/command.md#恢复检查点验收)。没有公开恢复生成命令。
+运行 `HARNESS_RECOVERY_ARTIFACTS="$PWD/runs/recovery-checkpoints" go test -race ./internal/recovery` 可保留三次恢复准备 SIGKILL 与重入材料；测试只杀自己启动并确认 PID 的辅助进程。完整 rpcx 中断验收和原生命令用法见 [M4.2b 工作记录](../../docs/worklog/2026-10-20-m4-recovery.md#11-m42b恢复控制检查点)与[命令说明](../../docs/archive/command.md#恢复检查点验收)。没有公开恢复生成命令。
 
 ## 激活与受控重跑
 

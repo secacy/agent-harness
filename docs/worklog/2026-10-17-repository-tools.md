@@ -2,7 +2,7 @@
 
 - 日期：2026-10-17
 - 状态：已实现，工具测试与真实夹具联调通过
-- 对应里程碑：[M1](../MILESTONES.md)
+- 对应里程碑：[M1](../archive/MILESTONES.md)
 - 前置能力：[有界 Agent 循环](2026-10-17-minimal-agent-loop.md)
 
 ## 本步交付

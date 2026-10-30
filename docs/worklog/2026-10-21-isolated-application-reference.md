@@ -2,7 +2,7 @@
 
 - 日期：2026-10-21。
 - 状态：已验收，限声明范围的参考实现与手工校准；独立只读实现/证据核验通过，尚未接入可信 Profile 或正式评测。
-- 对应里程碑：[M5 准备](../MILESTONES.md#m5独立评测与整体验收)，不表示正式评测开始。
+- 对应里程碑：[M5 准备](../archive/MILESTONES.md#m5独立评测与整体验收)，不表示正式评测开始。
 - 实现基线：804a8f88c2473063a2d66c3fc795a829a36e6775，启动时工作区干净。
 - 前置条件：[固定应用基线](../../scenarios/rpcx/l2/agent-application-baseline-v0.1.0.json)及[准入决定](../../scenarios/rpcx/l2/agent-application-admission-v0.1.0.json)已具备；来源和 B 保持原身份，方法边界见[准备记录](2026-10-21-agent-isolated-preparation.md)。
 

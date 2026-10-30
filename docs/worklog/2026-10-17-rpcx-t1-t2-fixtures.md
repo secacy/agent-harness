@@ -2,7 +2,7 @@
 
 - 日期：2026-10-17
 - 状态：已验收
-- 对应里程碑：[M0](../MILESTONES.md)
+- 对应里程碑：[M0](../archive/MILESTONES.md)
 - 当前结论：单场景的预制候选补丁已能离线应用、验证并输出证据；尚未接入 Agent 或批量 Runtime。
 
 ## 问题与目标
@@ -34,7 +34,7 @@
 | 验证器边界测试 | 通过 | 根模块 `go test ./...` |
 | 原始夹具完整性 | 未变化 | 报告 `fixtures_unchanged: true` |
 
-运行产物位于本地 `runs/rpcx-t1-t2-*/`，不提交 Git；完整命令见 [command.md](../command.md)，检查含义和限制见 [场景说明](../../scenarios/rpcx/README.md)。
+运行产物位于本地 `runs/rpcx-t1-t2-*/`，不提交 Git；完整命令见 [command.md](../archive/command.md)，检查含义和限制见 [场景说明](../../scenarios/rpcx/README.md)。
 
 实现中增加了探针实际执行检查，避免将进程退出 0 直接视为六个探针均通过；同时修正原 `.gitignore` 中本地文档的路径模式，确保协作约定与个人目录不进入提交。
 

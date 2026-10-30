@@ -2,7 +2,7 @@
 
 - 日期：2026-10-17
 - 状态：已验收（循环机制）；后续单仓库真实闭环亦已通过一次验收
-- 对应里程碑：[M1](../MILESTONES.md)
+- 对应里程碑：[M1](../archive/MILESTONES.md)
 - 当前结论：已实现 `Loop.Run`，保留并沿用开发者准备的消息、工具和预算类型。本记录覆盖循环机制；后续 [仓库工具](2026-10-17-repository-tools.md) 与 [DeepSeek 适配器](2026-10-17-deepseek-adapter.md) 已通过本地联调，[实验 03](../experiments/2026-10-18-rpcx-real-model-03.md) 验证了受控场景下的一次真实模型闭环。
 
 ## 目标与推进顺序
