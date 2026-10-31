@@ -81,7 +81,7 @@ func markdown(s Summary) []byte {
 	}
 	fmt.Fprintln(&b, "\nAmounts use the protocol's frozen currency and prices; unknown amounts remain blank in CSV/null in JSON. Token settlements are not supplier invoices. Local model attempts include admission rejections; ledger calls and conservative occupancy remain in the raw evidence. Duration covers each generation attempt's preparation, generation, gate and publication; independent reference and human review are separate.")
 	if s.Price != nil {
-		fmt.Fprintf(&b, "\nPrice basis: %s per million tokens, input=%g cached input=%g output=%g; recorded %s; source %s.\n", cell(s.Price.Currency), s.Price.InputPerMillion, s.Price.CachedInputPerMillion, s.Price.OutputPerMillion, cell(s.Price.RecordedAt), cell(s.Price.Source))
+		fmt.Fprintf(&b, "\nFrozen-rate estimate (%s): %s per million tokens, input=%g cached input=%g output=%g; recorded %s; source %s. These amounts are estimates under this basis, not verified billed charges.\n", cell(s.Price.Basis), cell(s.Price.Currency), s.Price.InputPerMillion, s.Price.CachedInputPerMillion, s.Price.OutputPerMillion, cell(s.Price.RecordedAt), cell(s.Price.Source))
 	}
 	fmt.Fprintln(&b, "\n| Slot | Execution | Submitted | Released | Gate | Candidate truth | Delivery accuracy | Failure |\n| --- | --- | --- | --- | --- | --- | --- | --- |")
 	for _, r := range s.Results {

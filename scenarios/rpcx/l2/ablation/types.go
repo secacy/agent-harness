@@ -62,6 +62,7 @@ type Slot struct {
 // Price is a frozen estimate basis, not a supplier invoice or monetary limiter.
 // Token admission is hard; its conservative monetary bound assumes these rates.
 type Price struct {
+	Basis                 string  `json:"basis,omitempty"` // e.g. peak-rate estimate, not an invoice
 	Currency              string  `json:"currency"`
 	Source                string  `json:"source"`
 	RecordedAt            string  `json:"recorded_at"`

@@ -19,7 +19,7 @@ func Draft(project string) (Protocol, error) {
 	if err != nil {
 		return Protocol{}, err
 	}
-	p := Protocol{SchemaVersion: 1, ID: "p1-baseline-v0_1_0", Kind: "formal", Repetitions: 3, Limits: agent.Limits{MaxModelCalls: 40, MaxToolCalls: 80}, AttemptBudget: budget.Limits{MaxCalls: 40, MaxTokens: 2500000}, TotalBudget: budget.Limits{MaxCalls: 1440, MaxTokens: 90000000}, PreparationTimeout: 2 * time.Minute, GenerationTimeout: 10 * time.Minute, ValidationTimeout: 3 * time.Minute, ReferenceTimeout: 5 * time.Minute, HostTimeout: 16 * time.Hour, Analysis: "independent-generations", FailurePolicy: "retain-all-no-retry-stop-on-shared-integrity-failure"}
+	p := Protocol{SchemaVersion: 1, ID: "p1-baseline-v0_1_0", Kind: "formal", Repetitions: 3, Limits: agent.Limits{MaxModelCalls: 40, MaxToolCalls: 80}, AttemptBudget: budget.Limits{MaxCalls: 40, MaxTokens: 2500000}, TotalBudget: budget.Limits{MaxCalls: 1440, MaxTokens: 90000000}, PreparationTimeout: 2 * time.Minute, GenerationTimeout: 10 * time.Minute, ValidationTimeout: 5 * time.Minute, ReferenceTimeout: 5 * time.Minute, HostTimeout: 16 * time.Hour, Analysis: "independent-generations", FailurePolicy: "retain-all-no-retry-stop-on-shared-integrity-failure"}
 	p.Model = budget.Profile{Provider: "deepseek", Endpoint: "https://api.deepseek.com/chat/completions", Model: "deepseek-flash", ContextTokens: 1048576, MaxOutputTokens: 4096}
 	p.Execution.Kind = "docker"
 	p.Execution.CPUs = 2

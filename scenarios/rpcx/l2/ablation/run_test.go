@@ -138,3 +138,27 @@ func TestP1InitialRunningReceiptRemainsUnknownWithoutBreakingDenominator(t *test
 		t.Fatalf("interrupted receipt became complete: %+v", s)
 	}
 }
+
+func TestP1LaunchEvidenceMustPersistBeforeAnyModelConstruction(t *testing.T) {
+	p := runnableProtocol(t)
+	root := filepath.Join(t.TempDir(), "experiment")
+	_, err := Run(context.Background(), root, p, Services{Backend: unusedBackend{p.Execution}, NewModel: func(Slot) (budget.ProfiledModel, error) {
+		t.Fatal("model constructed before launch evidence was durable")
+		return nil, nil
+	}, Prepare: func(context.Context, string, string) error { return errors.New("launch evidence write failed") }})
+	if err == nil {
+		t.Fatal("failed launch persistence did not stop dispatch")
+	}
+	summary, err := Collect(context.Background(), root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if summary.ExecutionComplete || summary.AllSlotsObserved || len(summary.Results) != 36 {
+		t.Fatal("unstarted schedule lost after preparation failure")
+	}
+	for _, r := range summary.Results {
+		if r.State != "not_started" {
+			t.Fatal("admitted before launch evidence")
+		}
+	}
+}

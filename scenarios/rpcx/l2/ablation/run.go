@@ -20,6 +20,7 @@ import (
 type Services struct {
 	Backend  execution.Executor
 	NewModel func(Slot) (budget.ProfiledModel, error)
+	Prepare  func(context.Context, string, string) error // persist actual launch evidence before model construction
 }
 
 type Execution struct {
@@ -113,6 +114,11 @@ func Run(parent context.Context, output string, p Protocol, services Services) (
 	ledger, err := budget.Create(budget.Config{Directory: filepath.Join(output, "budget"), CampaignID: p.ID, Profile: p.Model, Limits: p.TotalBudget, Targets: accounts})
 	if err != nil {
 		return out, err
+	}
+	if services.Prepare != nil {
+		if err = services.Prepare(ctx, output, out.ProtocolSHA256); err != nil {
+			return out, err
+		}
 	}
 	for i, s := range p.Schedule {
 		if err = ctx.Err(); err != nil {

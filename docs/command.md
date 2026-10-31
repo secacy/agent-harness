@@ -114,13 +114,35 @@ go run ./cmd/harness ablation prepare --output runs/p1-preparation
 
 `protocol.draft.json` 故意留空待测的模型能力来源和 Docker 引擎身份，不能作为已冻结或获准付费的协议。`generation-definitions.json` 可检查 A 的最小任务信息及 B/C 相同的完整生成配置；动态预算通知按同一 `final-response-v1` 策略生成。`task-reviews.template.json` 默认四项 pending，复核依据见[人工复核材料](worklog/2026-10-31-p1-truth-review.md)。
 
+查询供应商同源 `/models` 元数据和本机 Docker 身份，不发送模型生成请求。该命令需要环境中的 `DEEPSEEK_API_KEY`，不在输出中保存密钥；模型元数据、声明上界及原始响应保存到新目录。
+
+```sh
+go run ./cmd/harness ablation probe --draft runs/p1-preparation/protocol.draft.json --price docs/experiments/p1-baseline-v0.1.0/price-basis.json --output runs/p1-probe
+```
+
+正式冻结和启动使用同一个已构建的二进制，以便核对实际执行字节。运行相关源码需先提交；无关文档和人工复核文件的编辑可以继续。冻结还包含 Git HEAD、源码完整清单、模型原始响应、参考身份及 12 份实际初始提示/工具。
+
+```sh
+go build -trimpath -o runs/p1-harness ./cmd/harness
+runs/p1-harness ablation freeze --probe runs/p1-probe --output runs/p1-freeze
+```
+
+冻结目录中的 `task-reviews.template.json` 与 `authorization.template.json` 默认 pending，不能执行。实际人完成逐仓复核且模型/费用上限获明确授权后，另存完整记录并按冻结清单启动一次预定批次：
+
+```sh
+runs/p1-harness ablation run --freeze runs/p1-freeze --reviews <actual-task-reviews.json> --authorization <actual-spending-authorization.json> --output <new-experiment-root>
+runs/p1-harness ablation reference --freeze runs/p1-freeze --experiment <experiment-root>
+```
+
+启动核对冻结字节、真实 Docker engine/image/resources、当前模型声明及全部预算授权，之后串行执行预定项；不自动重试。参考命令不读取模型凭证，在新的独占参考目录评测所有固定候选，包括未放行和未正常提交者。实际人工复核写入每候选参考目录的 `review.json` 后可重新只读汇总；缺复核保持未知。字段校验只能认证记录结构与绑定，不能证明填写者身份或实际完成了复核。
+
 已有实验可只读核对 trace、预算、固定候选与独立参考，再输出 JSON、CSV、Markdown：
 
 ```sh
 go run ./cmd/harness ablation report --experiment <p1-root> --output <new-report-directory>
 ```
 
-汇总保留全部预定尝试、零分母及未知项，不修改原收据或人工复核。生产 `replay` 继续只处理普通 Run；实验 Go API 的 `runner.ReplayExperiment` 认证专用实验收据。运行、参考评测与聚合的 Go API 分别为 `ablation.Run`、`ablation.EvaluateAll`、`ablation.Collect`。正式启动所需源码冻结、资源校准及授权尚未完成，当前 CLI 不提供真实模型运行入口。
+汇总保留全部预定尝试、零分母及未知项，不修改原收据或人工复核。生产 `replay` 继续只处理普通 Run；实验 Go API 的 `runner.ReplayExperiment` 认证专用实验收据。运行、参考评测与聚合的 Go API 分别为 `ablation.Run`、`ablation.EvaluateAll`、`ablation.Collect`。准备、模型元数据查询、冻结及容器校准均不等于正式实验已启动或 P1 已验收。
 
 离线机制验证使用受控模型和执行替身，不代表三组迁移效果：
 
