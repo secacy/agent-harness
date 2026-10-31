@@ -103,3 +103,29 @@ go test -race -timeout 20m ./internal/trace ./internal/agent ./internal/budget .
 ```
 
 包括自有辅助进程强杀后的记录读取，默认不访问模型或开启 Docker 集成。五个历史 Run 的路径、复验结果与数据限制见 [P0 离线验收](experiments/2026-10-31-p0-offline-replay.md)；原 `runs/` 材料不随 Git 提供。
+
+## P1 实验准备与汇总
+
+生成四仓、三组、三次重复的草案、实际初始提示/工具清单和待填人工复核模板。输出目录必须不存在；此入口不读取模型凭证、不查询供应商或启动 Docker。
+
+```sh
+go run ./cmd/harness ablation prepare --output runs/p1-preparation
+```
+
+`protocol.draft.json` 故意留空待测的模型能力来源和 Docker 引擎身份，不能作为已冻结或获准付费的协议。`generation-definitions.json` 可检查 A 的最小任务信息及 B/C 相同的完整生成配置；动态预算通知按同一 `final-response-v1` 策略生成。`task-reviews.template.json` 默认四项 pending，复核依据见[人工复核材料](worklog/2026-10-31-p1-truth-review.md)。
+
+已有实验可只读核对 trace、预算、固定候选与独立参考，再输出 JSON、CSV、Markdown：
+
+```sh
+go run ./cmd/harness ablation report --experiment <p1-root> --output <new-report-directory>
+```
+
+汇总保留全部预定尝试、零分母及未知项，不修改原收据或人工复核。生产 `replay` 继续只处理普通 Run；实验 Go API 的 `runner.ReplayExperiment` 认证专用实验收据。运行、参考评测与聚合的 Go API 分别为 `ablation.Run`、`ablation.EvaluateAll`、`ablation.Collect`。正式启动所需源码冻结、资源校准及授权尚未完成，当前 CLI 不提供真实模型运行入口。
+
+离线机制验证使用受控模型和执行替身，不代表三组迁移效果：
+
+```sh
+go test -race ./scenarios/rpcx/l2/ablation
+go test -race ./scenarios/rpcx/runner -run '^TestExperiment|^TestDescribeExperiment|^TestReplay' -count=1
+go test -race ./cmd/harness -run '^TestAblation' -count=1
+```

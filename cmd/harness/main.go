@@ -26,6 +26,9 @@ func main() {
 
 // run 将参数、密钥和具体模型的组装留在入口，Runner 只接收统一接口。
 func run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
+	if len(args) > 0 && args[0] == "ablation" {
+		return runAblation(ctx, args[1:], stdout, stderr)
+	}
 	if len(args) > 0 && args[0] == "replay" {
 		return runReplay(ctx, args[1:], stdout, stderr)
 	}
